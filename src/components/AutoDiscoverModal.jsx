@@ -199,7 +199,11 @@ export default function AutoDiscoverModal({
                     <input
                       type="checkbox"
                       checked={isChecked}
-                      onChange={() => toggleSelect(item.path)}
+                      onChange={(e) => {
+                        e.stopPropagation();
+                        toggleSelect(item.path);
+                      }}
+                      onClick={(e) => e.stopPropagation()}
                       className="rounded border-white/20 text-indigo-600 focus:ring-indigo-500 bg-slate-900 h-4 w-4 cursor-pointer"
                     />
 

@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "concurrently -n \"SERVER,CLIENT\" -c \"blue,magenta\" \"npm run server\" \"npm run client\"",
-    "server": "node server/index.js",
+    "server": "nodemon --watch server server/index.js",
     "client": "vite",
     "build": "vite build",
     "preview": "vite preview",
