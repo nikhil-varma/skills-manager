@@ -206,7 +206,7 @@ export async function testLLMConnection(config) {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ config }),
-      signal: AbortSignal.timeout(12000)
+      signal: AbortSignal.timeout(60000) // 1 minute timeout
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({ error: 'Connection test failed' }));
@@ -215,7 +215,7 @@ export async function testLLMConnection(config) {
     return res.json();
   } catch (err) {
     if (err.name === 'TimeoutError' || err.name === 'AbortError' || err.message?.includes('aborted') || err.message?.includes('timeout')) {
-      throw new Error('Connection test timed out after 12s. The endpoint is unreachable or not responding.');
+      throw new Error('Connection test timed out after 1 minute. The endpoint is unreachable or not responding.');
     }
     throw err;
   }

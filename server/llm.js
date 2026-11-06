@@ -15,7 +15,7 @@ function resolveEndpointUrl(rawUrl) {
   return url;
 }
 
-export async function callLLM({ messages, config, systemPrompt, timeoutMs = 45000 }) {
+export async function callLLM({ messages, config, systemPrompt, timeoutMs = 60000 }) {
   const provider = config.provider || 'openai';
   const apiKey = (config.apiKey || '').trim();
   const model = (config.model || '').trim();
@@ -165,7 +165,9 @@ export async function callLLM({ messages, config, systemPrompt, timeoutMs = 4500
   } catch (err) {
     const causeStr = `${err.message || ''} ${err.cause?.message || ''} ${err.cause?.code || ''}`;
     if (err.name === 'TimeoutError' || err.name === 'AbortError' || causeStr.includes('aborted') || causeStr.includes('timeout')) {
-      throw new Error(`Request timed out after ${Math.round(timeoutMs / 1000)}s. Please check if endpoint (${config.baseUrl}) is reachable.`);
+      const seconds = Math.round(timeoutMs / 1000);
+      const timeDesc = seconds >= 60 ? `${Math.round(seconds / 60)} minute` : `${seconds}s`;
+      throw new Error(`Request timed out after ${timeDesc}. Please check if endpoint (${config.baseUrl}) is reachable.`);
     }
     if (causeStr.includes('ECONNREFUSED')) {
       throw new Error(`Connection refused to ${config.baseUrl || 'endpoint'}. Please ensure the service is running.`);
@@ -184,7 +186,7 @@ export async function testLLMConnection(config) {
       messages: testMessages,
       config,
       systemPrompt: 'You are a connection test responder. Reply with 3 words.',
-      timeoutMs: 10000 // 10 second timeout for connection test
+      timeoutMs: 60000 // 1 minute timeout
     });
     return { success: true, reply: (reply || 'Connection verified').trim() };
   } catch (err) {
@@ -242,7 +244,7 @@ ${catalogLines.join('\n')}
     messages,
     config,
     systemPrompt,
-    timeoutMs: 40000
+    timeoutMs: 60000 // 1 minute timeout
   });
 
   // Extract mentioned skills to render interactive quick chips
