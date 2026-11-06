@@ -30,13 +30,20 @@ export default function Navbar({
   theme = 'dark',
   onToggleTheme
 }) {
+  const isTauri = typeof window !== 'undefined' && (
+    Boolean(window.__TAURI_INTERNALS__) ||
+    Boolean(window.__TAURI__) ||
+    window.location.protocol === 'tauri:' ||
+    window.location.hostname === 'tauri.localhost'
+  );
+
   return (
-    <header className="sticky top-0 z-30 border-b border-slate-200/80 dark:border-white/5 bg-white/85 dark:bg-[#0b0f17]/90 backdrop-blur-xl px-3.5 sm:px-6 py-2.5 sm:py-3.5 transition-colors duration-200">
+    <header data-tauri-drag-region className="sticky top-0 z-30 border-b border-slate-200/80 dark:border-white/5 bg-white/85 dark:bg-[#0b0f17]/90 backdrop-blur-xl px-3.5 sm:px-6 py-2.5 sm:py-3.5 transition-colors duration-200">
       <div className={`w-full mx-auto flex flex-col md:flex-row md:items-center justify-between gap-3 sm:gap-4 transition-all duration-300 ${isChatOpen ? 'max-w-[1920px]' : 'max-w-7xl'}`}>
         
         {/* Brand & Mobile Quick Actions Row */}
         <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2.5 sm:gap-3">
+          <div className={`flex items-center gap-2.5 sm:gap-3 ${isTauri ? 'pl-16 sm:pl-18' : ''}`}>
             <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-xl bg-gradient-to-tr from-[#007AFF] via-indigo-600 to-purple-600 flex items-center justify-center shadow-lg shadow-[#007AFF]/20 ring-1 ring-white/20 flex-shrink-0">
               <Zap className="h-4 w-4 sm:h-5 sm:w-5 text-white fill-white/20" />
             </div>
