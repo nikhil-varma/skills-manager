@@ -1,12 +1,12 @@
 /**
  * SkillDesk LLM Service
- * Handles provider connections (OpenAI, Anthropic, Gemini, Ollama, Custom OpenAI-compatible)
+ * Handles provider connections (Custom OpenAI-compatible like LMStudio/OpenRouter/Groq, Ollama, OpenAI, Gemini)
  * and enforces strict skills-only domain scoping.
  */
 
+// Inside Docker, convert localhost / 127.0.0.1 to host.docker.internal so container can reach host LLMs
 function resolveEndpointUrl(rawUrl) {
   let url = (rawUrl || '').trim();
-  // If running inside Docker container, map localhost / 127.0.0.1 to host.docker.internal
   const isInDocker = process.platform !== 'darwin' || Boolean(process.env.HOST_HOME);
   if (isInDocker) {
     url = url.replace(/^http:\/\/localhost(?=[:/]|$)/i, 'http://host.docker.internal');
@@ -16,7 +16,7 @@ function resolveEndpointUrl(rawUrl) {
 }
 
 export async function callLLM({ messages, config, systemPrompt, timeoutMs = 60000 }) {
-  const provider = config.provider || 'openai';
+  const provider = config.provider || 'custom';
   const apiKey = (config.apiKey || '').trim();
   const model = (config.model || '').trim();
   const temperature = typeof config.temperature === 'number' ? config.temperature : 0.2;
@@ -36,67 +36,24 @@ export async function callLLM({ messages, config, systemPrompt, timeoutMs = 6000
   }
 
   try {
-    // 1. Anthropic Claude API
-    if (provider === 'anthropic') {
-      if (!apiKey) throw new Error('Anthropic API key is required');
-      let rawBase = config.baseUrl || 'https://api.anthropic.com/v1';
-      let baseUrl = resolveEndpointUrl(rawBase).replace(/\/+$/, '');
-      const url = baseUrl.endsWith('/messages') ? baseUrl : `${baseUrl}/messages`;
-
-      const anthropicMessages = validMessages.map(m => ({ role: m.role, content: m.content }));
-
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'x-api-key': apiKey,
-          'anthropic-version': '2023-06-01',
-          'content-type': 'application/json'
-        },
-        body: JSON.stringify({
-          model: model || 'claude-3-5-sonnet-20241022',
-          system: systemPrompt,
-          messages: anthropicMessages,
-          max_tokens: 1800,
-          temperature
-        }),
-        signal: AbortSignal.timeout(timeoutMs)
-      });
-
-      if (!res.ok) {
-        const errText = await res.text();
-        let msg = errText;
-        try {
-          const parsed = JSON.parse(errText);
-          msg = parsed.error?.message || errText;
-        } catch (e) {}
-        throw new Error(`Anthropic error (${res.status}): ${msg}`);
-      }
-
-      const data = await res.json();
-      return data.content?.map(c => c.text || '').join('\n') || '';
-    }
-
-    // 2. Google Gemini API
+    // 1. Google Gemini OpenAI-compatible endpoint
     if (provider === 'gemini') {
-      if (!apiKey) throw new Error('Google Gemini API key is required');
-
-      let rawBase = config.baseUrl || 'https://generativelanguage.googleapis.com/v1beta/openai';
-      let baseUrl = resolveEndpointUrl(rawBase).replace(/\/+$/, '');
-      const url = baseUrl.endsWith('/chat/completions') ? baseUrl : `${baseUrl}/chat/completions`;
-
+      if (!apiKey) throw new Error('Gemini API key is required');
+      const baseUrl = 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions';
+      
       const chatMessages = [
         { role: 'system', content: systemPrompt },
         ...validMessages
       ];
 
-      const res = await fetch(url, {
+      const res = await fetch(baseUrl, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`
         },
         body: JSON.stringify({
-          model: model || 'gemini-1.5-flash',
+          model: model || 'gemini-2.0-flash',
           messages: chatMessages,
           temperature
         }),
@@ -117,11 +74,14 @@ export async function callLLM({ messages, config, systemPrompt, timeoutMs = 6000
       return data.choices?.[0]?.message?.content || '';
     }
 
-    // 3. Ollama (local) or OpenAI or Custom OpenAI-Compatible (OpenRouter, Groq, LMStudio, vLLM, DeepSeek)
-    let defaultBaseUrl = 'https://api.openai.com/v1';
-    let defaultModel = 'gpt-4o-mini';
+    // 2. Custom OpenAI-Compatible (LMStudio, OpenRouter, Groq, vLLM, DeepSeek, LocalAI), Ollama, or OpenAI
+    let defaultBaseUrl = 'http://localhost:1234/v1';
+    let defaultModel = 'local-model';
 
-    if (provider === 'ollama') {
+    if (provider === 'openai') {
+      defaultBaseUrl = 'https://api.openai.com/v1';
+      defaultModel = 'gpt-4o-mini';
+    } else if (provider === 'ollama') {
       defaultBaseUrl = 'http://localhost:11434/v1';
       defaultModel = 'llama3.2';
     }
@@ -141,7 +101,13 @@ export async function callLLM({ messages, config, systemPrompt, timeoutMs = 6000
 
     if (apiKey) {
       headers['Authorization'] = `Bearer ${apiKey}`;
-    } else if (provider !== 'ollama' && !baseUrl.includes('localhost') && !baseUrl.includes('host.docker.internal')) {
+    } else if (
+      provider !== 'ollama' &&
+      provider !== 'custom' &&
+      !baseUrl.includes('localhost') &&
+      !baseUrl.includes('127.0.0.1') &&
+      !baseUrl.includes('host.docker.internal')
+    ) {
       throw new Error(`API Key is required for provider "${provider}"`);
     }
 
@@ -164,18 +130,13 @@ export async function callLLM({ messages, config, systemPrompt, timeoutMs = 6000
 
     if (!res.ok) {
       const errText = await res.text();
-      const lowerErr = errText.toLowerCase();
-      const isJinjaError = lowerErr.includes('jinja') || 
-                           lowerErr.includes('prompt template') || 
-                           lowerErr.includes('user query') ||
-                           lowerErr.includes('system');
 
-      // Automatic fallback for models whose Jinja template rejects system messages or requires user first
-      if (res.status === 400 && isJinjaError && validMessages.length > 0) {
+      // Automatic fallback for models whose Jinja template rejects system messages or requires user first (e.g. Gemma, LMStudio models)
+      if (res.status === 400 && validMessages.length > 0) {
         const mergedMessages = [
           {
             role: 'user',
-            content: `${systemPrompt}\n\n---\nUser Question:\n${validMessages[0].content}`
+            content: `[System Instructions:\n${systemPrompt}\n]\n\nUser Question:\n${validMessages[0].content}`
           },
           ...validMessages.slice(1)
         ];
@@ -195,9 +156,20 @@ export async function callLLM({ messages, config, systemPrompt, timeoutMs = 6000
           if (retryRes.ok) {
             const retryData = await retryRes.json();
             return retryData.choices?.[0]?.message?.content || '';
+          } else {
+            const retryErrText = await retryRes.text();
+            let retryMsg = retryErrText;
+            try {
+              const parsed = JSON.parse(retryErrText);
+              retryMsg = parsed.error?.message || parsed.message || parsed.error || retryErrText;
+            } catch (e) {}
+            throw new Error(`LLM provider error (${retryRes.status}): ${retryMsg}`);
           }
         } catch (retryErr) {
-          // ignore and fall through to original error
+          if (retryErr.message.startsWith('LLM provider error')) {
+            throw retryErr;
+          }
+          // fall through to original error if network/other issue
         }
       }
 
@@ -216,7 +188,7 @@ export async function callLLM({ messages, config, systemPrompt, timeoutMs = 6000
     if (err.name === 'TimeoutError' || err.name === 'AbortError' || causeStr.includes('aborted') || causeStr.includes('timeout')) {
       const seconds = Math.round(timeoutMs / 1000);
       const timeDesc = seconds >= 60 ? `${Math.round(seconds / 60)} minute` : `${seconds}s`;
-      throw new Error(`Request timed out after ${timeDesc}. Please check if endpoint (${config.baseUrl}) is reachable.`);
+      throw new Error(`Request timed out after ${timeDesc}. Please check if endpoint (${config.baseUrl || 'URL'}) is reachable.`);
     }
     if (causeStr.includes('ECONNREFUSED')) {
       throw new Error(`Connection refused to ${config.baseUrl || 'endpoint'}. Please ensure the service is running.`);
@@ -248,7 +220,12 @@ export async function chatWithSkills({ messages, skills = [], config }) {
     throw new Error('LLM provider is not configured. Please open Settings and configure your AI Provider.');
   }
 
-  const isLocal = config.provider === 'ollama' || config.baseUrl?.includes('localhost') || config.baseUrl?.includes('127.0.0.1');
+  const isLocal = config.provider === 'ollama' || 
+                  config.provider === 'custom' || 
+                  config.baseUrl?.includes('localhost') || 
+                  config.baseUrl?.includes('127.0.0.1') || 
+                  config.baseUrl?.includes('host.docker.internal');
+
   if (!isLocal && !config.apiKey) {
     throw new Error(`API key is required for ${config.provider || 'custom'}. Open Settings to enter your key.`);
   }
@@ -260,7 +237,7 @@ export async function chatWithSkills({ messages, skills = [], config }) {
       .map(([id, st]) => `${id}${st.isSymlink ? ' (symlink)' : ''}`)
       .join(', ');
 
-    const desc = s.description ? s.description.replace(/\s+/g, ' ').slice(0, 240) : 'No description';
+    const desc = s.description ? s.description.replace(/\s+/g, ' ').slice(0, 200) : 'No description';
     return `${idx + 1}. [${s.name}]: ${desc} | Installed on: [${installedIn || 'none'}]`;
   });
 

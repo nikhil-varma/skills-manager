@@ -20,34 +20,14 @@ import { updatePlatforms, fetchLLMConfig, saveLLMConfig, testLLMConnection } fro
 
 const PROVIDER_PRESETS = [
   {
-    id: 'openai',
-    name: 'OpenAI',
-    baseUrl: 'https://api.openai.com/v1',
-    defaultModel: 'gpt-4o-mini',
-    models: ['gpt-4o-mini', 'gpt-4o', 'o3-mini', 'gpt-4-turbo'],
-    needsKey: true,
-    keyPlaceholder: 'sk-...',
-    badge: 'Popular'
-  },
-  {
-    id: 'anthropic',
-    name: 'Anthropic Claude',
-    baseUrl: 'https://api.anthropic.com/v1',
-    defaultModel: 'claude-3-5-sonnet-20241022',
-    models: ['claude-3-5-sonnet-20241022', 'claude-3-5-haiku-20241022', 'claude-3-opus-20240229'],
-    needsKey: true,
-    keyPlaceholder: 'sk-ant-...',
-    badge: 'Recommended'
-  },
-  {
-    id: 'gemini',
-    name: 'Google Gemini',
-    baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai',
-    defaultModel: 'gemini-1.5-flash',
-    models: ['gemini-1.5-flash', 'gemini-2.0-flash', 'gemini-1.5-pro'],
-    needsKey: true,
-    keyPlaceholder: 'AIzaSy...',
-    badge: 'Fast & Free Tier'
+    id: 'custom',
+    name: 'Custom (LMStudio / OpenAI-Compatible)',
+    baseUrl: 'http://localhost:1234/v1',
+    defaultModel: 'local-model',
+    models: ['local-model', 'deepseek/deepseek-chat', 'meta-llama/llama-3.3-70b-instruct', 'qwen2.5-coder'],
+    needsKey: false,
+    keyPlaceholder: 'Optional (e.g. for OpenRouter, Groq, or vLLM)',
+    badge: 'LMStudio, Groq, vLLM'
   },
   {
     id: 'ollama',
@@ -60,14 +40,24 @@ const PROVIDER_PRESETS = [
     badge: 'Offline / Private'
   },
   {
-    id: 'custom',
-    name: 'Custom (OpenAI-Compatible)',
-    baseUrl: 'https://openrouter.ai/api/v1',
-    defaultModel: 'anthropic/claude-3.5-sonnet',
-    models: ['deepseek/deepseek-chat', 'meta-llama/llama-3.3-70b-instruct'],
+    id: 'openai',
+    name: 'OpenAI',
+    baseUrl: 'https://api.openai.com/v1',
+    defaultModel: 'gpt-4o-mini',
+    models: ['gpt-4o-mini', 'gpt-4o', 'o3-mini', 'o1'],
     needsKey: true,
-    keyPlaceholder: 'API Key or Token',
-    badge: 'OpenRouter, Groq, vLLM'
+    keyPlaceholder: 'sk-...',
+    badge: 'Popular'
+  },
+  {
+    id: 'gemini',
+    name: 'Google Gemini',
+    baseUrl: 'https://generativelanguage.googleapis.com/v1beta/openai',
+    defaultModel: 'gemini-2.0-flash',
+    models: ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-pro'],
+    needsKey: true,
+    keyPlaceholder: 'AIzaSy...',
+    badge: 'Fast & Free Tier'
   }
 ];
 
@@ -277,9 +267,9 @@ export default function SettingsModal({
                   Configured Locations
                 </h4>
                 <div className="space-y-2">
-                  {platformList.map((plat) => (
+                  {platformList.map((plat, idx) => (
                     <div
-                      key={plat.id}
+                      key={`${plat.id}-${plat.path || idx}`}
                       className="flex items-center justify-between gap-3 p-3 rounded-xl border border-white/5 bg-slate-900/60"
                     >
                       <div className="flex items-center gap-2.5">
@@ -399,7 +389,7 @@ export default function SettingsModal({
                       setTestResult(null);
                       setLlmConfig({ ...llmConfig, baseUrl: e.target.value });
                     }}
-                    placeholder="https://api.openai.com/v1"
+                    placeholder="http://localhost:1234/v1"
                     className="w-full bg-slate-950 border border-white/10 rounded-lg px-3 py-2 text-slate-100 font-mono text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500"
                   />
                 </div>

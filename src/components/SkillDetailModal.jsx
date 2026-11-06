@@ -426,8 +426,8 @@ export default function SkillDetailModal({
                           onChange={(e) => setTargetPlatformId(e.target.value)}
                           className="w-full bg-slate-950 border border-white/10 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500"
                         >
-                          {platforms.map(p => (
-                            <option key={p.id} value={p.id}>
+                          {platforms.map((p, idx) => (
+                            <option key={`${p.id}-${idx}`} value={p.id}>
                               {p.name} ({p.path})
                             </option>
                           ))}

@@ -177,18 +177,18 @@ export function savePlatforms(platforms) {
     current.platforms = clean;
 
     fs.writeFileSync(SETTINGS_FILE, JSON.stringify(current, null, 2), 'utf-8');
-    return true;
+    return clean;
   } catch (err) {
     console.error('Error saving settings:', err);
-    return false;
+    return [];
   }
 }
 
 export const DEFAULT_LLM_CONFIG = {
-  provider: 'openai', // 'openai', 'anthropic', 'gemini', 'ollama', 'custom'
-  baseUrl: 'https://api.openai.com/v1',
+  provider: 'custom', // 'custom', 'ollama', 'openai', 'gemini'
+  baseUrl: 'http://localhost:1234/v1',
   apiKey: '',
-  model: 'gpt-4o-mini',
+  model: 'local-model',
   temperature: 0.2
 };
 

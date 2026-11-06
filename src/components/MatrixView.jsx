@@ -374,11 +374,11 @@ export default function MatrixView({
               <div className="max-h-64 overflow-y-auto space-y-2 rounded-xl border border-white/5 bg-slate-900/60 p-2.5">
                 {visiblePlatforms
                   .filter(p => deleteTargetSkill.platforms[p.id]?.installed)
-                  .map(plat => {
+                  .map((plat, idx) => {
                     const status = deleteTargetSkill.platforms[plat.id];
                     const isSymlink = status?.isSymlink;
                     return (
-                      <div key={plat.id} className="flex items-center justify-between p-2.5 rounded-lg bg-slate-950/60 border border-white/5 text-xs">
+                      <div key={`${plat.id}-${plat.path || idx}`} className="flex items-center justify-between p-2.5 rounded-lg bg-slate-950/60 border border-white/5 text-xs">
                         <div className="flex items-center gap-2.5">
                           <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: plat.color }} />
                           <div>

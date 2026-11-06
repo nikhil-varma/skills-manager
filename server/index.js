@@ -90,7 +90,8 @@ app.post('/api/discover/sync-selection', (req, res) => {
     }
 
     savePlatforms(updated);
-    res.json({ success: true, platforms: updated });
+    const cleanPlatforms = getPlatforms();
+    res.json({ success: true, platforms: cleanPlatforms });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -114,9 +115,11 @@ app.post('/api/discover/add-selected', (req, res) => {
       const expPath = expandHome(tool.path);
       if (existingPaths.has(expPath)) continue;
 
-      let id = tool.id || tool.name.toLowerCase().replace(/[^a-z0-9]/g, '-');
-      if (existingIds.has(id)) {
-        id = `${id}-${Date.now().toString(36)}`;
+      let baseId = tool.id || tool.name.toLowerCase().replace(/[^a-z0-9]/g, '-');
+      let id = baseId;
+      let counter = 1;
+      while (existingIds.has(id)) {
+        id = `${baseId}-${counter++}`;
       }
       existingIds.add(id);
       existingPaths.add(expPath);
@@ -133,7 +136,8 @@ app.post('/api/discover/add-selected', (req, res) => {
     }
 
     savePlatforms(newPlatforms);
-    res.json({ success: true, platforms: newPlatforms });
+    const cleanPlatforms = getPlatforms();
+    res.json({ success: true, platforms: cleanPlatforms });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -515,8 +519,10 @@ app.get('/api/ai/config', (req, res) => {
     const config = getLLMConfig();
     const isConfigured = Boolean(
       config.provider === 'ollama' ||
+      config.provider === 'custom' ||
       (config.apiKey && config.apiKey.trim().length > 0) ||
-      config.baseUrl?.includes('localhost')
+      config.baseUrl?.includes('localhost') ||
+      config.baseUrl?.includes('127.0.0.1')
     );
     res.json({ config, isConfigured });
   } catch (err) {
