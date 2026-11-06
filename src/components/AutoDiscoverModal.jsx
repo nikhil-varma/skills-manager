@@ -10,9 +10,10 @@ import {
   Sparkles, 
   ExternalLink,
   Layers,
-  ArrowRight
+  ArrowRight,
+  Check
 } from 'lucide-react';
-import { fetchDiscoverTools, addDiscoveredTools, revealInFinder } from '../api.js';
+import { fetchDiscoverTools, syncDiscoveredSelection, revealInFinder } from '../api.js';
 
 export default function AutoDiscoverModal({
   onClose,
@@ -35,10 +36,12 @@ export default function AutoDiscoverModal({
       const res = await fetchDiscoverTools();
       setData(res);
 
-      // By default, select all un-added global tools
+      // Check all items that are currently already added in SkillDesk
       const toSelect = new Set();
-      res.globalTools.forEach(t => {
-        if (!t.isAdded) toSelect.add(t.path);
+      [...res.globalTools, ...res.projectWorkspaces].forEach(t => {
+        if (t.isAdded) {
+          toSelect.add(t.path);
+        }
       });
       setSelectedTools(toSelect);
     } catch (err) {
@@ -60,9 +63,7 @@ export default function AutoDiscoverModal({
 
   const selectAll = (items) => {
     const next = new Set(selectedTools);
-    items.forEach(i => {
-      if (!i.isAdded) next.add(i.path);
-    });
+    items.forEach(i => next.add(i.path));
     setSelectedTools(next);
   };
 
@@ -72,19 +73,14 @@ export default function AutoDiscoverModal({
     setSelectedTools(next);
   };
 
-  const handleAdd = async () => {
+  const handleSave = async () => {
     const all = [...data.globalTools, ...data.projectWorkspaces];
-    const itemsToAdd = all.filter(item => selectedTools.has(item.path) && !item.isAdded);
-
-    if (itemsToAdd.length === 0) {
-      showToast('No new tools selected to add', 'info');
-      return;
-    }
+    const itemsToKeep = all.filter(item => selectedTools.has(item.path));
 
     try {
       setSaving(true);
-      await addDiscoveredTools(itemsToAdd);
-      showToast(`Added ${itemsToAdd.length} tool locations to SkillDesk`, 'success');
+      await syncDiscoveredSelection(itemsToKeep);
+      showToast(`Updated active locations in SkillDesk (${itemsToKeep.length} active)`, 'success');
       onSuccess();
       onClose();
     } catch (err) {
@@ -95,8 +91,7 @@ export default function AutoDiscoverModal({
   };
 
   const currentList = activeTab === 'global' ? data.globalTools : data.projectWorkspaces;
-  const unaddedInCurrent = currentList.filter(i => !i.isAdded);
-  const selectedInCurrent = currentList.filter(i => selectedTools.has(i.path) && !i.isAdded);
+  const activeCountInCurrent = currentList.filter(i => selectedTools.has(i.path)).length;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md animate-fade-in">
@@ -116,7 +111,7 @@ export default function AutoDiscoverModal({
                 </span>
               </h3>
               <p className="text-xs text-slate-400">
-                Scanned your Mac for AI coding assistants and project skill repositories
+                Check or uncheck locations to add or remove them from SkillDesk
               </p>
             </div>
           </div>
@@ -125,7 +120,7 @@ export default function AutoDiscoverModal({
             onClick={onClose}
             className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
           >
-            <X className="h-5 w-5" />
+            <X className="h-4 w-4" />
           </button>
         </div>
 
@@ -157,25 +152,21 @@ export default function AutoDiscoverModal({
           </div>
 
           <div className="flex items-center gap-2 text-xs">
-            {unaddedInCurrent.length > 0 && (
-              <>
-                <button
-                  type="button"
-                  onClick={() => selectAll(currentList)}
-                  className="text-indigo-400 hover:text-indigo-300 font-medium"
-                >
-                  Select All
-                </button>
-                <span className="text-slate-600">|</span>
-                <button
-                  type="button"
-                  onClick={() => deselectAll(currentList)}
-                  className="text-slate-400 hover:text-slate-200"
-                >
-                  Deselect
-                </button>
-              </>
-            )}
+            <button
+              type="button"
+              onClick={() => selectAll(currentList)}
+              className="text-indigo-400 hover:text-indigo-300 font-medium"
+            >
+              Select All
+            </button>
+            <span className="text-slate-600">|</span>
+            <button
+              type="button"
+              onClick={() => deselectAll(currentList)}
+              className="text-slate-400 hover:text-slate-200"
+            >
+              Deselect All
+            </button>
           </div>
         </div>
 
@@ -192,28 +183,24 @@ export default function AutoDiscoverModal({
             </div>
           ) : (
             currentList.map((item) => {
-              const isSelected = selectedTools.has(item.path);
-              const isAdded = item.isAdded;
+              const isChecked = selectedTools.has(item.path);
 
               return (
                 <div
                   key={item.path}
-                  onClick={() => !isAdded && toggleSelect(item.path)}
-                  className={`flex items-center justify-between p-3.5 rounded-xl border transition-all ${
-                    isAdded
-                      ? 'bg-slate-900/30 border-white/5 opacity-60 cursor-default'
-                      : isSelected
-                      ? 'bg-indigo-950/40 border-indigo-500/50 shadow-md shadow-indigo-500/5 cursor-pointer ring-1 ring-indigo-500/30'
-                      : 'bg-slate-900/60 border-white/5 hover:border-white/15 hover:bg-slate-900/90 cursor-pointer'
+                  onClick={() => toggleSelect(item.path)}
+                  className={`flex items-center justify-between p-3.5 rounded-xl border transition-all cursor-pointer ${
+                    isChecked
+                      ? 'bg-indigo-950/40 border-indigo-500/50 shadow-md shadow-indigo-500/5 ring-1 ring-indigo-500/30'
+                      : 'bg-slate-900/60 border-white/5 hover:border-white/15 hover:bg-slate-900/90'
                   }`}
                 >
                   <div className="flex items-center gap-3">
                     <input
                       type="checkbox"
-                      disabled={isAdded}
-                      checked={isSelected || isAdded}
-                      onChange={() => !isAdded && toggleSelect(item.path)}
-                      className="rounded border-white/20 text-indigo-600 focus:ring-indigo-500 bg-slate-900 h-4 w-4"
+                      checked={isChecked}
+                      onChange={() => toggleSelect(item.path)}
+                      className="rounded border-white/20 text-indigo-600 focus:ring-indigo-500 bg-slate-900 h-4 w-4 cursor-pointer"
                     />
 
                     <div
@@ -232,9 +219,9 @@ export default function AutoDiscoverModal({
                         <span className="font-semibold text-slate-200 text-sm">
                           {item.name}
                         </span>
-                        {isAdded && (
+                        {isChecked && (
                           <span className="flex items-center gap-1 text-[10px] text-emerald-400 bg-emerald-500/10 px-1.5 py-0.2 rounded border border-emerald-500/20 font-medium">
-                            <CheckCircle2 className="h-3 w-3" /> Added
+                            <Check className="h-3 w-3" /> Added to SkillDesk
                           </span>
                         )}
                       </div>
@@ -270,7 +257,7 @@ export default function AutoDiscoverModal({
         {/* Footer */}
         <div className="p-4 border-t border-white/5 bg-slate-900/60 flex items-center justify-between text-xs">
           <div className="text-slate-400">
-            Selected <strong className="text-indigo-400">{selectedTools.size}</strong> locations to add
+            <strong className="text-indigo-400 font-mono">{selectedTools.size}</strong> locations selected in SkillDesk
           </div>
 
           <div className="flex items-center gap-2">
@@ -281,12 +268,12 @@ export default function AutoDiscoverModal({
               Cancel
             </button>
             <button
-              onClick={handleAdd}
-              disabled={saving || selectedTools.size === 0}
+              onClick={handleSave}
+              disabled={saving}
               className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-medium shadow-md shadow-indigo-600/30 transition-all disabled:opacity-50"
             >
               <Sparkles className="h-3.5 w-3.5" />
-              <span>{saving ? 'Adding...' : `Add Selected Tools (${selectedTools.size})`}</span>
+              <span>{saving ? 'Saving...' : 'Apply Selection'}</span>
             </button>
           </div>
         </div>

@@ -33,12 +33,12 @@ app.get('/api/discover', (req, res) => {
   try {
     const discovered = discoverAllOSTools();
     const currentPlatforms = getPlatforms();
-    const currentPaths = new Set(currentPlatforms.map(p => expandHome(p.path)));
+    const currentPaths = new Set(currentPlatforms.map(p => path.resolve(expandHome(p.path))));
 
     // Mark whether each discovered tool is already added
     const markAdded = (item) => ({
       ...item,
-      isAdded: currentPaths.has(expandHome(item.path))
+      isAdded: currentPaths.has(path.resolve(expandHome(item.path)))
     });
 
     res.json({
@@ -46,6 +46,49 @@ app.get('/api/discover', (req, res) => {
       projectWorkspaces: discovered.projectWorkspaces.map(markAdded),
       totalFound: discovered.allDiscovered.length
     });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Sync selection: adds newly checked and removes unchecked tools
+app.post('/api/discover/sync-selection', (req, res) => {
+  try {
+    const { selectedTools } = req.body;
+    if (!Array.isArray(selectedTools)) {
+      return res.status(400).json({ error: 'selectedTools must be an array' });
+    }
+
+    const currentPlatforms = getPlatforms();
+    const selectedPaths = new Set(selectedTools.map(t => path.resolve(expandHome(t.path))));
+
+    const updated = [];
+    const processedPaths = new Set();
+
+    for (const tool of selectedTools) {
+      const expPath = path.resolve(expandHome(tool.path));
+      if (processedPaths.has(expPath)) continue;
+      processedPaths.add(expPath);
+
+      const existing = currentPlatforms.find(p => path.resolve(expandHome(p.path)) === expPath);
+      if (existing) {
+        updated.push(existing);
+      } else {
+        const id = tool.id || tool.name.toLowerCase().replace(/[^a-z0-9]/g, '-');
+        updated.push({
+          id,
+          name: tool.name,
+          badge: tool.badge || tool.name.slice(0, 10),
+          path: contractHome(tool.path),
+          color: tool.color || '#6366F1',
+          icon: tool.icon || 'Folder',
+          description: tool.description || ''
+        });
+      }
+    }
+
+    savePlatforms(updated);
+    res.json({ success: true, platforms: updated });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

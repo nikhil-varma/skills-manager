@@ -6,6 +6,11 @@ const HOME = process.env.HOST_HOME || os.homedir();
 
 export function expandHome(filePath) {
   if (!filePath) return filePath;
+  // Handle and repair accidental nested tildes like /.../~/path
+  const tildeIdx = filePath.indexOf('/~/');
+  if (tildeIdx !== -1) {
+    filePath = '~/' + filePath.slice(tildeIdx + 3);
+  }
   if (filePath.startsWith('~/') || filePath === '~') {
     return path.join(HOME, filePath.slice(1));
   }
@@ -14,7 +19,8 @@ export function expandHome(filePath) {
 
 export function contractHome(filePath) {
   if (!filePath) return filePath;
-  const abs = path.resolve(filePath);
+  const exp = expandHome(filePath);
+  const abs = path.resolve(exp);
   if (abs.startsWith(HOME)) {
     return '~' + abs.slice(HOME.length);
   }

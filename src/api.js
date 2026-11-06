@@ -151,6 +151,16 @@ export async function addDiscoveredTools(tools) {
   return res.json();
 }
 
+export async function syncDiscoveredSelection(selectedTools) {
+  const res = await fetch(`${BASE}/discover/sync-selection`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ selectedTools })
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
 export async function revealInFinder(filePath) {
   const res = await fetch(`${BASE}/actions/reveal-in-finder`, {
     method: 'POST',
