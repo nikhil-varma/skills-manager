@@ -4,59 +4,118 @@
  * and enforces strict skills-only domain scoping.
  */
 
-export async function callLLM({ messages, config, systemPrompt }) {
+function resolveEndpointUrl(rawUrl) {
+  let url = (rawUrl || '').trim();
+  // If running inside Docker container, map localhost / 127.0.0.1 to host.docker.internal
+  const isInDocker = process.platform !== 'darwin' || Boolean(process.env.HOST_HOME);
+  if (isInDocker) {
+    url = url.replace(/^http:\/\/localhost(?=[:/]|$)/i, 'http://host.docker.internal');
+    url = url.replace(/^http:\/\/127\.0\.0\.1(?=[:/]|$)/i, 'http://host.docker.internal');
+  }
+  return url;
+}
+
+export async function callLLM({ messages, config, systemPrompt, timeoutMs = 45000 }) {
   const provider = config.provider || 'openai';
   const apiKey = (config.apiKey || '').trim();
   const model = (config.model || '').trim();
   const temperature = typeof config.temperature === 'number' ? config.temperature : 0.2;
 
-  // 1. Anthropic Claude API
-  if (provider === 'anthropic') {
-    if (!apiKey) throw new Error('Anthropic API key is required');
-    const baseUrl = (config.baseUrl || 'https://api.anthropic.com/v1').replace(/\/+$/, '');
-    const url = baseUrl.endsWith('/messages') ? baseUrl : `${baseUrl}/messages`;
+  try {
+    // 1. Anthropic Claude API
+    if (provider === 'anthropic') {
+      if (!apiKey) throw new Error('Anthropic API key is required');
+      let rawBase = config.baseUrl || 'https://api.anthropic.com/v1';
+      let baseUrl = resolveEndpointUrl(rawBase).replace(/\/+$/, '');
+      const url = baseUrl.endsWith('/messages') ? baseUrl : `${baseUrl}/messages`;
 
-    const anthropicMessages = messages
-      .filter(m => m.role === 'user' || m.role === 'assistant')
-      .map(m => ({ role: m.role, content: m.content }));
+      const anthropicMessages = messages
+        .filter(m => m.role === 'user' || m.role === 'assistant')
+        .map(m => ({ role: m.role, content: m.content }));
 
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'content-type': 'application/json'
-      },
-      body: JSON.stringify({
-        model: model || 'claude-3-5-sonnet-20241022',
-        system: systemPrompt,
-        messages: anthropicMessages,
-        max_tokens: 1800,
-        temperature
-      })
-    });
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+          'content-type': 'application/json'
+        },
+        body: JSON.stringify({
+          model: model || 'claude-3-5-sonnet-20241022',
+          system: systemPrompt,
+          messages: anthropicMessages,
+          max_tokens: 1800,
+          temperature
+        }),
+        signal: AbortSignal.timeout(timeoutMs)
+      });
 
-    if (!res.ok) {
-      const errText = await res.text();
-      let msg = errText;
-      try {
-        const parsed = JSON.parse(errText);
-        msg = parsed.error?.message || errText;
-      } catch (e) {}
-      throw new Error(`Anthropic error (${res.status}): ${msg}`);
+      if (!res.ok) {
+        const errText = await res.text();
+        let msg = errText;
+        try {
+          const parsed = JSON.parse(errText);
+          msg = parsed.error?.message || errText;
+        } catch (e) {}
+        throw new Error(`Anthropic error (${res.status}): ${msg}`);
+      }
+
+      const data = await res.json();
+      return data.content?.map(c => c.text || '').join('\n') || '';
     }
 
-    const data = await res.json();
-    return data.content?.map(c => c.text || '').join('\n') || '';
-  }
+    // 2. Google Gemini API
+    if (provider === 'gemini') {
+      if (!apiKey) throw new Error('Google Gemini API key is required');
 
-  // 2. Google Gemini API
-  if (provider === 'gemini') {
-    if (!apiKey) throw new Error('Google Gemini API key is required');
+      let rawBase = config.baseUrl || 'https://generativelanguage.googleapis.com/v1beta/openai';
+      let baseUrl = resolveEndpointUrl(rawBase).replace(/\/+$/, '');
+      const url = baseUrl.endsWith('/chat/completions') ? baseUrl : `${baseUrl}/chat/completions`;
 
-    // If custom base URL not supplied or default openai format, use Gemini OpenAI endpoint
-    let baseUrl = config.baseUrl || 'https://generativelanguage.googleapis.com/v1beta/openai';
-    baseUrl = baseUrl.replace(/\/+$/, '');
+      const chatMessages = [
+        { role: 'system', content: systemPrompt },
+        ...messages.filter(m => m.role === 'user' || m.role === 'assistant')
+      ];
+
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          model: model || 'gemini-1.5-flash',
+          messages: chatMessages,
+          temperature
+        }),
+        signal: AbortSignal.timeout(timeoutMs)
+      });
+
+      if (!res.ok) {
+        const errText = await res.text();
+        let msg = errText;
+        try {
+          const parsed = JSON.parse(errText);
+          msg = parsed.error?.message || errText;
+        } catch (e) {}
+        throw new Error(`Gemini error (${res.status}): ${msg}`);
+      }
+
+      const data = await res.json();
+      return data.choices?.[0]?.message?.content || '';
+    }
+
+    // 3. Ollama (local) or OpenAI or Custom OpenAI-Compatible (OpenRouter, Groq, LMStudio, vLLM, DeepSeek)
+    let defaultBaseUrl = 'https://api.openai.com/v1';
+    let defaultModel = 'gpt-4o-mini';
+
+    if (provider === 'ollama') {
+      defaultBaseUrl = 'http://localhost:11434/v1';
+      defaultModel = 'llama3.2';
+    }
+
+    let rawBase = config.baseUrl || defaultBaseUrl;
+    let baseUrl = resolveEndpointUrl(rawBase).replace(/\/+$/, '');
     const url = baseUrl.endsWith('/chat/completions') ? baseUrl : `${baseUrl}/chat/completions`;
 
     const chatMessages = [
@@ -64,17 +123,31 @@ export async function callLLM({ messages, config, systemPrompt }) {
       ...messages.filter(m => m.role === 'user' || m.role === 'assistant')
     ];
 
+    const headers = {
+      'Content-Type': 'application/json'
+    };
+
+    if (apiKey) {
+      headers['Authorization'] = `Bearer ${apiKey}`;
+    } else if (provider !== 'ollama' && !baseUrl.includes('localhost') && !baseUrl.includes('host.docker.internal')) {
+      throw new Error(`API Key is required for provider "${provider}"`);
+    }
+
+    const isReasoning = (model || '').startsWith('o1') || (model || '').startsWith('o3');
+    const reqBody = {
+      model: model || defaultModel,
+      messages: chatMessages
+    };
+
+    if (!isReasoning) {
+      reqBody.temperature = temperature;
+    }
+
     const res = await fetch(url, {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        model: model || 'gemini-1.5-flash',
-        messages: chatMessages,
-        temperature
-      })
+      headers,
+      body: JSON.stringify(reqBody),
+      signal: AbortSignal.timeout(timeoutMs)
     });
 
     if (!res.ok) {
@@ -82,64 +155,26 @@ export async function callLLM({ messages, config, systemPrompt }) {
       let msg = errText;
       try {
         const parsed = JSON.parse(errText);
-        msg = parsed.error?.message || errText;
+        msg = parsed.error?.message || parsed.message || errText;
       } catch (e) {}
-      throw new Error(`Gemini error (${res.status}): ${msg}`);
+      throw new Error(`LLM provider error (${res.status}): ${msg}`);
     }
 
     const data = await res.json();
     return data.choices?.[0]?.message?.content || '';
+  } catch (err) {
+    const causeStr = `${err.message || ''} ${err.cause?.message || ''} ${err.cause?.code || ''}`;
+    if (err.name === 'TimeoutError' || err.name === 'AbortError' || causeStr.includes('aborted') || causeStr.includes('timeout')) {
+      throw new Error(`Request timed out after ${Math.round(timeoutMs / 1000)}s. Please check if endpoint (${config.baseUrl}) is reachable.`);
+    }
+    if (causeStr.includes('ECONNREFUSED')) {
+      throw new Error(`Connection refused to ${config.baseUrl || 'endpoint'}. Please ensure the service is running.`);
+    }
+    if (err.cause?.message) {
+      throw new Error(`${err.message}: ${err.cause.message}`);
+    }
+    throw err;
   }
-
-  // 3. Ollama (local) or OpenAI or Custom OpenAI-Compatible (OpenRouter, Groq, LMStudio, vLLM, DeepSeek)
-  let defaultBaseUrl = 'https://api.openai.com/v1';
-  let defaultModel = 'gpt-4o-mini';
-
-  if (provider === 'ollama') {
-    defaultBaseUrl = 'http://localhost:11434/v1';
-    defaultModel = 'llama3.2';
-  }
-
-  let baseUrl = (config.baseUrl || defaultBaseUrl).trim().replace(/\/+$/, '');
-  const url = baseUrl.endsWith('/chat/completions') ? baseUrl : `${baseUrl}/chat/completions`;
-
-  const chatMessages = [
-    { role: 'system', content: systemPrompt },
-    ...messages.filter(m => m.role === 'user' || m.role === 'assistant')
-  ];
-
-  const headers = {
-    'Content-Type': 'application/json'
-  };
-
-  if (apiKey) {
-    headers['Authorization'] = `Bearer ${apiKey}`;
-  } else if (provider !== 'ollama' && !baseUrl.includes('localhost') && !baseUrl.includes('127.0.0.1')) {
-    throw new Error(`API Key is required for provider "${provider}"`);
-  }
-
-  const res = await fetch(url, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify({
-      model: model || defaultModel,
-      messages: chatMessages,
-      temperature
-    })
-  });
-
-  if (!res.ok) {
-    const errText = await res.text();
-    let msg = errText;
-    try {
-      const parsed = JSON.parse(errText);
-      msg = parsed.error?.message || parsed.message || errText;
-    } catch (e) {}
-    throw new Error(`LLM provider error (${res.status}): ${msg}`);
-  }
-
-  const data = await res.json();
-  return data.choices?.[0]?.message?.content || '';
 }
 
 export async function testLLMConnection(config) {
@@ -148,9 +183,10 @@ export async function testLLMConnection(config) {
     const reply = await callLLM({
       messages: testMessages,
       config,
-      systemPrompt: 'You are a test ping responder. Reply concisely.'
+      systemPrompt: 'You are a connection test responder. Reply with 3 words.',
+      timeoutMs: 10000 // 10 second timeout for connection test
     });
-    return { success: true, reply: reply.trim() };
+    return { success: true, reply: (reply || 'Connection verified').trim() };
   } catch (err) {
     return { success: false, error: err.message };
   }
@@ -205,7 +241,8 @@ ${catalogLines.join('\n')}
   const assistantReply = await callLLM({
     messages,
     config,
-    systemPrompt
+    systemPrompt,
+    timeoutMs: 40000
   });
 
   // Extract mentioned skills to render interactive quick chips

@@ -201,13 +201,24 @@ export async function saveLLMConfig(config) {
 }
 
 export async function testLLMConnection(config) {
-  const res = await fetch(`${BASE}/ai/test`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ config })
-  });
-  if (!res.ok) throw new Error(await res.text());
-  return res.json();
+  try {
+    const res = await fetch(`${BASE}/ai/test`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ config }),
+      signal: AbortSignal.timeout(12000)
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: 'Connection test failed' }));
+      throw new Error(err.error || 'Connection test failed');
+    }
+    return res.json();
+  } catch (err) {
+    if (err.name === 'TimeoutError' || err.name === 'AbortError' || err.message?.includes('aborted') || err.message?.includes('timeout')) {
+      throw new Error('Connection test timed out after 12s. The endpoint is unreachable or not responding.');
+    }
+    throw err;
+  }
 }
 
 export async function sendAIChat(messages) {
