@@ -31,6 +31,10 @@ export default function App() {
   const [activeFilter, setActiveFilter] = useState('all'); // 'all', platform.id, 'unsynced', 'symlinked'
   const [isFiltersExpanded, setIsFiltersExpanded] = useState(false); // Collapsed by default
 
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
+
   // Modals
   const [selectedSkillName, setSelectedSkillName] = useState(null);
   const [isNewSkillOpen, setIsNewSkillOpen] = useState(false);
@@ -127,6 +131,17 @@ export default function App() {
       return result.filter(s => s.platforms[activeFilter]?.installed);
     }
   }, [skills, searchTerm, activeFilter, platforms]);
+
+  // Reset page to 1 whenever search term or filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, activeFilter]);
+
+  // Paginate the filtered skills
+  const paginatedSkills = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredSkills.slice(start, start + pageSize);
+  }, [filteredSkills, currentPage, pageSize]);
 
   // Operations
   const handleLinkSkill = async (skillName, sourcePlatformId, targetPlatformId, makeSharedCanonical = true) => {
@@ -353,7 +368,13 @@ export default function App() {
           </div>
         ) : (
           <MatrixView
-            skills={filteredSkills}
+            skills={paginatedSkills}
+            totalFiltered={filteredSkills.length}
+            totalSkills={skills.length}
+            currentPage={currentPage}
+            setCurrentPage={setCurrentPage}
+            pageSize={pageSize}
+            setPageSize={setPageSize}
             platforms={platforms}
             onOpenDetail={(name) => setSelectedSkillName(name)}
             onLinkSkill={handleLinkSkill}

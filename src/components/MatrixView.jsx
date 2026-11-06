@@ -11,11 +11,21 @@ import {
   Copy, 
   Unlink, 
   MoreVertical,
-  CheckCircle2
+  CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight
 } from 'lucide-react';
 
 export default function MatrixView({
   skills,
+  totalFiltered = 0,
+  totalSkills = 0,
+  currentPage = 1,
+  setCurrentPage,
+  pageSize = 25,
+  setPageSize,
   platforms,
   onOpenDetail,
   onLinkSkill,
@@ -252,6 +262,78 @@ export default function MatrixView({
           })}
         </tbody>
       </table>
+
+      {/* Pagination Footer */}
+      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-white/10 bg-slate-900/90 px-5 py-3 text-xs">
+        <div className="text-slate-400">
+          Showing <span className="font-semibold text-slate-200">{totalFiltered === 0 ? 0 : (currentPage - 1) * pageSize + 1}–{Math.min(currentPage * pageSize, totalFiltered)}</span> of <span className="font-semibold text-slate-200">{totalFiltered}</span> skills
+          {totalFiltered !== totalSkills && (
+            <span className="text-slate-500 ml-1">
+              (searched across all {totalSkills} skills)
+            </span>
+          )}
+        </div>
+
+        <div className="flex items-center gap-4">
+          {/* Page Size Selector */}
+          <div className="flex items-center gap-1.5 text-slate-400">
+            <span>Per page:</span>
+            <select
+              value={pageSize}
+              onChange={(e) => {
+                setPageSize(Number(e.target.value));
+                setCurrentPage(1);
+              }}
+              className="rounded-lg border border-white/10 bg-slate-950 px-2 py-1 text-xs text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+            >
+              <option value={25}>25</option>
+              <option value={50}>50</option>
+              <option value={100}>100</option>
+            </select>
+          </div>
+
+          {/* Navigation Controls */}
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setCurrentPage(1)}
+              disabled={currentPage <= 1}
+              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
+              title="First page"
+            >
+              <ChevronsLeft className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+              disabled={currentPage <= 1}
+              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
+              title="Previous page"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+
+            <span className="px-2 text-slate-300 font-mono text-[11px]">
+              Page <strong className="text-indigo-400">{currentPage}</strong> of {Math.ceil(totalFiltered / pageSize) || 1}
+            </span>
+
+            <button
+              onClick={() => setCurrentPage(prev => Math.min(Math.ceil(totalFiltered / pageSize) || 1, prev + 1))}
+              disabled={currentPage >= (Math.ceil(totalFiltered / pageSize) || 1)}
+              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
+              title="Next page"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => setCurrentPage(Math.ceil(totalFiltered / pageSize) || 1)}
+              disabled={currentPage >= (Math.ceil(totalFiltered / pageSize) || 1)}
+              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
+              title="Last page"
+            >
+              <ChevronsRight className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
