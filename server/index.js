@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
+import fs from 'fs';
 import { exec } from 'child_process';
 import { getPlatforms, savePlatforms, expandHome, contractHome } from './config.js';
 import { discoverAllOSTools } from './discover.js';
