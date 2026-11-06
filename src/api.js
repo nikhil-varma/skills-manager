@@ -221,11 +221,12 @@ export async function testLLMConnection(config) {
   }
 }
 
-export async function sendAIChat(messages) {
+export async function sendAIChat(messages, signal) {
   const res = await fetch(`${BASE}/ai/chat`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ messages })
+    body: JSON.stringify({ messages }),
+    signal
   });
   if (!res.ok) {
     const errData = await res.json().catch(() => ({ error: 'AI service failed' }));

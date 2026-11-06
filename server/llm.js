@@ -15,11 +15,17 @@ function resolveEndpointUrl(rawUrl) {
   return url;
 }
 
-export async function callLLM({ messages, config, systemPrompt, timeoutMs = 60000 }) {
+export async function callLLM({ messages, config, systemPrompt, timeoutMs = 60000, signal }) {
   const provider = config.provider || 'custom';
   const apiKey = (config.apiKey || '').trim();
   const model = (config.model || '').trim();
   const temperature = typeof config.temperature === 'number' ? config.temperature : 0.2;
+
+  // Combine timeout signal with optional external cancellation signal
+  const timeoutSignal = AbortSignal.timeout(timeoutMs);
+  const activeSignal = signal && typeof AbortSignal.any === 'function'
+    ? AbortSignal.any([timeoutSignal, signal])
+    : (signal || timeoutSignal);
 
   // Clean and ensure conversation history strictly begins with a user turn
   const validMessages = (messages || [])
@@ -57,7 +63,7 @@ export async function callLLM({ messages, config, systemPrompt, timeoutMs = 6000
           messages: chatMessages,
           temperature
         }),
-        signal: AbortSignal.timeout(timeoutMs)
+        signal: activeSignal
       });
 
       if (!res.ok) {
@@ -125,7 +131,7 @@ export async function callLLM({ messages, config, systemPrompt, timeoutMs = 6000
       method: 'POST',
       headers,
       body: JSON.stringify(reqBody),
-      signal: AbortSignal.timeout(timeoutMs)
+      signal: activeSignal
     });
 
     if (!res.ok) {
@@ -150,7 +156,7 @@ export async function callLLM({ messages, config, systemPrompt, timeoutMs = 6000
               messages: mergedMessages,
               ...(isReasoning ? {} : { temperature })
             }),
-            signal: AbortSignal.timeout(timeoutMs)
+            signal: activeSignal
           });
 
           if (retryRes.ok) {
@@ -215,7 +221,7 @@ export async function testLLMConnection(config) {
   }
 }
 
-export async function chatWithSkills({ messages, skills = [], config }) {
+export async function chatWithSkills({ messages, skills = [], config, signal }) {
   if (!config) {
     throw new Error('LLM provider is not configured. Please open Settings and configure your AI Provider.');
   }
@@ -270,7 +276,8 @@ ${catalogLines.join('\n')}
     messages,
     config,
     systemPrompt,
-    timeoutMs: 60000 // 1 minute timeout
+    timeoutMs: 60000, // 1 minute timeout
+    signal
   });
 
   // Extract mentioned skills to render interactive quick chips

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   X, 
   Send, 
+  Square,
   Bot, 
   User, 
   Sparkles, 
@@ -43,6 +44,7 @@ export default function ChatPanel({
   const [error, setError] = useState(null);
   const messagesEndRef = useRef(null);
   const textareaRef = useRef(null);
+  const abortControllerRef = useRef(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -61,6 +63,14 @@ export default function ChatPanel({
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  const handleStop = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+    setLoading(false);
+  };
+
   const handleSend = async (textToSend) => {
     const query = (textToSend || input).trim();
     if (!query || loading) return;
@@ -70,6 +80,9 @@ export default function ChatPanel({
       return;
     }
 
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
     const newMessages = [...messages, { role: 'user', content: query }];
     setMessages(newMessages);
     setInput('');
@@ -77,18 +90,35 @@ export default function ChatPanel({
     setLoading(true);
 
     try {
-      const res = await sendAIChat(newMessages);
+      const res = await sendAIChat(newMessages, controller.signal);
       if (res.message) {
         setMessages([...newMessages, res.message]);
       }
     } catch (err) {
-      setError(err.message || 'Failed to get answer from AI Assistant.');
+      if (err.name === 'AbortError' || controller.signal.aborted) {
+        setMessages([
+          ...newMessages,
+          {
+            role: 'assistant',
+            content: '_Generation stopped by user._',
+            isStopped: true
+          }
+        ]);
+      } else {
+        setError(err.message || 'Failed to get answer from AI Assistant.');
+      }
     } finally {
       setLoading(false);
+      abortControllerRef.current = null;
     }
   };
 
   const handleKeyDown = (e) => {
+    if (e.key === 'Escape' && loading) {
+      e.preventDefault();
+      handleStop();
+      return;
+    }
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSend();
@@ -96,6 +126,7 @@ export default function ChatPanel({
   };
 
   const handleClear = () => {
+    handleStop();
     setMessages([]);
     setError(null);
   };
@@ -200,7 +231,18 @@ export default function ChatPanel({
             </div>
           </div>
 
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1.5">
+            {loading && (
+              <button
+                type="button"
+                onClick={handleStop}
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/30 text-xs font-semibold animate-pulse transition-all shadow-sm"
+                title="Stop generating response (Esc)"
+              >
+                <Square className="h-3 w-3 fill-current text-rose-400" />
+                <span>Stop</span>
+              </button>
+            )}
             <button
               onClick={handleClear}
               className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition-colors"
@@ -348,6 +390,23 @@ export default function ChatPanel({
 
         {/* Input Bar */}
         <div className="p-3.5 border-t border-white/10 bg-slate-900/90 space-y-2">
+          {loading && (
+            <div className="flex items-center justify-between px-3 py-1.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs animate-in fade-in">
+              <span className="flex items-center gap-2 text-[11px] font-medium text-slate-300">
+                <Loader2 className="h-3.5 w-3.5 animate-spin text-indigo-400" />
+                Evaluating skills & generating...
+              </span>
+              <button
+                type="button"
+                onClick={handleStop}
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-200 border border-rose-500/30 text-[11px] font-semibold transition-colors shadow-sm"
+              >
+                <Square className="h-2.5 w-2.5 fill-current text-rose-400" />
+                Stop Generating
+              </button>
+            </div>
+          )}
+
           <div className="relative flex items-end rounded-xl border border-white/10 bg-slate-950/90 focus-within:border-indigo-500 focus-within:ring-1 focus-within:ring-indigo-500/50 transition-all p-1.5">
             <textarea
               ref={textareaRef}
@@ -359,20 +418,31 @@ export default function ChatPanel({
               disabled={loading || !isLLMConfigured}
               className="flex-1 bg-transparent border-0 px-2.5 py-1.5 text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none resize-none max-h-32 disabled:opacity-50"
             />
-            <button
-              type="button"
-              onClick={() => handleSend()}
-              disabled={!input.trim() || loading || !isLLMConfigured}
-              className="p-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white transition-all disabled:opacity-40 disabled:hover:bg-indigo-600 flex-shrink-0"
-              title="Send message (Enter)"
-            >
-              <Send className="h-3.5 w-3.5" />
-            </button>
+            {loading ? (
+              <button
+                type="button"
+                onClick={handleStop}
+                className="p-2 rounded-lg bg-rose-600 hover:bg-rose-500 text-white transition-all flex items-center justify-center flex-shrink-0 shadow-sm animate-pulse"
+                title="Stop generating response (Esc)"
+              >
+                <Square className="h-3.5 w-3.5 fill-current" />
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => handleSend()}
+                disabled={!input.trim() || !isLLMConfigured}
+                className="p-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white transition-all disabled:opacity-40 disabled:hover:bg-indigo-600 flex-shrink-0"
+                title="Send message (Enter)"
+              >
+                <Send className="h-3.5 w-3.5" />
+              </button>
+            )}
           </div>
 
           <div className="flex items-center justify-between text-[10px] text-slate-500 px-1">
             <span>Scoped strictly to your skills catalog</span>
-            <span>Enter to send • Shift+Enter for newline</span>
+            <span>{loading ? 'Esc to stop generation' : 'Enter to send • Shift+Enter for newline'}</span>
           </div>
         </div>
       </aside>

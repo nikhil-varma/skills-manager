@@ -556,6 +556,13 @@ app.post('/api/ai/test', async (req, res) => {
 
 // Chat with SkillDesk AI scoped strictly to user skills
 app.post('/api/ai/chat', async (req, res) => {
+  const abortController = new AbortController();
+  req.on('close', () => {
+    if (!res.writableEnded) {
+      abortController.abort();
+    }
+  });
+
   try {
     const { messages } = req.body;
     if (!Array.isArray(messages)) {
@@ -569,13 +576,21 @@ app.post('/api/ai/chat', async (req, res) => {
     const reply = await chatWithSkills({
       messages,
       skills,
-      config
+      config,
+      signal: abortController.signal
     });
 
-    res.json({ success: true, message: reply });
+    if (!res.writableEnded) {
+      res.json({ success: true, message: reply });
+    }
   } catch (err) {
+    if (abortController.signal.aborted) {
+      return;
+    }
     console.error('AI Chat Error:', err);
-    res.status(500).json({ error: err.message });
+    if (!res.writableEnded) {
+      res.status(500).json({ error: err.message });
+    }
   }
 });
 
