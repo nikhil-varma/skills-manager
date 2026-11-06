@@ -66,6 +66,28 @@ export default function App() {
     loadData();
   }, []);
 
+  // Reset filter to 'all' if the selected platform has 0 skills
+  useEffect(() => {
+    if (activeFilter !== 'all' && activeFilter !== 'unsynced' && activeFilter !== 'symlinked') {
+      const plat = platforms.find(p => p.id === activeFilter);
+      if (plat && (plat.count || 0) === 0) {
+        setActiveFilter('all');
+      }
+    }
+  }, [platforms, activeFilter]);
+
+  // Computed counts for filters
+  const filterStats = useMemo(() => {
+    const unsynced = skills.filter(s => {
+      const count = platforms.filter(p => s.platforms[p.id]?.installed).length;
+      return count < platforms.length;
+    }).length;
+
+    const symlinked = skills.filter(s => s.hasSymlink).length;
+
+    return { unsynced, symlinked };
+  }, [skills, platforms]);
+
   // Filter skills
   const filteredSkills = useMemo(() => {
     let result = skills;
@@ -209,40 +231,48 @@ export default function App() {
             >
               All Skills ({skills.length})
             </button>
-            <button
-              onClick={() => setActiveFilter('unsynced')}
-              className={`px-3 py-1.5 rounded-lg font-medium transition-colors ${
-                activeFilter === 'unsynced'
-                  ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'
-              }`}
-            >
-              Needs Sync
-            </button>
-            <button
-              onClick={() => setActiveFilter('symlinked')}
-              className={`px-3 py-1.5 rounded-lg font-medium transition-colors ${
-                activeFilter === 'symlinked'
-                  ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'
-              }`}
-            >
-              Symlinked
-            </button>
 
-            {platforms.map(p => (
+            {filterStats.unsynced > 0 && (
               <button
-                key={p.id}
-                onClick={() => setActiveFilter(p.id)}
+                onClick={() => setActiveFilter('unsynced')}
                 className={`px-3 py-1.5 rounded-lg font-medium transition-colors ${
-                  activeFilter === p.id
-                    ? 'bg-indigo-600 text-white'
+                  activeFilter === 'unsynced'
+                    ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
                     : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'
                 }`}
               >
-                {p.badge || p.name} ({p.count})
+                Needs Sync ({filterStats.unsynced})
               </button>
-            ))}
+            )}
+
+            {filterStats.symlinked > 0 && (
+              <button
+                onClick={() => setActiveFilter('symlinked')}
+                className={`px-3 py-1.5 rounded-lg font-medium transition-colors ${
+                  activeFilter === 'symlinked'
+                    ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'
+                }`}
+              >
+                Symlinked ({filterStats.symlinked})
+              </button>
+            )}
+
+            {platforms
+              .filter(p => (p.count || 0) > 0)
+              .map(p => (
+                <button
+                  key={p.id}
+                  onClick={() => setActiveFilter(p.id)}
+                  className={`px-3 py-1.5 rounded-lg font-medium transition-colors ${
+                    activeFilter === p.id
+                      ? 'bg-indigo-600 text-white shadow-sm'
+                      : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'
+                  }`}
+                >
+                  {p.badge || p.name} ({p.count})
+                </button>
+              ))}
           </div>
 
           <div className="text-xs text-slate-400">

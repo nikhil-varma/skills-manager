@@ -65,13 +65,15 @@ export default function MatrixView({
     }
   };
 
+  const visiblePlatforms = platforms.filter(plat => plat.exists || (plat.count || 0) > 0);
+
   return (
     <div className="overflow-x-auto rounded-2xl border border-white/10 bg-slate-900/60 shadow-2xl backdrop-blur-md">
       <table className="w-full text-left text-xs border-collapse">
         <thead>
           <tr className="border-b border-white/10 bg-slate-900/95 text-slate-400 font-semibold uppercase tracking-wider text-[11px]">
             <th className="py-3.5 px-4 min-w-[280px]">Skill Name & Description</th>
-            {platforms.map(plat => (
+            {visiblePlatforms.map(plat => (
               <th key={plat.id} className="py-3.5 px-3 text-center min-w-[140px]">
                 <div className="flex items-center justify-center gap-1.5">
                   <span className="h-2 w-2 rounded-full" style={{ backgroundColor: plat.color }} />
@@ -84,9 +86,9 @@ export default function MatrixView({
         </thead>
         <tbody className="divide-y divide-white/5">
           {skills.map(skill => {
-            const installedPlatforms = platforms.filter(p => skill.platforms[p.id]?.installed);
+            const installedPlatforms = visiblePlatforms.filter(p => skill.platforms[p.id]?.installed);
             const primarySource = installedPlatforms.find(p => p.id === 'shared') || installedPlatforms[0];
-            const hasMissing = installedPlatforms.length < platforms.length;
+            const hasMissing = installedPlatforms.length < visiblePlatforms.length;
 
             return (
               <tr 
@@ -124,7 +126,7 @@ export default function MatrixView({
                 </td>
 
                 {/* Platform columns */}
-                {platforms.map(plat => {
+                {visiblePlatforms.map(plat => {
                   const platStatus = skill.platforms[plat.id];
                   const isInstalled = !!platStatus?.installed;
                   const isSymlink = !!platStatus?.isSymlink;
