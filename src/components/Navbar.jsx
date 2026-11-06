@@ -1,4 +1,5 @@
 import React from 'react';
+import { getCurrentWindow } from '@tauri-apps/api/window';
 import { 
   Zap, 
   Search, 
@@ -37,8 +38,24 @@ export default function Navbar({
     window.location.hostname === 'tauri.localhost'
   );
 
+  const handleHeaderMouseDown = async (e) => {
+    if (!isTauri) return;
+    if (e.buttons === 1 && !e.target.closest('button, input, textarea, select, a, [role="button"], .no-drag')) {
+      try {
+        const win = getCurrentWindow();
+        await win.startDragging();
+      } catch (err) {
+        // Fallback
+      }
+    }
+  };
+
   return (
-    <header data-tauri-drag-region className="sticky top-0 z-30 border-b border-slate-200/80 dark:border-white/5 bg-white/85 dark:bg-[#0b0f17]/90 backdrop-blur-xl px-3.5 sm:px-6 py-2.5 sm:py-3.5 transition-colors duration-200">
+    <header
+      data-tauri-drag-region
+      onMouseDown={handleHeaderMouseDown}
+      className="sticky top-0 z-30 select-none cursor-default border-b border-slate-200/80 dark:border-white/5 bg-white/85 dark:bg-[#0b0f17]/90 backdrop-blur-xl px-3.5 sm:px-6 py-2.5 sm:py-3.5 transition-colors duration-200"
+    >
       <div className={`w-full mx-auto flex flex-col md:flex-row md:items-center justify-between gap-3 sm:gap-4 transition-all duration-300 ${isChatOpen ? 'max-w-[1920px]' : 'max-w-7xl'}`}>
         
         {/* Brand & Mobile Quick Actions Row */}

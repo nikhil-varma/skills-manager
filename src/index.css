@@ -42,3 +42,26 @@
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(140, 140, 140, 0.45);
 }
+
+/* Native macOS Window Dragging for Tauri */
+[data-tauri-drag-region] {
+  -webkit-app-region: drag;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+[data-tauri-drag-region] * {
+  -webkit-app-region: drag;
+}
+
+[data-tauri-drag-region] button,
+[data-tauri-drag-region] input,
+[data-tauri-drag-region] select,
+[data-tauri-drag-region] textarea,
+[data-tauri-drag-region] a,
+[data-tauri-drag-region] [role="button"],
+[data-tauri-drag-region] .no-drag,
+.no-drag,
+.no-drag * {
+  -webkit-app-region: no-drag;
+}
