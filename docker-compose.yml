@@ -3,7 +3,7 @@ services:
     build: .
     container_name: skilldesk
     ports:
-      - "3001:3001"
+      - "${PORT:-3001}:3001"
     environment:
       - HOST_HOME=/host_home
       - PORT=3001

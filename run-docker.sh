@@ -1,17 +1,19 @@
 #!/usr/bin/env bash
 set -e
 
-echo "⚡ Starting SkillDesk in Docker..."
+PORT="${1:-${PORT:-3001}}"
+
+echo "⚡ Starting SkillDesk in Docker on port ${PORT}..."
 
 # Ensure config directory exists on host
 mkdir -p "$HOME/.config/skills-manager"
 
 # Build and start container in detached mode
-docker compose up -d --build
+PORT="$PORT" docker compose up -d --build
 
 echo ""
 echo "✅ SkillDesk is running!"
-echo "👉 Open your browser at: http://localhost:3001"
+echo "👉 Open your browser at: http://localhost:${PORT}"
 echo ""
 echo "To view logs:    docker compose logs -f"
 echo "To stop:         docker compose down"
