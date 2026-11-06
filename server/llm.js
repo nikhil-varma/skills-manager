@@ -7,6 +7,9 @@
 // Inside Docker, convert localhost / 127.0.0.1 to host.docker.internal so container can reach host LLMs
 function resolveEndpointUrl(rawUrl) {
   let url = (rawUrl || '').trim();
+  if (url && !/^https?:\/\//i.test(url)) {
+    url = 'http://' + url;
+  }
   const isInDocker = process.platform !== 'darwin' || Boolean(process.env.HOST_HOME);
   if (isInDocker) {
     url = url.replace(/^http:\/\/localhost(?=[:/]|$)/i, 'http://host.docker.internal');
@@ -15,7 +18,23 @@ function resolveEndpointUrl(rawUrl) {
   return url;
 }
 
-export async function callLLM({ messages, config, systemPrompt, timeoutMs = 60000, signal }) {
+// Helper to unwrap clean error messages from diverse providers (LMStudio, OpenAI, Ollama)
+function formatErrorMessage(errText, status) {
+  let msg = errText;
+  try {
+    const parsed = JSON.parse(errText);
+    if (typeof parsed.error === 'string') {
+      msg = parsed.error;
+    } else if (parsed.error?.message) {
+      msg = parsed.error.message;
+    } else if (typeof parsed.message === 'string') {
+      msg = parsed.message;
+    }
+  } catch (e) {}
+  return `LLM provider error (${status}): ${msg}`;
+}
+
+export async function callLLM({ messages, config, systemPrompt, timeoutMs = 120000, signal }) {
   const provider = config.provider || 'custom';
   const apiKey = (config.apiKey || '').trim();
   const model = (config.model || '').trim();
@@ -155,15 +174,11 @@ export async function callLLM({ messages, config, systemPrompt, timeoutMs = 6000
 
           if (retryRes.ok) {
             const retryData = await retryRes.json();
-            return retryData.choices?.[0]?.message?.content || '';
+            const retryChoice = retryData.choices?.[0]?.message;
+            return (retryChoice?.content || retryChoice?.reasoning_content || '').trim();
           } else {
             const retryErrText = await retryRes.text();
-            let retryMsg = retryErrText;
-            try {
-              const parsed = JSON.parse(retryErrText);
-              retryMsg = parsed.error?.message || parsed.message || parsed.error || retryErrText;
-            } catch (e) {}
-            throw new Error(`LLM provider error (${retryRes.status}): ${retryMsg}`);
+            throw new Error(formatErrorMessage(retryErrText, retryRes.status));
           }
         } catch (retryErr) {
           if (retryErr.message.startsWith('LLM provider error')) {
@@ -173,16 +188,12 @@ export async function callLLM({ messages, config, systemPrompt, timeoutMs = 6000
         }
       }
 
-      let msg = errText;
-      try {
-        const parsed = JSON.parse(errText);
-        msg = parsed.error?.message || parsed.message || parsed.error || errText;
-      } catch (e) {}
-      throw new Error(`LLM provider error (${res.status}): ${msg}`);
+      throw new Error(formatErrorMessage(errText, res.status));
     }
 
     const data = await res.json();
-    return data.choices?.[0]?.message?.content || '';
+    const choice = data.choices?.[0]?.message;
+    return (choice?.content || choice?.reasoning_content || '').trim();
   } catch (err) {
     const causeStr = `${err.message || ''} ${err.cause?.message || ''} ${err.cause?.code || ''}`;
     if (err.name === 'TimeoutError' || err.name === 'AbortError' || causeStr.includes('aborted') || causeStr.includes('timeout')) {
@@ -202,12 +213,59 @@ export async function callLLM({ messages, config, systemPrompt, timeoutMs = 6000
 
 export async function testLLMConnection(config) {
   try {
-    const testMessages = [{ role: 'user', content: 'Say "Connection successful!" in 3 words.' }];
+    let rawBase = config.baseUrl || 'http://localhost:1234/v1';
+    let baseUrl = resolveEndpointUrl(rawBase).replace(/\/+$/, '');
+    const apiKey = (config.apiKey || '').trim();
+
+    // 1. Fast, lightweight GET /models check (returns in ~30ms without triggering model generation)
+    const modelsBase = baseUrl.endsWith('/chat/completions') 
+      ? baseUrl.replace(/\/chat\/completions$/, '') 
+      : baseUrl;
+    const modelsUrl = modelsBase.endsWith('/models') ? modelsBase : `${modelsBase}/models`;
+
+    try {
+      const modelsRes = await fetch(modelsUrl, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(apiKey ? { 'Authorization': `Bearer ${apiKey}` } : {})
+        },
+        signal: AbortSignal.timeout(8000)
+      });
+
+      if (modelsRes.ok) {
+        const data = await modelsRes.json();
+        const modelList = Array.isArray(data?.data) ? data.data.map(m => m.id) : [];
+        const configuredModel = (config.model || '').trim();
+        const modelFound = configuredModel && modelList.includes(configuredModel);
+
+        let msg = 'Connected successfully!';
+        if (modelFound) {
+          msg += ` Model "${configuredModel}" is loaded and ready.`;
+        } else if (modelList.length > 0) {
+          msg += ` Detected ${modelList.length} models on server.`;
+        }
+        return { success: true, reply: msg, models: modelList };
+      } else if (modelsRes.status === 401 || modelsRes.status === 403) {
+        const errText = await modelsRes.text().catch(() => '');
+        let errMsg = 'Authentication failed. Please check your API Key / Token.';
+        try {
+          const parsed = JSON.parse(errText);
+          errMsg = parsed.error?.message || parsed.message || errMsg;
+        } catch (e) {}
+        return { success: false, error: `Authentication error (${modelsRes.status}): ${errMsg}` };
+      }
+    } catch (e) {
+      // If /models is not supported by custom proxy, proceed to chat completion ping
+    }
+
+    // 2. Fallback: Fast minimal chat completion ping
+    const testMessages = [{ role: 'user', content: 'Say OK' }];
     const reply = await callLLM({
       messages: testMessages,
       config,
-      systemPrompt: 'You are a connection test responder. Reply with 3 words.',
-      timeoutMs: 60000 // 1 minute timeout
+      systemPrompt: 'Respond with OK.',
+      timeoutMs: 40000
     });
     return { success: true, reply: (reply || 'Connection verified').trim() };
   } catch (err) {
@@ -265,7 +323,7 @@ ${catalogLines.join('\n')}
     messages,
     config,
     systemPrompt,
-    timeoutMs: 60000, // 1 minute timeout
+    timeoutMs: 120000, // 2 minutes timeout for local LLMs & reasoning models
     signal
   });
 

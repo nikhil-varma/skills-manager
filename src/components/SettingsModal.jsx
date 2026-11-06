@@ -87,12 +87,13 @@ export default function SettingsModal({
 
   // AI LLM State
   const [llmConfig, setLlmConfig] = useState({
-    provider: 'openai',
-    baseUrl: 'https://api.openai.com/v1',
+    provider: 'custom',
+    baseUrl: 'http://localhost:1234/v1',
     apiKey: '',
-    model: 'gpt-4o-mini',
+    model: 'local-model',
     temperature: 0.2
   });
+  const [availableModels, setAvailableModels] = useState([]);
   const [showApiKey, setShowApiKey] = useState(false);
   const [testingConnection, setTestingConnection] = useState(false);
   const [testResult, setTestResult] = useState(null); // { success: boolean, message: string }
@@ -135,8 +136,11 @@ export default function SettingsModal({
       if (res.success) {
         setTestResult({
           success: true,
-          message: `Connected successfully! Model responded: "${res.reply}"`
+          message: res.reply || 'Connected successfully!'
         });
+        if (Array.isArray(res.models) && res.models.length > 0) {
+          setAvailableModels(res.models);
+        }
       } else {
         setTestResult({
           success: false,
@@ -204,18 +208,18 @@ export default function SettingsModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md animate-fade-in">
-      <div className="relative w-full max-w-2xl rounded-2xl border border-white/10 bg-[#0f172a] shadow-2xl overflow-hidden text-slate-100 flex flex-col max-h-[85vh]">
+      <div className="relative w-full max-w-2xl rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0f172a] shadow-2xl overflow-hidden text-slate-900 dark:text-slate-100 flex flex-col max-h-[85vh]">
         
         {/* Header & Tabs */}
-        <div className="border-b border-white/10 bg-slate-900/90 px-6 pt-5 pb-0">
+        <div className="border-b border-slate-200 dark:border-white/10 bg-slate-100/90 dark:bg-slate-900/90 px-6 pt-5 pb-0">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h3 className="font-bold text-base text-white">SkillDesk Settings</h3>
-              <p className="text-xs text-slate-400">Manage tool paths and custom AI assistant configuration</p>
+              <h3 className="font-bold text-base text-slate-900 dark:text-white">SkillDesk Settings</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Manage tool paths and custom AI assistant configuration</p>
             </div>
             <button
               onClick={onClose}
-              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
+              className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-white/10 transition-colors"
             >
               <X className="h-4 w-4" />
             </button>
@@ -446,8 +450,10 @@ export default function SettingsModal({
 
                   {/* Quick Model Chips */}
                   <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                    <span className="text-[11px] text-slate-500">Suggested:</span>
-                    {currentPreset.models.map((m) => (
+                    <span className="text-[11px] text-slate-500">
+                      {availableModels.length > 0 ? 'Detected on Server:' : 'Suggested:'}
+                    </span>
+                    {(availableModels.length > 0 ? availableModels.slice(0, 10) : currentPreset.models).map((m) => (
                       <button
                         key={m}
                         type="button"

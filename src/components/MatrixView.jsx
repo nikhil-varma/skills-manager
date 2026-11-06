@@ -80,23 +80,23 @@ export default function MatrixView({
   const visiblePlatforms = platforms.filter(plat => plat.exists || (plat.count || 0) > 0);
 
   return (
-    <div className="overflow-x-auto rounded-2xl border border-white/10 bg-slate-900/60 shadow-2xl backdrop-blur-md">
+    <div className="overflow-x-auto rounded-2xl border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-slate-900/60 shadow-xl backdrop-blur-md">
       <table className="w-full text-left text-xs border-collapse">
         <thead>
-          <tr className="border-b border-white/10 bg-slate-900/95 text-slate-400 font-semibold uppercase tracking-wider text-[11px]">
+          <tr className="border-b border-slate-200/80 dark:border-white/10 bg-slate-100/90 dark:bg-slate-900/95 text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider text-[11px]">
             <th className="py-3.5 px-4 min-w-[280px]">Skill Name & Description</th>
             {visiblePlatforms.map((plat, idx) => (
               <th key={`${plat.id}-${plat.path || idx}`} className="py-3.5 px-3 text-center min-w-[140px]">
                 <div className="flex items-center justify-center gap-1.5">
                   <span className="h-2 w-2 rounded-full" style={{ backgroundColor: plat.color }} />
-                  <span className="text-slate-200">{plat.badge || plat.name}</span>
+                  <span className="text-slate-700 dark:text-slate-200">{plat.badge || plat.name}</span>
                 </div>
               </th>
             ))}
             <th className="py-3.5 px-4 text-right min-w-[110px]">Actions</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-white/5">
+        <tbody className="divide-y divide-slate-200/60 dark:divide-white/5">
           {skills.map(skill => {
             const installedPlatforms = visiblePlatforms.filter(p => skill.platforms[p.id]?.installed);
             const primarySource = installedPlatforms.find(p => p.id === 'shared') || installedPlatforms[0];
@@ -105,32 +105,32 @@ export default function MatrixView({
             return (
               <tr 
                 key={skill.name}
-                className="hover:bg-slate-800/40 transition-colors group"
+                className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors group"
               >
                 {/* Skill Name & Description */}
                 <td className="py-3 px-4">
                   <div className="flex items-start gap-2.5">
                     <button
                       onClick={() => onOpenDetail(skill.name)}
-                      className="p-1 rounded-lg bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20 transition-colors mt-0.5 flex-shrink-0"
+                      className="p-1 rounded-lg bg-[#007AFF]/10 text-[#007AFF] hover:bg-[#007AFF]/20 transition-colors mt-0.5 flex-shrink-0"
                       title="Inspect SKILL.md"
                     >
                       <FileText className="h-3.5 w-3.5" />
                     </button>
                     <div>
                       <div 
-                        className="font-semibold text-slate-100 group-hover:text-indigo-300 transition-colors cursor-pointer text-sm"
+                        className="font-semibold text-slate-900 dark:text-slate-100 group-hover:text-[#007AFF] dark:group-hover:text-sky-300 transition-colors cursor-pointer text-sm"
                         onClick={() => onOpenDetail(skill.name)}
                       >
                         {skill.displayName || skill.name}
                       </div>
-                      <p className="text-[11px] text-slate-400 line-clamp-1 max-w-sm mt-0.5">
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-1 max-w-sm mt-0.5">
                         {skill.description || 'No description provided'}
                       </p>
                       <div className="flex items-center gap-2 mt-1">
-                        <span className="font-mono text-[10px] text-slate-500">{skill.name}</span>
+                        <span className="font-mono text-[10px] text-slate-400 dark:text-slate-500">{skill.name}</span>
                         {skill.metadata?.version && (
-                          <span className="text-[10px] text-slate-500">v{skill.metadata.version}</span>
+                          <span className="text-[10px] text-slate-400 dark:text-slate-500">v{skill.metadata.version}</span>
                         )}
                       </div>
                     </div>
@@ -273,11 +273,11 @@ export default function MatrixView({
       </table>
 
       {/* Pagination Footer */}
-      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-white/10 bg-slate-900/90 px-5 py-3 text-xs">
-        <div className="text-slate-400">
-          Showing <span className="font-semibold text-slate-200">{totalFiltered === 0 ? 0 : (currentPage - 1) * pageSize + 1}–{Math.min(currentPage * pageSize, totalFiltered)}</span> of <span className="font-semibold text-slate-200">{totalFiltered}</span> skills
+      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200/80 dark:border-white/10 bg-slate-100/70 dark:bg-slate-900/90 px-5 py-3 text-xs">
+        <div className="text-slate-600 dark:text-slate-400">
+          Showing <span className="font-semibold text-slate-800 dark:text-slate-200">{totalFiltered === 0 ? 0 : (currentPage - 1) * pageSize + 1}–{Math.min(currentPage * pageSize, totalFiltered)}</span> of <span className="font-semibold text-slate-800 dark:text-slate-200">{totalFiltered}</span> skills
           {totalFiltered !== totalSkills && (
-            <span className="text-slate-500 ml-1">
+            <span className="text-slate-400 dark:text-slate-500 ml-1">
               (searched across all {totalSkills} skills)
             </span>
           )}
@@ -285,7 +285,7 @@ export default function MatrixView({
 
         <div className="flex items-center gap-4">
           {/* Page Size Selector */}
-          <div className="flex items-center gap-1.5 text-slate-400">
+          <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400">
             <span>Per page:</span>
             <select
               value={pageSize}
@@ -293,7 +293,7 @@ export default function MatrixView({
                 setPageSize(Number(e.target.value));
                 setCurrentPage(1);
               }}
-              className="rounded-lg border border-white/10 bg-slate-950 px-2 py-1 text-xs text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              className="rounded-lg border border-slate-300 dark:border-white/10 bg-white dark:bg-slate-950 px-2 py-1 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#007AFF]"
             >
               <option value={25}>25</option>
               <option value={50}>50</option>
@@ -306,7 +306,7 @@ export default function MatrixView({
             <button
               onClick={() => setCurrentPage(1)}
               disabled={currentPage <= 1}
-              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
+              className="p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-white/5 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
               title="First page"
             >
               <ChevronsLeft className="h-4 w-4" />
@@ -314,20 +314,20 @@ export default function MatrixView({
             <button
               onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
               disabled={currentPage <= 1}
-              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
+              className="p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-white/5 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
               title="Previous page"
             >
               <ChevronLeft className="h-4 w-4" />
             </button>
 
-            <span className="px-2 text-slate-300 font-mono text-[11px]">
-              Page <strong className="text-indigo-400">{currentPage}</strong> of {Math.ceil(totalFiltered / pageSize) || 1}
+            <span className="px-2 text-slate-700 dark:text-slate-300 font-mono text-[11px]">
+              Page <strong className="text-[#007AFF]">{currentPage}</strong> of {Math.ceil(totalFiltered / pageSize) || 1}
             </span>
 
             <button
               onClick={() => setCurrentPage(prev => Math.min(Math.ceil(totalFiltered / pageSize) || 1, prev + 1))}
               disabled={currentPage >= (Math.ceil(totalFiltered / pageSize) || 1)}
-              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
+              className="p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-white/5 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
               title="Next page"
             >
               <ChevronRight className="h-4 w-4" />
@@ -335,7 +335,7 @@ export default function MatrixView({
             <button
               onClick={() => setCurrentPage(Math.ceil(totalFiltered / pageSize) || 1)}
               disabled={currentPage >= (Math.ceil(totalFiltered / pageSize) || 1)}
-              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
+              className="p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-white/5 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
               title="Last page"
             >
               <ChevronsRight className="h-4 w-4" />

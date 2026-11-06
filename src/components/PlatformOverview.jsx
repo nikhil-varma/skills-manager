@@ -31,35 +31,35 @@ export default function PlatformOverview({
   const totalSkillsCount = platforms.reduce((acc, p) => acc + (p.count || 0), 0);
 
   return (
-    <div className="mb-6 rounded-2xl border border-white/5 bg-slate-900/40 backdrop-blur-md overflow-hidden transition-all duration-300">
+    <div className="mb-6 rounded-2xl border border-slate-200/80 dark:border-white/5 bg-white/70 dark:bg-slate-900/40 backdrop-blur-md overflow-hidden transition-all duration-300 shadow-xs">
       
       {/* Collapsible Header Bar */}
       <button
         type="button"
         onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full flex items-center justify-between px-5 py-3.5 bg-slate-900/60 hover:bg-slate-900/90 transition-colors text-left group"
+        className="w-full flex items-center justify-between px-5 py-3.5 bg-slate-100/70 hover:bg-slate-100 dark:bg-slate-900/60 dark:hover:bg-slate-900/90 transition-colors text-left group"
       >
         <div className="flex items-center gap-3">
-          <div className="h-7 w-7 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
+          <div className="h-7 w-7 rounded-lg bg-[#007AFF]/10 border border-[#007AFF]/20 flex items-center justify-center text-[#007AFF]">
             <Layers className="h-4 w-4" />
           </div>
           <div>
-            <span className="font-semibold text-xs text-slate-200 group-hover:text-white transition-colors">
+            <span className="font-semibold text-xs text-slate-800 dark:text-slate-200 group-hover:text-slate-950 dark:group-hover:text-white transition-colors">
               Connected Assistants & Workspaces
             </span>
-            <span className="ml-2.5 text-[11px] font-mono text-slate-400">
+            <span className="ml-2.5 text-[11px] font-mono text-slate-500 dark:text-slate-400">
               {activeCount} active locations • {totalSkillsCount} total skills installed
             </span>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 text-xs text-slate-400 group-hover:text-slate-200 transition-colors">
+        <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 group-hover:text-slate-800 dark:group-hover:text-slate-200 transition-colors">
           <span className="text-[11px] font-medium">
             {isExpanded ? 'Collapse' : `Expand (${platforms.length})`}
           </span>
           <ChevronDown 
             className={`h-4 w-4 transition-transform duration-200 ${
-              isExpanded ? 'rotate-180 text-indigo-400' : ''
+              isExpanded ? 'rotate-180 text-[#007AFF]' : ''
             }`} 
           />
         </div>
@@ -67,7 +67,7 @@ export default function PlatformOverview({
 
       {/* Expanded Grid */}
       {isExpanded && (
-        <div className="p-5 border-t border-white/5 bg-slate-950/40 animate-fade-in">
+        <div className="p-5 border-t border-slate-200/80 dark:border-white/5 bg-slate-50/50 dark:bg-slate-950/40 animate-fade-in">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
             {platforms.map((plat) => {
               const IconComponent = ICONS[plat.icon] || Bot;
@@ -79,8 +79,8 @@ export default function PlatformOverview({
                   onClick={() => setActiveFilter(isSelected ? 'all' : plat.id)}
                   className={`cursor-pointer group relative overflow-hidden rounded-xl border p-4 transition-all duration-200 ${
                     isSelected
-                      ? 'bg-slate-900 border-indigo-500/80 shadow-lg shadow-indigo-500/10 ring-1 ring-indigo-500/50'
-                      : 'bg-slate-900/60 border-white/5 hover:border-white/15 hover:bg-slate-900/80'
+                      ? 'bg-white dark:bg-slate-900 border-[#007AFF] shadow-lg shadow-[#007AFF]/10 ring-1 ring-[#007AFF]/50'
+                      : 'bg-white/80 dark:bg-slate-900/60 border-slate-200/80 dark:border-white/5 hover:border-slate-300 dark:hover:border-white/15 hover:bg-white dark:hover:bg-slate-900/80'
                   }`}
                 >
                   {/* Ambient accent glow */}
@@ -98,15 +98,15 @@ export default function PlatformOverview({
                         <IconComponent className="h-4 w-4" style={{ color: plat.color }} />
                       </div>
                       <div className="min-w-0">
-                        <h3 className="text-sm font-semibold text-slate-100 flex items-center gap-1.5 truncate">
+                        <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-100 flex items-center gap-1.5 truncate">
                           {plat.name}
                           {plat.id === 'shared' && (
-                            <span className="text-[10px] bg-purple-500/20 text-purple-300 px-1 py-0.2 rounded border border-purple-500/30 flex-shrink-0">
+                            <span className="text-[10px] bg-purple-500/20 text-purple-700 dark:text-purple-300 px-1 py-0.2 rounded border border-purple-500/30 flex-shrink-0">
                               Hub
                             </span>
                           )}
                         </h3>
-                        <p className="text-[11px] font-mono text-slate-400 truncate max-w-[170px]" title={plat.path}>
+                        <p className="text-[11px] font-mono text-slate-500 dark:text-slate-400 truncate max-w-[170px]" title={plat.path}>
                           {plat.path}
                         </p>
                       </div>
@@ -120,7 +120,7 @@ export default function PlatformOverview({
                           e.stopPropagation();
                           onRevealFolder(plat.expandedPath);
                         }}
-                        className="p-1 rounded text-slate-500 hover:text-slate-300 hover:bg-white/5 transition-colors flex-shrink-0"
+                        className="p-1 rounded text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors flex-shrink-0"
                         title="Reveal directory in macOS Finder"
                       >
                         <ExternalLink className="h-3.5 w-3.5" />
@@ -131,21 +131,21 @@ export default function PlatformOverview({
                   <div className="mt-4 flex items-center justify-between text-xs">
                     <div className="flex items-center gap-1.5">
                       {plat.exists ? (
-                        <span className="flex items-center gap-1 text-emerald-400">
-                          <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                        <span className="flex items-center gap-1 text-emerald-500 dark:text-emerald-400">
+                          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400 animate-pulse" />
                           <span className="text-[11px] font-medium">Active</span>
                         </span>
                       ) : (
-                        <span className="flex items-center gap-1 text-amber-400">
-                          <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
+                        <span className="flex items-center gap-1 text-amber-500 dark:text-amber-400">
+                          <span className="h-1.5 w-1.5 rounded-full bg-amber-500 dark:bg-amber-400" />
                           <span className="text-[11px]">Folder not created</span>
                         </span>
                       )}
                     </div>
 
                     <div className="flex items-baseline gap-1">
-                      <span className="text-lg font-bold text-white font-mono">{plat.count || 0}</span>
-                      <span className="text-slate-400 text-[11px]">skills</span>
+                      <span className="text-lg font-bold text-slate-900 dark:text-white font-mono">{plat.count || 0}</span>
+                      <span className="text-slate-500 dark:text-slate-400 text-[11px]">skills</span>
                     </div>
                   </div>
                 </div>

@@ -177,27 +177,27 @@ export default function SkillDetailModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md animate-fade-in">
-      <div className="relative w-full max-w-4xl max-h-[90vh] flex flex-col rounded-2xl border border-white/10 bg-[#0f172a] shadow-2xl overflow-hidden text-slate-100">
+      <div className="relative w-full max-w-4xl max-h-[90vh] flex flex-col rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0f172a] shadow-2xl overflow-hidden text-slate-900 dark:text-slate-100">
         
         {/* Modal Header */}
-        <div className="flex items-center justify-between border-b border-white/10 px-6 py-4 bg-slate-900/80">
+        <div className="flex items-center justify-between border-b border-slate-200 dark:border-white/10 px-6 py-4 bg-slate-100/90 dark:bg-slate-900/80">
           <div className="flex items-center gap-3">
-            <div className="h-9 w-9 rounded-xl bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
+            <div className="h-9 w-9 rounded-xl bg-[#007AFF]/15 border border-[#007AFF]/30 flex items-center justify-center text-[#007AFF]">
               <FileText className="h-5 w-5" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="font-bold text-base text-white">
+                <h3 className="font-bold text-base text-slate-900 dark:text-white">
                   {detail?.displayName || skillName}
                 </h3>
                 {detail?.isSymlink && (
-                  <span className="flex items-center gap-1 rounded bg-purple-500/20 px-2 py-0.5 text-[11px] font-mono text-purple-300 border border-purple-500/30">
+                  <span className="flex items-center gap-1 rounded bg-purple-500/20 px-2 py-0.5 text-[11px] font-mono text-purple-700 dark:text-purple-300 border border-purple-500/30">
                     <Link2 className="h-3 w-3" />
                     Symlink
                   </span>
                 )}
               </div>
-              <p className="text-xs font-mono text-slate-400 mt-0.5 truncate max-w-lg">
+              <p className="text-xs font-mono text-slate-500 dark:text-slate-400 mt-0.5 truncate max-w-lg">
                 {detail?.dirPath}
               </p>
             </div>

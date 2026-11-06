@@ -46,6 +46,29 @@ export default function App() {
   const [isDiscoverOpen, setIsDiscoverOpen] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
 
+  // Theme State (macOS Sequoia Glass Light / Dark)
+  const [theme, setTheme] = useState(() => {
+    const saved = localStorage.getItem('skilldesk-theme');
+    if (saved === 'light' || saved === 'dark') return saved;
+    return (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) ? 'light' : 'dark';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('skilldesk-theme', theme);
+    const root = document.documentElement;
+    if (theme === 'dark') {
+      root.classList.add('dark');
+      root.classList.remove('light');
+    } else {
+      root.classList.remove('dark');
+      root.classList.add('light');
+    }
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme(prev => (prev === 'dark' ? 'light' : 'dark'));
+  };
+
   // AI LLM State
   const [llmConfig, setLlmConfig] = useState(null);
   const [isLLMConfigured, setIsLLMConfigured] = useState(false);
@@ -258,7 +281,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0b0f17] text-slate-100 flex flex-col">
+    <div className="min-h-screen bg-[#f5f6f8] dark:bg-[#0b0f17] text-slate-900 dark:text-slate-100 flex flex-col transition-colors duration-200">
       <Navbar
         searchTerm={searchTerm}
         setSearchTerm={setSearchTerm}
@@ -277,6 +300,8 @@ export default function App() {
         onToggleChat={() => setIsChatOpen(!isChatOpen)}
         isChatOpen={isChatOpen}
         isLLMConfigured={isLLMConfigured}
+        theme={theme}
+        onToggleTheme={toggleTheme}
       />
 
       <div className={`flex-1 flex w-full transition-all duration-300 ${isChatOpen ? 'max-w-[1920px] mx-auto' : 'max-w-7xl mx-auto'}`}>
@@ -290,18 +315,18 @@ export default function App() {
           />
 
           {/* Collapsible Filter Section */}
-          <div className="mb-6 rounded-2xl border border-white/5 bg-slate-900/40 backdrop-blur-md overflow-hidden transition-all duration-300">
+          <div className="mb-6 rounded-2xl border border-slate-200/80 dark:border-white/5 bg-white/70 dark:bg-slate-900/40 backdrop-blur-md overflow-hidden transition-all duration-300 shadow-xs">
           <div
             onClick={() => setIsFiltersExpanded(!isFiltersExpanded)}
-            className="flex flex-wrap items-center justify-between gap-3 px-5 py-3 bg-slate-900/60 hover:bg-slate-900/90 transition-colors cursor-pointer select-none"
+            className="flex flex-wrap items-center justify-between gap-3 px-5 py-3 bg-slate-100/70 hover:bg-slate-100 dark:bg-slate-900/60 dark:hover:bg-slate-900/90 transition-colors cursor-pointer select-none"
           >
             <div className="flex items-center gap-3">
-              <div className="h-7 w-7 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
+              <div className="h-7 w-7 rounded-lg bg-[#007AFF]/10 border border-[#007AFF]/20 flex items-center justify-center text-[#007AFF]">
                 <Filter className="h-3.5 w-3.5" />
               </div>
               <div className="flex items-center gap-2 text-xs">
-                <span className="font-semibold text-slate-300">Filter:</span>
-                <span className="px-2.5 py-1 rounded-lg bg-indigo-600/30 text-indigo-200 border border-indigo-500/30 font-medium">
+                <span className="font-semibold text-slate-700 dark:text-slate-300">Filter:</span>
+                <span className="px-2.5 py-1 rounded-lg bg-[#007AFF] text-white font-medium shadow-xs">
                   {activeFilterName}
                 </span>
                 {activeFilter !== 'all' && (
@@ -311,7 +336,7 @@ export default function App() {
                       e.stopPropagation();
                       setActiveFilter('all');
                     }}
-                    className="text-[11px] text-slate-400 hover:text-white underline ml-1"
+                    className="text-[11px] text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white underline ml-1"
                   >
                     Reset
                   </button>
@@ -320,28 +345,28 @@ export default function App() {
             </div>
 
             <div className="flex items-center gap-4 text-xs">
-              <span className="text-slate-400 text-[11px]">
-                Showing <strong className="text-slate-200">{filteredSkills.length}</strong> of {skills.length} skills
+              <span className="text-slate-500 dark:text-slate-400 text-[11px]">
+                Showing <strong className="text-slate-800 dark:text-slate-200">{filteredSkills.length}</strong> of {skills.length} skills
               </span>
               <button
                 type="button"
-                className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 transition-colors text-xs"
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-200/60 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-700 dark:text-slate-300 transition-colors text-xs"
               >
                 <span>{isFiltersExpanded ? 'Hide Filters' : 'Show Filters'}</span>
-                <ChevronDown className={`h-3.5 w-3.5 transition-transform duration-200 ${isFiltersExpanded ? 'rotate-180 text-indigo-400' : ''}`} />
+                <ChevronDown className={`h-3.5 w-3.5 transition-transform duration-200 ${isFiltersExpanded ? 'rotate-180 text-[#007AFF]' : ''}`} />
               </button>
             </div>
           </div>
 
           {isFiltersExpanded && (
-            <div className="p-4 border-t border-white/5 bg-slate-950/40 animate-fade-in">
+            <div className="p-4 border-t border-slate-200/80 dark:border-white/5 bg-slate-50/50 dark:bg-slate-950/40 animate-fade-in">
               <div className="flex flex-wrap items-center gap-1.5 text-xs">
                 <button
                   onClick={() => setActiveFilter('all')}
                   className={`px-3 py-1.5 rounded-lg font-medium transition-colors ${
                     activeFilter === 'all'
-                      ? 'bg-white/10 text-white border border-white/20'
-                      : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'
+                      ? 'bg-slate-200 dark:bg-white/10 text-slate-900 dark:text-white border border-slate-300 dark:border-white/20'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/5'
                   }`}
                 >
                   All Skills ({skills.length})
@@ -352,8 +377,8 @@ export default function App() {
                     onClick={() => setActiveFilter('unsynced')}
                     className={`px-3 py-1.5 rounded-lg font-medium transition-colors ${
                       activeFilter === 'unsynced'
-                        ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                        : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'
+                        ? 'bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30'
+                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/5'
                     }`}
                   >
                     Needs Sync ({filterStats.unsynced})
@@ -365,8 +390,8 @@ export default function App() {
                     onClick={() => setActiveFilter('symlinked')}
                     className={`px-3 py-1.5 rounded-lg font-medium transition-colors ${
                       activeFilter === 'symlinked'
-                        ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
-                        : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'
+                        ? 'bg-purple-500/20 text-purple-700 dark:text-purple-300 border border-purple-500/30'
+                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/5'
                     }`}
                   >
                     Symlinked ({filterStats.symlinked})
@@ -381,8 +406,8 @@ export default function App() {
                       onClick={() => setActiveFilter(p.id)}
                       className={`px-3 py-1.5 rounded-lg font-medium transition-colors ${
                         activeFilter === p.id
-                          ? 'bg-indigo-600 text-white shadow-sm'
-                          : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'
+                          ? 'bg-[#007AFF] text-white shadow-sm'
+                          : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/5'
                       }`}
                     >
                       {p.badge || p.name} ({p.count})
@@ -449,6 +474,7 @@ export default function App() {
           totalSkills={totalSkills}
           isLLMConfigured={isLLMConfigured}
           llmConfig={llmConfig}
+          theme={theme}
         />
       </div>
 
