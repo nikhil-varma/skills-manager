@@ -41,7 +41,7 @@ export default function Navbar({
     if (!isTauri) return;
     if (e.buttons === 1 && !e.target.closest('button, input, textarea, select, a, [role="button"], .no-drag')) {
       try {
-        const { getCurrentWindow } = await import('@tauri-apps/api/window');
+        const { getCurrentWindow } = await import(/* @vite-ignore */ '@tauri-apps/api/window');
         const win = getCurrentWindow();
         await win.startDragging();
       } catch (err) {
