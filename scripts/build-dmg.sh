@@ -53,15 +53,16 @@ Alternatively, open Terminal and paste:
 xattr -cr /Applications/SkillDesk.app
 EOF
 
-rm -f ./SkillDesk.dmg "src-tauri/target/release/bundle/dmg/SkillDesk_1.0.0_aarch64.dmg"
+VERSION="1.1.0"
+rm -f ./SkillDesk.dmg "src-tauri/target/release/bundle/dmg/SkillDesk_${VERSION}_aarch64.dmg"
 hdiutil create -volname "SkillDesk" -srcfolder "$DMG_STAGING" -ov -format UDZO ./SkillDesk.dmg
 mkdir -p "src-tauri/target/release/bundle/dmg"
-cp ./SkillDesk.dmg "src-tauri/target/release/bundle/dmg/SkillDesk_1.0.0_aarch64.dmg"
+cp ./SkillDesk.dmg "src-tauri/target/release/bundle/dmg/SkillDesk_${VERSION}_aarch64.dmg"
 rm -rf "$DMG_STAGING"
 
 echo "==> 7. Signing DMG container..."
 codesign --force --sign - ./SkillDesk.dmg
-codesign --force --sign - "src-tauri/target/release/bundle/dmg/SkillDesk_1.0.0_aarch64.dmg"
+codesign --force --sign - "src-tauri/target/release/bundle/dmg/SkillDesk_${VERSION}_aarch64.dmg"
 
 echo "==> 8. Verifying DMG disk image..."
 hdiutil verify ./SkillDesk.dmg
