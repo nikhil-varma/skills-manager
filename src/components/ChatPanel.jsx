@@ -37,12 +37,7 @@ export default function ChatPanel({
   isLLMConfigured = false,
   llmConfig
 }) {
-  const [messages, setMessages] = useState([
-    {
-      role: 'assistant',
-      content: `Hello! I'm your **SkillDesk AI Assistant**.\n\nI can analyze your **${totalSkills} installed skills**, search for the best match based on what you need, and recommend which skill is the most useful for your project.\n\n*Note: My scope is strictly limited to discovering and recommending skills from your catalog.*`
-    }
-  ]);
+  const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -101,12 +96,7 @@ export default function ChatPanel({
   };
 
   const handleClear = () => {
-    setMessages([
-      {
-        role: 'assistant',
-        content: `Conversation reset. Ask me to find or recommend any skill in your catalog (${totalSkills} skills available).`
-      }
-    ]);
+    setMessages([]);
     setError(null);
   };
 
@@ -316,24 +306,39 @@ export default function ChatPanel({
             </div>
           )}
 
-          {/* Starter Chips (shown when only initial welcome message is present) */}
-          {messages.length === 1 && (
-            <div className="pt-2 space-y-2">
-              <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">
-                Suggested Questions
-              </span>
-              <div className="flex flex-col gap-1.5">
-                {STARTER_PROMPTS.map((prompt, i) => (
-                  <button
-                    key={i}
-                    type="button"
-                    onClick={() => handleSend(prompt)}
-                    className="p-2.5 text-left rounded-xl border border-white/5 bg-slate-900/60 hover:border-indigo-500/30 hover:bg-slate-900 text-slate-300 hover:text-white transition-all text-xs flex items-center justify-between group"
-                  >
-                    <span>{prompt}</span>
-                    <ArrowRight className="h-3 w-3 text-slate-500 group-hover:text-indigo-400 group-hover:translate-x-0.5 transition-all" />
-                  </button>
-                ))}
+          {/* Welcome Card & Starter Chips (shown when no messages yet) */}
+          {messages.length === 0 && (
+            <div className="space-y-4 animate-in fade-in">
+              <div className="rounded-2xl p-4 bg-slate-900/80 border border-white/10 text-slate-200 space-y-2">
+                <div className="flex items-center gap-2 font-semibold text-white">
+                  <Bot className="h-4 w-4 text-indigo-400" />
+                  <span>Welcome to SkillDesk AI</span>
+                </div>
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  I can analyze your <strong>{totalSkills} installed skills</strong>, search for the best match based on what you need, and recommend which skill is the most useful for your project.
+                </p>
+                <div className="pt-1 text-[11px] text-slate-400 italic">
+                  Scope strictly limited to discovering and recommending skills from your catalog.
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">
+                  Suggested Questions
+                </span>
+                <div className="flex flex-col gap-1.5">
+                  {STARTER_PROMPTS.map((prompt, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => handleSend(prompt)}
+                      className="p-2.5 text-left rounded-xl border border-white/5 bg-slate-900/60 hover:border-indigo-500/30 hover:bg-slate-900 text-slate-300 hover:text-white transition-all text-xs flex items-center justify-between group"
+                    >
+                      <span>{prompt}</span>
+                      <ArrowRight className="h-3 w-3 text-slate-500 group-hover:text-indigo-400 group-hover:translate-x-0.5 transition-all" />
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
           )}

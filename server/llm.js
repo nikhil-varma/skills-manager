@@ -21,6 +21,20 @@ export async function callLLM({ messages, config, systemPrompt, timeoutMs = 6000
   const model = (config.model || '').trim();
   const temperature = typeof config.temperature === 'number' ? config.temperature : 0.2;
 
+  // Clean and ensure conversation history strictly begins with a user turn
+  const validMessages = (messages || [])
+    .filter(m => (m.role === 'user' || m.role === 'assistant') && typeof m.content === 'string' && m.content.trim())
+    .map(m => ({ role: m.role, content: m.content.trim() }));
+
+  // Strip any leading assistant turns so first turn is always from the user
+  while (validMessages.length > 0 && validMessages[0].role === 'assistant') {
+    validMessages.shift();
+  }
+
+  if (validMessages.length === 0) {
+    validMessages.push({ role: 'user', content: 'What skills are in my catalog?' });
+  }
+
   try {
     // 1. Anthropic Claude API
     if (provider === 'anthropic') {
@@ -29,9 +43,7 @@ export async function callLLM({ messages, config, systemPrompt, timeoutMs = 6000
       let baseUrl = resolveEndpointUrl(rawBase).replace(/\/+$/, '');
       const url = baseUrl.endsWith('/messages') ? baseUrl : `${baseUrl}/messages`;
 
-      const anthropicMessages = messages
-        .filter(m => m.role === 'user' || m.role === 'assistant')
-        .map(m => ({ role: m.role, content: m.content }));
+      const anthropicMessages = validMessages.map(m => ({ role: m.role, content: m.content }));
 
       const res = await fetch(url, {
         method: 'POST',
@@ -74,7 +86,7 @@ export async function callLLM({ messages, config, systemPrompt, timeoutMs = 6000
 
       const chatMessages = [
         { role: 'system', content: systemPrompt },
-        ...messages.filter(m => m.role === 'user' || m.role === 'assistant')
+        ...validMessages
       ];
 
       const res = await fetch(url, {
@@ -120,7 +132,7 @@ export async function callLLM({ messages, config, systemPrompt, timeoutMs = 6000
 
     const chatMessages = [
       { role: 'system', content: systemPrompt },
-      ...messages.filter(m => m.role === 'user' || m.role === 'assistant')
+      ...validMessages
     ];
 
     const headers = {
@@ -152,10 +164,47 @@ export async function callLLM({ messages, config, systemPrompt, timeoutMs = 6000
 
     if (!res.ok) {
       const errText = await res.text();
+      const lowerErr = errText.toLowerCase();
+      const isJinjaError = lowerErr.includes('jinja') || 
+                           lowerErr.includes('prompt template') || 
+                           lowerErr.includes('user query') ||
+                           lowerErr.includes('system');
+
+      // Automatic fallback for models whose Jinja template rejects system messages or requires user first
+      if (res.status === 400 && isJinjaError && validMessages.length > 0) {
+        const mergedMessages = [
+          {
+            role: 'user',
+            content: `${systemPrompt}\n\n---\nUser Question:\n${validMessages[0].content}`
+          },
+          ...validMessages.slice(1)
+        ];
+
+        try {
+          const retryRes = await fetch(url, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({
+              model: model || defaultModel,
+              messages: mergedMessages,
+              ...(isReasoning ? {} : { temperature })
+            }),
+            signal: AbortSignal.timeout(timeoutMs)
+          });
+
+          if (retryRes.ok) {
+            const retryData = await retryRes.json();
+            return retryData.choices?.[0]?.message?.content || '';
+          }
+        } catch (retryErr) {
+          // ignore and fall through to original error
+        }
+      }
+
       let msg = errText;
       try {
         const parsed = JSON.parse(errText);
-        msg = parsed.error?.message || parsed.message || errText;
+        msg = parsed.error?.message || parsed.message || parsed.error || errText;
       } catch (e) {}
       throw new Error(`LLM provider error (${res.status}): ${msg}`);
     }
