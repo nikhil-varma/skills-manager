@@ -34,17 +34,20 @@ function formatErrorMessage(errText, status) {
   return `LLM provider error (${status}): ${msg}`;
 }
 
-export async function callLLM({ messages, config, systemPrompt, timeoutMs = 120000, signal }) {
+export async function callLLM({ messages, config, systemPrompt, timeoutMs = 0, signal }) {
   const provider = config.provider || 'custom';
   const apiKey = (config.apiKey || '').trim();
   const model = (config.model || '').trim();
   const temperature = typeof config.temperature === 'number' ? config.temperature : 0.2;
 
-  // Combine timeout signal with optional external cancellation signal
-  const timeoutSignal = AbortSignal.timeout(timeoutMs);
-  const activeSignal = signal && typeof AbortSignal.any === 'function'
-    ? AbortSignal.any([timeoutSignal, signal])
-    : (signal || timeoutSignal);
+  // Combine timeout signal with optional external cancellation signal only if timeoutMs > 0
+  let activeSignal = signal || null;
+  if (timeoutMs && timeoutMs > 0) {
+    const timeoutSignal = AbortSignal.timeout(timeoutMs);
+    activeSignal = signal && typeof AbortSignal.any === 'function'
+      ? AbortSignal.any([timeoutSignal, signal])
+      : (signal || timeoutSignal);
+  }
 
   // Clean and ensure conversation history strictly begins with a user turn
   const validMessages = (messages || [])
@@ -200,8 +203,15 @@ export async function callLLM({ messages, config, systemPrompt, timeoutMs = 1200
     console.log(`[callLLM] Finished! Content length: ${finalContent.length} chars`);
     return finalContent;
   } catch (err) {
+    // If the caller cancelled the request externally (e.g. user clicked Stop in chat or closed connection)
+    if (signal && signal.aborted) {
+      const abortErr = new Error('Request was cancelled by user.');
+      abortErr.name = 'AbortError';
+      throw abortErr;
+    }
+
     const causeStr = `${err.message || ''} ${err.cause?.message || ''} ${err.cause?.code || ''}`;
-    if (err.name === 'TimeoutError' || err.name === 'AbortError' || causeStr.includes('aborted') || causeStr.includes('timeout')) {
+    if (err.name === 'TimeoutError' || (timeoutMs > 0 && (err.name === 'AbortError' || causeStr.includes('timeout')))) {
       const seconds = Math.round(timeoutMs / 1000);
       const timeDesc = seconds >= 60 ? `${Math.round(seconds / 60)} minute` : `${seconds}s`;
       throw new Error(`Request timed out after ${timeDesc}. Please check if endpoint (${config.baseUrl || 'URL'}) is reachable.`);
@@ -328,7 +338,7 @@ ${catalogLines.join('\n')}
     messages,
     config,
     systemPrompt,
-    timeoutMs: 120000, // 2 minutes timeout for local LLMs & reasoning models
+    timeoutMs: 0, // No timeout during chat - generation can take as long as local model needs
     signal
   });
 

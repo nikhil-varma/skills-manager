@@ -557,6 +557,16 @@ app.post('/api/ai/test', async (req, res) => {
 // Chat with SkillDesk AI scoped strictly to user skills
 app.post('/api/ai/chat', async (req, res) => {
   console.log(`[AI Chat] Incoming chat request with ${req.body?.messages?.length || 0} messages`);
+  
+  // Disable socket and request timeout so long-running local LLM generations don't get terminated
+  if (req.socket) {
+    req.socket.setTimeout(0);
+    req.socket.setKeepAlive(true, 10000);
+  }
+  if (typeof req.setTimeout === 'function') {
+    req.setTimeout(0);
+  }
+
   const abortController = new AbortController();
   
   // Abort only when client disconnects (res 'close' before response is sent)
@@ -611,6 +621,11 @@ if (fs.existsSync(distPath)) {
   });
 }
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`⚡ SkillDesk Backend API running on http://localhost:${PORT}`);
 });
+
+// Ensure HTTP server does not drop long-lived connections for local LLMs
+server.timeout = 0;
+server.requestTimeout = 0;
+server.headersTimeout = 0;
