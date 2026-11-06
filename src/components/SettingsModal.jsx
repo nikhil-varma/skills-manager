@@ -207,11 +207,11 @@ export default function SettingsModal({
   const currentPreset = PROVIDER_PRESETS.find(p => p.id === llmConfig.provider) || PROVIDER_PRESETS[0];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md animate-fade-in">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 dark:bg-black/70 backdrop-blur-md animate-fade-in">
       <div className="relative w-full max-w-2xl rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0f172a] shadow-2xl overflow-hidden text-slate-900 dark:text-slate-100 flex flex-col max-h-[85vh]">
         
         {/* Header & Tabs */}
-        <div className="border-b border-slate-200 dark:border-white/10 bg-slate-100/90 dark:bg-slate-900/90 px-6 pt-5 pb-0">
+        <div className="border-b border-slate-200 dark:border-white/10 bg-slate-50/90 dark:bg-slate-900/90 px-6 pt-5 pb-0">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h3 className="font-bold text-base text-slate-900 dark:text-white">SkillDesk Settings</h3>
@@ -231,13 +231,13 @@ export default function SettingsModal({
               onClick={() => setActiveTab('locations')}
               className={`flex items-center gap-2 px-4 py-2.5 text-xs font-semibold border-b-2 transition-all ${
                 activeTab === 'locations'
-                  ? 'border-indigo-500 text-indigo-400 bg-indigo-500/5 rounded-t-lg'
-                  : 'border-transparent text-slate-400 hover:text-slate-200'
+                  ? 'border-indigo-600 dark:border-indigo-500 text-indigo-600 dark:text-indigo-400 bg-indigo-50/80 dark:bg-indigo-500/10 rounded-t-lg'
+                  : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
               }`}
             >
               <Folder className="h-4 w-4" />
               <span>Assistant Locations</span>
-              <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-white/10 font-mono">
+              <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-200 dark:bg-white/10 text-slate-700 dark:text-slate-300 font-mono">
                 {platformList.length}
               </span>
             </button>
@@ -246,16 +246,16 @@ export default function SettingsModal({
               onClick={() => setActiveTab('ai')}
               className={`flex items-center gap-2 px-4 py-2.5 text-xs font-semibold border-b-2 transition-all ${
                 activeTab === 'ai'
-                  ? 'border-indigo-500 text-indigo-400 bg-indigo-500/5 rounded-t-lg'
-                  : 'border-transparent text-slate-400 hover:text-slate-200'
+                  ? 'border-indigo-600 dark:border-indigo-500 text-indigo-600 dark:text-indigo-400 bg-indigo-50/80 dark:bg-indigo-500/10 rounded-t-lg'
+                  : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
               }`}
             >
-              <Sparkles className="h-4 w-4 text-indigo-400" />
+              <Sparkles className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
               <span>AI Skill Assistant (Custom LLM)</span>
               {llmConfig.apiKey || llmConfig.provider === 'ollama' ? (
-                <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" title="Configured" />
+                <span className="h-2 w-2 rounded-full bg-emerald-500 dark:bg-emerald-400 animate-pulse" title="Configured" />
               ) : (
-                <span className="h-2 w-2 rounded-full bg-amber-400" title="Setup needed" />
+                <span className="h-2 w-2 rounded-full bg-amber-500 dark:bg-amber-400" title="Setup needed" />
               )}
             </button>
           </div>
@@ -267,14 +267,14 @@ export default function SettingsModal({
             <div className="space-y-5">
               {/* Platform paths list */}
               <div className="space-y-3">
-                <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                <h4 className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                   Configured Locations
                 </h4>
                 <div className="space-y-2">
                   {platformList.map((plat, idx) => (
                     <div
                       key={`${plat.id}-${plat.path || idx}`}
-                      className="flex items-center justify-between gap-3 p-3 rounded-xl border border-white/5 bg-slate-900/60"
+                      className="flex items-center justify-between gap-3 p-3 rounded-xl border border-slate-200 dark:border-white/5 bg-slate-50/80 dark:bg-slate-900/60"
                     >
                       <div className="flex items-center gap-2.5">
                         <span
@@ -282,8 +282,8 @@ export default function SettingsModal({
                           style={{ backgroundColor: plat.color }}
                         />
                         <div>
-                          <div className="font-semibold text-slate-200">{plat.name}</div>
-                          <div className="font-mono text-[11px] text-slate-400">{plat.path}</div>
+                          <div className="font-semibold text-slate-800 dark:text-slate-200">{plat.name}</div>
+                          <div className="font-mono text-[11px] text-slate-500 dark:text-slate-400">{plat.path}</div>
                         </div>
                       </div>
 
@@ -291,7 +291,7 @@ export default function SettingsModal({
                       {!['claude', 'opencode', 'cursor', 'codex', 'antigravity-builtin', 'antigravity', 'shared'].includes(plat.id) && (
                         <button
                           onClick={() => handleRemovePlatform(plat.id)}
-                          className="p-1.5 text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors"
+                          className="p-1.5 text-rose-500 dark:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors"
                           title="Remove custom location"
                         >
                           <Trash2 className="h-4 w-4" />
@@ -303,13 +303,13 @@ export default function SettingsModal({
               </div>
 
               {/* Add custom location */}
-              <div className="rounded-xl border border-white/10 bg-slate-900/80 p-4 space-y-3">
-                <h4 className="font-semibold text-slate-200 flex items-center gap-1.5">
-                  <Plus className="h-4 w-4 text-indigo-400" />
+              <div className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-slate-900/80 p-4 space-y-3">
+                <h4 className="font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                  <Plus className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
                   Add Custom Project or Tool Location
                 </h4>
-                <p className="text-[11px] text-slate-400">
-                  Add any directory containing skills (e.g. <code className="bg-white/10 px-1 py-0.5 rounded text-indigo-300">~/projects/app/.claude/skills</code>).
+                <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                  Add any directory containing skills (e.g. <code className="bg-slate-200 dark:bg-white/10 px-1 py-0.5 rounded text-indigo-700 dark:text-indigo-300 font-mono">~/projects/app/.claude/skills</code>).
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <input
@@ -317,20 +317,20 @@ export default function SettingsModal({
                     placeholder="Display Name (e.g. My Repo Skills)"
                     value={newPlatformName}
                     onChange={(e) => setNewPlatformName(e.target.value)}
-                    className="bg-slate-950 border border-white/10 rounded-lg px-3 py-2 text-slate-100 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    className="bg-white dark:bg-slate-950 border border-slate-300 dark:border-white/10 rounded-lg px-3 py-2 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-600 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500"
                   />
                   <input
                     type="text"
                     placeholder="Path (e.g. ~/projects/app/.claude/skills)"
                     value={newPlatformPath}
                     onChange={(e) => setNewPlatformPath(e.target.value)}
-                    className="bg-slate-950 border border-white/10 rounded-lg px-3 py-2 text-slate-100 font-mono text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    className="bg-white dark:bg-slate-950 border border-slate-300 dark:border-white/10 rounded-lg px-3 py-2 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-600 font-mono text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500"
                   />
                 </div>
                 <button
                   type="button"
                   onClick={handleAddCustom}
-                  className="px-3 py-1.5 rounded-lg bg-indigo-600/30 hover:bg-indigo-600/50 text-indigo-200 border border-indigo-500/30 text-xs font-medium transition-colors"
+                  className="px-3 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-600/30 dark:hover:bg-indigo-600/50 text-indigo-700 dark:text-indigo-200 border border-indigo-200 dark:border-indigo-500/30 text-xs font-medium transition-colors"
                 >
                   Add Location to List
                 </button>
@@ -339,13 +339,13 @@ export default function SettingsModal({
           ) : (
             /* AI LLM Settings Tab */
             <div className="space-y-5">
-              <div className="rounded-xl border border-indigo-500/20 bg-indigo-500/5 p-4 flex items-start gap-3">
-                <Bot className="h-5 w-5 text-indigo-400 flex-shrink-0 mt-0.5" />
+              <div className="rounded-xl border border-indigo-500/20 bg-indigo-50/80 dark:bg-indigo-500/10 p-4 flex items-start gap-3">
+                <Bot className="h-5 w-5 text-indigo-600 dark:text-indigo-400 flex-shrink-0 mt-0.5" />
                 <div className="text-xs space-y-1">
-                  <p className="font-semibold text-slate-200">
+                  <p className="font-semibold text-indigo-950 dark:text-indigo-200">
                     Custom LLM for SkillDesk Assistant
                   </p>
-                  <p className="text-slate-400 leading-relaxed">
+                  <p className="text-indigo-800/80 dark:text-slate-400 leading-relaxed">
                     Configure your preferred AI provider to power the slide-out Skill Assistant. It will search and recommend the best skills strictly from your local catalog.
                   </p>
                 </div>
@@ -353,7 +353,7 @@ export default function SettingsModal({
 
               {/* Provider Selection Cards */}
               <div className="space-y-2">
-                <label className="text-xs font-semibold text-slate-300">Select Provider</label>
+                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Select Provider</label>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                   {PROVIDER_PRESETS.map((preset) => {
                     const isSelected = llmConfig.provider === preset.id;
@@ -364,12 +364,12 @@ export default function SettingsModal({
                         onClick={() => handleProviderSelect(preset)}
                         className={`flex flex-col items-start p-3 rounded-xl border text-left transition-all ${
                           isSelected
-                            ? 'border-indigo-500 bg-indigo-500/15 text-white shadow-sm ring-1 ring-indigo-500/50'
-                            : 'border-white/5 bg-slate-900/60 text-slate-300 hover:border-white/20 hover:bg-slate-900'
+                            ? 'border-indigo-600 dark:border-indigo-500 bg-indigo-50/90 dark:bg-indigo-500/15 text-indigo-950 dark:text-white shadow-xs ring-1 ring-indigo-500/50'
+                            : 'border-slate-200 dark:border-white/5 bg-slate-50 hover:bg-slate-100 dark:bg-slate-900/60 dark:hover:bg-slate-900 text-slate-700 dark:text-slate-300'
                         }`}
                       >
-                        <span className="font-semibold text-xs text-white">{preset.name}</span>
-                        <span className="text-[10px] text-slate-400 mt-0.5 truncate w-full">
+                        <span className="font-semibold text-xs text-slate-900 dark:text-white">{preset.name}</span>
+                        <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 truncate w-full">
                           {preset.badge}
                         </span>
                       </button>
@@ -379,10 +379,10 @@ export default function SettingsModal({
               </div>
 
               {/* Endpoint & Keys */}
-              <div className="space-y-4 rounded-xl border border-white/5 bg-slate-900/40 p-4">
+              <div className="space-y-4 rounded-xl border border-slate-200 dark:border-white/5 bg-slate-50/70 dark:bg-slate-900/40 p-4">
                 {/* Base URL */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-slate-300 flex items-center justify-between">
+                  <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center justify-between">
                     <span>Base API Endpoint URL</span>
                     <span className="text-[10px] text-slate-500 font-mono">OpenAI-compatible format</span>
                   </label>
@@ -394,17 +394,17 @@ export default function SettingsModal({
                       setLlmConfig({ ...llmConfig, baseUrl: e.target.value });
                     }}
                     placeholder="http://localhost:1234/v1"
-                    className="w-full bg-slate-950 border border-white/10 rounded-lg px-3 py-2 text-slate-100 font-mono text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-white/10 rounded-lg px-3 py-2 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-600 font-mono text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500"
                   />
                 </div>
 
                 {/* API Key */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-slate-300 flex items-center justify-between">
+                  <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center justify-between">
                     <span>
                       API Key{' '}
                       {currentPreset.id === 'custom' || currentPreset.id === 'ollama' ? (
-                        <span className="text-slate-400 font-normal text-[11px]">(Optional for local / LAN)</span>
+                        <span className="text-slate-500 dark:text-slate-400 font-normal text-[11px]">(Optional for local / LAN)</span>
                       ) : null}
                     </span>
                     <span className="text-[10px] text-slate-500">
@@ -422,12 +422,12 @@ export default function SettingsModal({
                         setLlmConfig({ ...llmConfig, apiKey: e.target.value });
                       }}
                       placeholder={currentPreset.keyPlaceholder || 'Enter API Key or Bearer token'}
-                      className="w-full bg-slate-950 border border-white/10 rounded-lg pl-3 pr-10 py-2 text-slate-100 font-mono text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                      className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-white/10 rounded-lg pl-3 pr-10 py-2 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-600 font-mono text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500"
                     />
                     <button
                       type="button"
                       onClick={() => setShowApiKey(!showApiKey)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
                     >
                       {showApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
@@ -436,7 +436,7 @@ export default function SettingsModal({
 
                 {/* Model Name & Suggestions */}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-slate-300">Model Name</label>
+                  <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Model Name</label>
                   <input
                     type="text"
                     value={llmConfig.model || ''}
@@ -445,7 +445,7 @@ export default function SettingsModal({
                       setLlmConfig({ ...llmConfig, model: e.target.value });
                     }}
                     placeholder="e.g. gpt-4o-mini or claude-3-5-sonnet-20241022"
-                    className="w-full bg-slate-950 border border-white/10 rounded-lg px-3 py-2 text-slate-100 font-mono text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-white/10 rounded-lg px-3 py-2 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-600 font-mono text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500"
                   />
 
                   {/* Quick Model Chips */}
@@ -460,8 +460,8 @@ export default function SettingsModal({
                         onClick={() => setLlmConfig({ ...llmConfig, model: m })}
                         className={`text-[10px] font-mono px-2 py-0.5 rounded-full border transition-colors ${
                           llmConfig.model === m
-                            ? 'border-indigo-500 bg-indigo-500/20 text-indigo-300'
-                            : 'border-white/10 bg-white/5 text-slate-400 hover:text-white'
+                            ? 'border-indigo-600 dark:border-indigo-500 bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300'
+                            : 'border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:text-white'
                         }`}
                       >
                         {m}
@@ -473,8 +473,8 @@ export default function SettingsModal({
                 {/* Temperature */}
                 <div className="space-y-1 pt-1">
                   <div className="flex items-center justify-between text-xs">
-                    <span className="font-semibold text-slate-300">Temperature</span>
-                    <span className="font-mono text-indigo-400">{llmConfig.temperature ?? 0.2}</span>
+                    <span className="font-semibold text-slate-700 dark:text-slate-300">Temperature</span>
+                    <span className="font-mono text-indigo-600 dark:text-indigo-400">{llmConfig.temperature ?? 0.2}</span>
                   </div>
                   <input
                     type="range"
@@ -483,9 +483,9 @@ export default function SettingsModal({
                     step="0.05"
                     value={llmConfig.temperature ?? 0.2}
                     onChange={(e) => setLlmConfig({ ...llmConfig, temperature: parseFloat(e.target.value) })}
-                    className="w-full accent-indigo-500 h-1.5 bg-slate-800 rounded-lg cursor-pointer"
+                    className="w-full accent-indigo-600 dark:accent-indigo-500 h-1.5 bg-slate-200 dark:bg-slate-800 rounded-lg cursor-pointer"
                   />
-                  <div className="flex justify-between text-[10px] text-slate-500">
+                  <div className="flex justify-between text-[10px] text-slate-400 dark:text-slate-500">
                     <span>Deterministic (0.0)</span>
                     <span>Balanced (0.5)</span>
                     <span>Creative (1.0)</span>
@@ -493,28 +493,28 @@ export default function SettingsModal({
                 </div>
 
                 {/* Test Connection Button & Status */}
-                <div className="pt-2 border-t border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="pt-2 border-t border-slate-200 dark:border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <button
                     type="button"
                     onClick={handleTestConnection}
                     disabled={testingConnection || (currentPreset.needsKey && !llmConfig.apiKey)}
-                    className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-white/10 text-xs font-medium transition-all disabled:opacity-40"
+                    className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-white/10 text-xs font-medium transition-all disabled:opacity-40 shadow-xs"
                   >
                     {testingConnection ? (
                       <>
-                        <Loader2 className="h-3.5 w-3.5 animate-spin text-indigo-400" />
+                        <Loader2 className="h-3.5 w-3.5 animate-spin text-indigo-600 dark:text-indigo-400" />
                         <span>Testing Connection...</span>
                       </>
                     ) : (
                       <>
-                        <Zap className="h-3.5 w-3.5 text-amber-400" />
+                        <Zap className="h-3.5 w-3.5 text-amber-500" />
                         <span>Test LLM Connection</span>
                       </>
                     )}
                   </button>
 
                   {testResult && (
-                    <div className={`flex items-center gap-1.5 text-xs ${testResult.success ? 'text-emerald-400' : 'text-rose-400'}`}>
+                    <div className={`flex items-center gap-1.5 text-xs ${testResult.success ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
                       {testResult.success ? (
                         <CheckCircle2 className="h-4 w-4 flex-shrink-0" />
                       ) : (
@@ -530,7 +530,7 @@ export default function SettingsModal({
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-white/5 bg-slate-900/60 flex items-center justify-between text-xs">
+        <div className="p-4 border-t border-slate-200 dark:border-white/5 bg-slate-50/90 dark:bg-slate-900/60 flex items-center justify-between text-xs">
           <div className="text-slate-500 text-[11px]">
             {activeTab === 'ai' && (
               <span>Scoped strictly to discover & recommend your skills</span>
@@ -540,7 +540,7 @@ export default function SettingsModal({
           <div className="flex items-center gap-2">
             <button
               onClick={onClose}
-              className="px-4 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition-colors"
+              className="px-4 py-2 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 dark:text-slate-400 dark:hover:text-white dark:hover:bg-white/5 transition-colors"
             >
               Cancel
             </button>

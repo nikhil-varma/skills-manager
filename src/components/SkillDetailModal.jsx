@@ -213,7 +213,7 @@ export default function SkillDetailModal({
                     revealInFinder(detail.dirPath);
                   }
                 }}
-                className="p-2 rounded-lg bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 transition-colors"
+                className="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white border border-slate-200 dark:border-white/10 transition-colors"
                 title="Reveal in macOS Finder or Copy Path"
               >
                 <ExternalLink className="h-4 w-4" />
@@ -221,14 +221,14 @@ export default function SkillDetailModal({
             )}
             <button
               onClick={() => setShowDeleteModal(true)}
-              className="p-2 rounded-lg bg-rose-500/10 text-rose-400 hover:text-white hover:bg-rose-600 transition-colors"
+              className="p-2 rounded-lg bg-rose-500/10 text-rose-600 dark:text-rose-400 hover:text-white hover:bg-rose-600 transition-colors"
               title="Delete this skill"
             >
               <Trash2 className="h-4 w-4" />
             </button>
             <button
               onClick={onClose}
-              className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
+              className="p-2 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-white/10 transition-colors"
             >
               <X className="h-5 w-5" />
             </button>
@@ -236,14 +236,14 @@ export default function SkillDetailModal({
         </div>
 
         {/* Navigation Tabs */}
-        <div className="flex items-center justify-between border-b border-white/5 bg-slate-900/50 px-6 py-2">
+        <div className="flex items-center justify-between border-b border-slate-200 dark:border-white/5 bg-slate-100/70 dark:bg-slate-900/50 px-6 py-2">
           <div className="flex items-center gap-1">
             <button
               onClick={() => { setActiveTab('doc'); setIsEditing(false); }}
               className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
                 activeTab === 'doc' && !isEditing
-                  ? 'bg-indigo-600 text-white'
-                  : 'text-slate-400 hover:text-slate-200'
+                  ? 'bg-indigo-600 text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-white/5'
               }`}
             >
               Documentation
@@ -252,8 +252,8 @@ export default function SkillDetailModal({
               onClick={() => { setActiveTab('edit'); setIsEditing(true); }}
               className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 ${
                 isEditing
-                  ? 'bg-indigo-600 text-white'
-                  : 'text-slate-400 hover:text-slate-200'
+                  ? 'bg-indigo-600 text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-white/5'
               }`}
             >
               <Edit3 className="h-3.5 w-3.5" />
@@ -263,8 +263,8 @@ export default function SkillDetailModal({
               onClick={() => { setActiveTab('files'); setIsEditing(false); }}
               className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 ${
                 activeTab === 'files'
-                  ? 'bg-indigo-600 text-white'
-                  : 'text-slate-400 hover:text-slate-200'
+                  ? 'bg-indigo-600 text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-white/5'
               }`}
             >
               <Folder className="h-3.5 w-3.5" />
@@ -274,8 +274,8 @@ export default function SkillDetailModal({
               onClick={() => { setActiveTab('manage'); setIsEditing(false); }}
               className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 ${
                 activeTab === 'manage'
-                  ? 'bg-indigo-600 text-white'
-                  : 'text-slate-400 hover:text-slate-200'
+                  ? 'bg-indigo-600 text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-white/5'
               }`}
             >
               <ArrowRightLeft className="h-3.5 w-3.5" />
@@ -313,35 +313,35 @@ export default function SkillDetailModal({
                 <div className="space-y-6">
                   {/* Frontmatter summary card */}
                   {detail.frontmatter && Object.keys(detail.frontmatter).length > 0 && (
-                    <div className="rounded-xl border border-white/5 bg-slate-900/60 p-4">
-                      <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                    <div className="rounded-xl border border-slate-200 dark:border-white/5 bg-slate-50/80 dark:bg-slate-900/60 p-4">
+                      <h4 className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">
                         Skill Metadata
                       </h4>
                       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
                         <div>
                           <span className="text-slate-500">Name:</span>
-                          <span className="ml-1.5 font-mono text-indigo-300">{detail.name}</span>
+                          <span className="ml-1.5 font-mono text-indigo-600 dark:text-indigo-300">{detail.name}</span>
                         </div>
                         {detail.frontmatter.description && (
                           <div className="col-span-2">
                             <span className="text-slate-500">Description:</span>
-                            <span className="ml-1.5 text-slate-200">{detail.frontmatter.description}</span>
+                            <span className="ml-1.5 text-slate-800 dark:text-slate-200">{detail.frontmatter.description}</span>
                           </div>
                         )}
                         {detail.frontmatter.license && (
                           <div>
                             <span className="text-slate-500">License:</span>
-                            <span className="ml-1.5 text-slate-200">{detail.frontmatter.license}</span>
+                            <span className="ml-1.5 text-slate-800 dark:text-slate-200">{detail.frontmatter.license}</span>
                           </div>
                         )}
                         {detail.frontmatter.metadata?.author && (
                           <div>
                             <span className="text-slate-500">Author:</span>
-                            <span className="ml-1.5 text-slate-200">{detail.frontmatter.metadata.author}</span>
+                            <span className="ml-1.5 text-slate-800 dark:text-slate-200">{detail.frontmatter.metadata.author}</span>
                           </div>
                         )}
                         {detail.isSymlink && (
-                          <div className="col-span-2 sm:col-span-3 text-[11px] font-mono text-purple-300 flex items-center gap-1.5 bg-purple-500/10 px-2.5 py-1.5 rounded-lg border border-purple-500/20">
+                          <div className="col-span-2 sm:col-span-3 text-[11px] font-mono text-purple-700 dark:text-purple-300 flex items-center gap-1.5 bg-purple-500/10 px-2.5 py-1.5 rounded-lg border border-purple-500/20">
                             <Link2 className="h-3.5 w-3.5" />
                             <span>Target: {detail.symlinkTarget}</span>
                           </div>
@@ -351,7 +351,7 @@ export default function SkillDetailModal({
                   )}
 
                   {/* Markdown content */}
-                  <div className="prose prose-invert prose-indigo max-w-none text-slate-200">
+                  <div className="prose prose-sm dark:prose-invert max-w-none text-slate-800 dark:text-slate-200">
                     <ReactMarkdown remarkPlugins={[remarkGfm]}>
                       {detail.markdownBody || detail.rawContent || '_No documentation found in SKILL.md_'}
                     </ReactMarkdown>
@@ -365,10 +365,10 @@ export default function SkillDetailModal({
                   <textarea
                     value={editedContent}
                     onChange={(e) => setEditedContent(e.target.value)}
-                    className="w-full h-[55vh] font-mono text-xs bg-slate-950 border border-white/10 rounded-xl p-4 text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 leading-relaxed resize-none"
+                    className="w-full h-[55vh] font-mono text-xs bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-white/10 rounded-xl p-4 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 leading-relaxed resize-none"
                     placeholder="Enter SKILL.md content..."
                   />
-                  <p className="text-[11px] text-slate-500 mt-2">
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-2">
                     Editing this file updates the physical SKILL.md on disk. If this skill is symlinked, changes reflect across all assistants.
                   </p>
                 </div>
@@ -377,20 +377,20 @@ export default function SkillDetailModal({
               {/* Tab: Contained Files */}
               {activeTab === 'files' && (
                 <div className="space-y-4">
-                  <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                  <h4 className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                     Files in Skill Directory
                   </h4>
-                  <div className="divide-y divide-white/5 rounded-xl border border-white/5 bg-slate-900/60 overflow-hidden">
+                  <div className="divide-y divide-slate-200 dark:divide-white/5 rounded-xl border border-slate-200 dark:border-white/5 bg-slate-50/80 dark:bg-slate-900/60 overflow-hidden">
                     {detail.files && detail.files.length > 0 ? (
                       detail.files.map((f, i) => (
                         <div key={i} className="flex items-center justify-between px-4 py-2.5 text-xs">
                           <div className="flex items-center gap-2">
                             {f.isDirectory ? (
-                              <Folder className="h-4 w-4 text-amber-400" />
+                              <Folder className="h-4 w-4 text-amber-500 dark:text-amber-400" />
                             ) : (
-                              <FileText className="h-4 w-4 text-indigo-400" />
+                              <FileText className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
                             )}
-                            <span className="font-mono text-slate-200">{f.name}</span>
+                            <span className="font-mono text-slate-800 dark:text-slate-200">{f.name}</span>
                           </div>
                           <span className="text-[11px] text-slate-500">
                             {f.isDirectory ? 'directory' : 'file'}
@@ -407,24 +407,24 @@ export default function SkillDetailModal({
               {/* Tab: Move & Sync Management */}
               {activeTab === 'manage' && (
                 <div className="space-y-6">
-                  <div className="rounded-xl border border-white/10 bg-slate-900/80 p-5 space-y-4">
-                    <h4 className="text-sm font-semibold text-white flex items-center gap-2">
-                      <Sparkles className="h-4 w-4 text-indigo-400" />
+                  <div className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-slate-900/80 p-5 space-y-4">
+                    <h4 className="text-sm font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+                      <Sparkles className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
                       Sync & Transfer Across Assistants
                     </h4>
-                    <p className="text-xs text-slate-400">
-                      Transfer this skill between Claude, OpenCode, and Antigravity. Using <strong>Symlink (Recommended)</strong> keeps canonical files in <code className="bg-white/10 px-1 py-0.5 rounded text-indigo-300">~/.agents/skills</code> so any changes stay synchronized across all tools without drift.
+                    <p className="text-xs text-slate-600 dark:text-slate-400">
+                      Transfer this skill between Claude, OpenCode, and Antigravity. Using <strong>Symlink (Recommended)</strong> keeps canonical files in <code className="bg-slate-200 dark:bg-white/10 px-1 py-0.5 rounded text-indigo-700 dark:text-indigo-300 font-mono">~/.agents/skills</code> so any changes stay synchronized across all tools without drift.
                     </p>
 
                     <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-2">
                       <div className="flex-1">
-                        <label className="block text-[11px] font-medium text-slate-400 mb-1">
+                        <label className="block text-[11px] font-medium text-slate-700 dark:text-slate-400 mb-1">
                           Select Destination Assistant:
                         </label>
                         <select
                           value={targetPlatformId}
                           onChange={(e) => setTargetPlatformId(e.target.value)}
-                          className="w-full bg-slate-950 border border-white/10 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                          className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-white/10 rounded-lg px-3 py-2 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500"
                         >
                           {platforms.map((p, idx) => (
                             <option key={`${p.id}-${idx}`} value={p.id}>
@@ -438,7 +438,7 @@ export default function SkillDetailModal({
                         <button
                           onClick={handleLink}
                           disabled={actionProcessing || targetPlatformId === detail.platformId}
-                          className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium transition-colors disabled:opacity-40"
+                          className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium transition-colors disabled:opacity-40 shadow-xs"
                           title="Create symlink pointing to this skill"
                         >
                           <Link2 className="h-3.5 w-3.5" />
@@ -448,7 +448,7 @@ export default function SkillDetailModal({
                         <button
                           onClick={handleCopy}
                           disabled={actionProcessing || targetPlatformId === detail.platformId}
-                          className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium border border-white/10 transition-colors disabled:opacity-40"
+                          className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white hover:bg-slate-100 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-medium border border-slate-300 dark:border-white/10 transition-colors disabled:opacity-40 shadow-xs"
                           title="Copy independent copy to target platform"
                         >
                           <Copy className="h-3.5 w-3.5" />
@@ -458,7 +458,7 @@ export default function SkillDetailModal({
                         <button
                           onClick={handleMove}
                           disabled={actionProcessing || targetPlatformId === detail.platformId}
-                          className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-amber-600 hover:bg-amber-500 text-white text-xs font-medium transition-colors disabled:opacity-40"
+                          className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-amber-600 hover:bg-amber-500 text-white text-xs font-medium transition-colors disabled:opacity-40 shadow-xs"
                           title="Move skill completely to target platform"
                         >
                           <ArrowRightLeft className="h-3.5 w-3.5" />
@@ -469,15 +469,15 @@ export default function SkillDetailModal({
                   </div>
 
                   {/* Active Platforms & Unlinking */}
-                  <div className="rounded-xl border border-white/10 bg-slate-900/60 p-5 space-y-3">
-                    <h4 className="text-sm font-semibold text-slate-200 flex items-center gap-2">
-                      <Link2 className="h-4 w-4 text-purple-400" />
+                  <div className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/80 dark:bg-slate-900/60 p-5 space-y-3">
+                    <h4 className="text-sm font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-2">
+                      <Link2 className="h-4 w-4 text-purple-600 dark:text-purple-400" />
                       Installed Locations ({detail.allInstallations?.length || 1})
                     </h4>
-                    <p className="text-xs text-slate-400">
+                    <p className="text-xs text-slate-600 dark:text-slate-400">
                       Un-symlink to disconnect an assistant, or detach it into an independent physical folder.
                     </p>
-                    <div className="divide-y divide-white/5 border border-white/5 rounded-xl bg-slate-950/60">
+                    <div className="divide-y divide-slate-200 dark:divide-white/5 border border-slate-200 dark:border-white/5 rounded-xl bg-white dark:bg-slate-950/60">
                       {(detail.allInstallations || [
                         {
                           platformId: detail.platformId,
@@ -492,7 +492,7 @@ export default function SkillDetailModal({
                             <div className="flex items-center gap-2.5">
                               <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: inst.color || '#6366f1' }} />
                               <div>
-                                <span className="font-semibold text-slate-200">{inst.platformName}</span>
+                                <span className="font-semibold text-slate-800 dark:text-slate-200">{inst.platformName}</span>
                                 <span className="ml-2 font-mono text-[11px] text-slate-500">{inst.path}</span>
                               </div>
                             </div>
@@ -503,7 +503,7 @@ export default function SkillDetailModal({
                                   <button
                                     onClick={() => handleUnlink(inst.platformId, false)}
                                     disabled={actionProcessing}
-                                    className="px-2.5 py-1 rounded-lg border border-purple-500/30 bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 transition-colors"
+                                    className="px-2.5 py-1 rounded-lg border border-purple-500/30 bg-purple-500/10 hover:bg-purple-500/20 text-purple-700 dark:text-purple-300 transition-colors font-medium"
                                     title="Remove this symlink without touching the canonical files"
                                   >
                                     Un-symlink
@@ -511,7 +511,7 @@ export default function SkillDetailModal({
                                   <button
                                     onClick={() => handleUnlink(inst.platformId, true)}
                                     disabled={actionProcessing}
-                                    className="px-2.5 py-1 rounded-lg border border-indigo-500/30 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 transition-colors"
+                                    className="px-2.5 py-1 rounded-lg border border-indigo-500/30 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 transition-colors font-medium"
                                     title="Convert this symlink to a standalone directory"
                                   >
                                     Detach to Copy
@@ -521,7 +521,7 @@ export default function SkillDetailModal({
                                 <button
                                   onClick={() => handleTrash(inst.platformId)}
                                   disabled={actionProcessing}
-                                  className="px-2.5 py-1 rounded-lg border border-rose-500/30 bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 transition-colors"
+                                  className="px-2.5 py-1 rounded-lg border border-rose-500/30 bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-300 transition-colors font-medium"
                                   title={`Remove from ${inst.platformName}`}
                                 >
                                   Remove
@@ -535,19 +535,19 @@ export default function SkillDetailModal({
                   </div>
 
                   {/* Danger Zone */}
-                  <div className="rounded-xl border border-rose-500/20 bg-rose-950/20 p-5 space-y-3">
-                    <h4 className="text-sm font-semibold text-rose-300 flex items-center gap-2">
-                      <Trash2 className="h-4 w-4 text-rose-400" />
+                  <div className="rounded-xl border border-rose-300 dark:border-rose-500/20 bg-rose-50/70 dark:bg-rose-950/20 p-5 space-y-3">
+                    <h4 className="text-sm font-semibold text-rose-800 dark:text-rose-300 flex items-center gap-2">
+                      <Trash2 className="h-4 w-4 text-rose-600 dark:text-rose-400" />
                       Danger Zone
                     </h4>
-                    <p className="text-xs text-rose-200/70">
+                    <p className="text-xs text-rose-700/80 dark:text-rose-200/70">
                       Permanently remove this skill from this platform or from all connected platforms.
                     </p>
                     <div className="flex flex-wrap items-center gap-3 pt-1">
                       <button
                         onClick={() => handleTrash(detail.platformId)}
                         disabled={actionProcessing}
-                        className="px-3 py-2 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 text-xs font-medium transition-colors"
+                        className="px-3 py-2 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-700 dark:text-rose-300 border border-rose-500/30 text-xs font-medium transition-colors"
                       >
                         Remove from {detail.platformName || detail.platformId}
                       </button>
@@ -570,32 +570,32 @@ export default function SkillDetailModal({
 
       {/* Delete Skill Confirmation Modal */}
       {showDeleteModal && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-150">
-          <div className="w-full max-w-lg rounded-2xl border border-rose-500/30 bg-slate-950 p-6 shadow-2xl space-y-5 text-left text-slate-100">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/70 dark:bg-black/80 backdrop-blur-sm animate-in fade-in duration-150">
+          <div className="w-full max-w-lg rounded-2xl border border-rose-500/30 bg-white dark:bg-slate-950 p-6 shadow-2xl space-y-5 text-left text-slate-900 dark:text-slate-100">
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-xl bg-rose-500/15 border border-rose-500/30 flex items-center justify-center text-rose-400">
+                <div className="h-10 w-10 rounded-xl bg-rose-500/15 border border-rose-500/30 flex items-center justify-center text-rose-600 dark:text-rose-400">
                   <Trash2 className="h-5 w-5" />
                 </div>
                 <div>
-                  <h3 className="text-base font-semibold text-white">Delete Skill</h3>
-                  <p className="text-xs text-slate-400 font-mono mt-0.5">{skillName}</p>
+                  <h3 className="text-base font-semibold text-slate-900 dark:text-white">Delete Skill</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 font-mono mt-0.5">{skillName}</p>
                 </div>
               </div>
               <button
                 onClick={() => setShowDeleteModal(false)}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-white/10 transition-colors"
               >
                 <X className="h-4 w-4" />
               </button>
             </div>
 
             <div className="space-y-3">
-              <p className="text-xs text-slate-300">
+              <p className="text-xs text-slate-600 dark:text-slate-300">
                 Choose to remove this skill from a specific location or delete it everywhere:
               </p>
 
-              <div className="max-h-60 overflow-y-auto space-y-2 rounded-xl border border-white/5 bg-slate-900/60 p-2.5">
+              <div className="max-h-60 overflow-y-auto space-y-2 rounded-xl border border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-slate-900/60 p-2.5">
                 {(detail?.allInstallations || [
                   {
                     platformId: detail?.platformId,
@@ -605,17 +605,17 @@ export default function SkillDetailModal({
                     color: '#6366f1'
                   }
                 ]).map(inst => (
-                  <div key={inst.platformId} className="flex items-center justify-between p-2.5 rounded-lg bg-slate-950/60 border border-white/5 text-xs">
+                  <div key={inst.platformId} className="flex items-center justify-between p-2.5 rounded-lg bg-white dark:bg-slate-950/60 border border-slate-200 dark:border-white/5 text-xs">
                     <div className="flex items-center gap-2.5">
                       <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: inst.color || '#6366f1' }} />
                       <div>
-                        <div className="font-semibold text-slate-200">{inst.platformName}</div>
+                        <div className="font-semibold text-slate-800 dark:text-slate-200">{inst.platformName}</div>
                         <div className="text-[10px] text-slate-500 font-mono">{inst.path}</div>
                       </div>
                     </div>
 
                     <div className="flex items-center gap-2">
-                      <span className={`text-[10px] px-2 py-0.5 rounded-full border ${inst.isSymlink ? 'border-purple-500/30 bg-purple-500/10 text-purple-300' : 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300'}`}>
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full border ${inst.isSymlink ? 'border-purple-500/30 bg-purple-500/10 text-purple-700 dark:text-purple-300' : 'border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'}`}>
                         {inst.isSymlink ? 'Symlink' : 'Source'}
                       </span>
                       <button
@@ -623,7 +623,7 @@ export default function SkillDetailModal({
                           await handleTrash(inst.platformId);
                           setShowDeleteModal(false);
                         }}
-                        className="px-2.5 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/20 text-[11px] font-medium transition-colors"
+                        className="px-2.5 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-300 border border-rose-500/20 text-[11px] font-medium transition-colors"
                         title={`Remove from ${inst.platformName}`}
                       >
                         Remove
@@ -634,10 +634,10 @@ export default function SkillDetailModal({
               </div>
             </div>
 
-            <div className="pt-2 flex items-center justify-between border-t border-white/10">
+            <div className="pt-2 flex items-center justify-between border-t border-slate-200 dark:border-white/10">
               <button
                 onClick={() => setShowDeleteModal(false)}
-                className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 text-xs font-medium transition-colors"
+                className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-white/5 dark:hover:bg-white/10 text-slate-700 dark:text-slate-300 text-xs font-medium transition-colors"
               >
                 Cancel
               </button>

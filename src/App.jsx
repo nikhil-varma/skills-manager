@@ -430,13 +430,13 @@ export default function App() {
             <p className="text-xs mt-1">{error}</p>
           </div>
         ) : filteredSkills.length === 0 ? (
-          <div className="py-16 text-center rounded-2xl border border-dashed border-white/10 bg-slate-900/30">
-            <Layers className="h-8 w-8 text-slate-500 mx-auto mb-2" />
-            <h4 className="text-sm font-semibold text-slate-300">No skills match the current filter</h4>
+          <div className="py-16 text-center rounded-2xl border border-dashed border-slate-300 dark:border-white/10 bg-slate-100/60 dark:bg-slate-900/30">
+            <Layers className="h-8 w-8 text-slate-400 dark:text-slate-500 mx-auto mb-2" />
+            <h4 className="text-sm font-semibold text-slate-800 dark:text-slate-300">No skills match the current filter</h4>
             <p className="text-xs text-slate-500 mt-1">Try resetting search or filters</p>
             <button
               onClick={() => { setSearchTerm(''); setActiveFilter('all'); }}
-              className="mt-3 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-xs text-slate-300 transition-colors"
+              className="mt-3 px-3 py-1.5 rounded-lg bg-slate-200 dark:bg-white/5 hover:bg-slate-300 dark:hover:bg-white/10 text-xs text-slate-700 dark:text-slate-300 transition-colors"
             >
               Reset Filters
             </button>

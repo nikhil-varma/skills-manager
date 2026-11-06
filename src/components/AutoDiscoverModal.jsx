@@ -95,23 +95,23 @@ export default function AutoDiscoverModal({
   const activeCountInCurrent = currentList.filter(i => selectedTools.has(i.path)).length;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md animate-fade-in">
-      <div className="relative w-full max-w-3xl max-h-[85vh] flex flex-col rounded-2xl border border-white/10 bg-[#0f172a] shadow-2xl overflow-hidden text-slate-100">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 dark:bg-black/75 backdrop-blur-md animate-fade-in">
+      <div className="relative w-full max-w-3xl max-h-[85vh] flex flex-col rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0f172a] shadow-2xl overflow-hidden text-slate-900 dark:text-slate-100">
         
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-white/10 px-6 py-4 bg-slate-900/80">
+        <div className="flex items-center justify-between border-b border-slate-200 dark:border-white/10 px-6 py-4 bg-slate-50/90 dark:bg-slate-900/80">
           <div className="flex items-center gap-3">
             <div className="h-9 w-9 rounded-xl bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-white shadow-lg shadow-indigo-500/20">
               <Radar className="h-5 w-5 animate-pulse" />
             </div>
             <div>
-              <h3 className="font-bold text-base text-white flex items-center gap-2">
+              <h3 className="font-bold text-base text-slate-900 dark:text-white flex items-center gap-2">
                 macOS Tool & Skill Discovery
-                <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
                   {data.totalFound} locations found
                 </span>
               </h3>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-slate-500 dark:text-slate-400">
                 Check or uncheck locations to add or remove them from SkillDesk
               </p>
             </div>
@@ -119,21 +119,21 @@ export default function AutoDiscoverModal({
 
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-white/10 transition-colors"
           >
             <X className="h-4 w-4" />
           </button>
         </div>
 
         {/* Tabs & Bulk Action */}
-        <div className="flex items-center justify-between border-b border-white/5 bg-slate-900/50 px-6 py-2.5">
+        <div className="flex items-center justify-between border-b border-slate-200 dark:border-white/5 bg-slate-100/70 dark:bg-slate-900/50 px-6 py-2.5">
           <div className="flex items-center gap-1.5">
             <button
               onClick={() => setActiveTab('global')}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1.5 ${
                 activeTab === 'global'
-                  ? 'bg-indigo-600 text-white'
-                  : 'text-slate-400 hover:text-slate-200'
+                  ? 'bg-indigo-600 text-white shadow-xs'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-transparent'
               }`}
             >
               <Bot className="h-3.5 w-3.5" />
@@ -143,8 +143,8 @@ export default function AutoDiscoverModal({
               onClick={() => setActiveTab('projects')}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1.5 ${
                 activeTab === 'projects'
-                  ? 'bg-indigo-600 text-white'
-                  : 'text-slate-400 hover:text-slate-200'
+                  ? 'bg-indigo-600 text-white shadow-xs'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-transparent'
               }`}
             >
               <Folder className="h-3.5 w-3.5" />
@@ -156,15 +156,15 @@ export default function AutoDiscoverModal({
             <button
               type="button"
               onClick={() => selectAll(currentList)}
-              className="text-indigo-400 hover:text-indigo-300 font-medium"
+              className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-medium"
             >
               Select All
             </button>
-            <span className="text-slate-600">|</span>
+            <span className="text-slate-300 dark:text-slate-600">|</span>
             <button
               type="button"
               onClick={() => deselectAll(currentList)}
-              className="text-slate-400 hover:text-slate-200"
+              className="text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
             >
               Deselect All
             </button>
@@ -175,8 +175,8 @@ export default function AutoDiscoverModal({
         <div className="flex-1 overflow-y-auto p-6 space-y-3">
           {loading ? (
             <div className="py-20 text-center text-slate-400 flex flex-col items-center justify-center gap-3">
-              <Radar className="h-8 w-8 text-indigo-400 animate-spin" />
-              <p className="text-sm">Scanning macOS filesystem for AI assistants & skills...</p>
+              <Radar className="h-8 w-8 text-indigo-500 animate-spin" />
+              <p className="text-sm text-slate-500 dark:text-slate-400">Scanning macOS filesystem for AI assistants & skills...</p>
             </div>
           ) : currentList.length === 0 ? (
             <div className="py-16 text-center text-slate-500 text-sm">
@@ -192,8 +192,8 @@ export default function AutoDiscoverModal({
                   onClick={() => toggleSelect(item.path)}
                   className={`flex items-center justify-between p-3.5 rounded-xl border transition-all cursor-pointer ${
                     isChecked
-                      ? 'bg-indigo-950/40 border-indigo-500/50 shadow-md shadow-indigo-500/5 ring-1 ring-indigo-500/30'
-                      : 'bg-slate-900/60 border-white/5 hover:border-white/15 hover:bg-slate-900/90'
+                      ? 'bg-indigo-50/70 dark:bg-indigo-950/40 border-indigo-500/40 dark:border-indigo-500/50 shadow-xs ring-1 ring-indigo-500/20'
+                      : 'bg-slate-50/70 dark:bg-slate-900/60 border-slate-200 dark:border-white/5 hover:border-slate-300 dark:hover:border-white/15 hover:bg-slate-100 dark:hover:bg-slate-900/90'
                   }`}
                 >
                   <div className="flex items-center gap-3">
@@ -205,7 +205,7 @@ export default function AutoDiscoverModal({
                         toggleSelect(item.path);
                       }}
                       onClick={(e) => e.stopPropagation()}
-                      className="rounded border-white/20 text-indigo-600 focus:ring-indigo-500 bg-slate-900 h-4 w-4 cursor-pointer"
+                      className="rounded border-slate-300 dark:border-white/20 text-indigo-600 focus:ring-indigo-500 bg-white dark:bg-slate-900 h-4 w-4 cursor-pointer"
                     />
 
                     <div
@@ -215,29 +215,29 @@ export default function AutoDiscoverModal({
                       {activeTab === 'global' ? (
                         <Bot className="h-4 w-4" style={{ color: item.color }} />
                       ) : (
-                        <Folder className="h-4 w-4 text-purple-400" />
+                        <Folder className="h-4 w-4 text-purple-500 dark:text-purple-400" />
                       )}
                     </div>
 
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="font-semibold text-slate-200 text-sm">
+                        <span className="font-semibold text-slate-800 dark:text-slate-200 text-sm">
                           {item.name}
                         </span>
                         {isChecked && (
-                          <span className="flex items-center gap-1 text-[10px] text-emerald-400 bg-emerald-500/10 px-1.5 py-0.2 rounded border border-emerald-500/20 font-medium">
+                          <span className="flex items-center gap-1 text-[10px] text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.2 rounded border border-emerald-500/20 font-medium">
                             <Check className="h-3 w-3" /> Added to SkillDesk
                           </span>
                         )}
                       </div>
-                      <p className="text-[11px] font-mono text-slate-400 truncate max-w-md mt-0.5">
+                      <p className="text-[11px] font-mono text-slate-500 dark:text-slate-400 truncate max-w-md mt-0.5">
                         {item.path}
                       </p>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-3">
-                    <span className="text-xs font-mono font-semibold px-2.5 py-1 rounded-full bg-white/5 border border-white/10 text-slate-300">
+                    <span className="text-xs font-mono font-semibold px-2.5 py-1 rounded-full bg-slate-200/70 dark:bg-white/5 border border-slate-300 dark:border-white/10 text-slate-700 dark:text-slate-300">
                       {item.count} skills
                     </span>
 
@@ -251,7 +251,7 @@ export default function AutoDiscoverModal({
                           revealInFinder(item.path);
                         }
                       }}
-                      className="p-1 rounded text-slate-500 hover:text-slate-300 hover:bg-white/5 transition-colors"
+                      className="p-1 rounded text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-200/50 dark:hover:bg-white/5 transition-colors"
                       title="Reveal in Finder or Copy Path"
                     >
                       <ExternalLink className="h-3.5 w-3.5" />
@@ -264,15 +264,15 @@ export default function AutoDiscoverModal({
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-white/5 bg-slate-900/60 flex items-center justify-between text-xs">
-          <div className="text-slate-400">
-            <strong className="text-indigo-400 font-mono">{selectedTools.size}</strong> locations selected in SkillDesk
+        <div className="p-4 border-t border-slate-200 dark:border-white/5 bg-slate-50/90 dark:bg-slate-900/60 flex items-center justify-between text-xs">
+          <div className="text-slate-600 dark:text-slate-400">
+            <strong className="text-indigo-600 dark:text-indigo-400 font-mono">{selectedTools.size}</strong> locations selected in SkillDesk
           </div>
 
           <div className="flex items-center gap-2">
             <button
               onClick={onClose}
-              className="px-4 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition-colors"
+              className="px-4 py-2 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 dark:text-slate-400 dark:hover:text-white dark:hover:bg-white/5 transition-colors"
             >
               Cancel
             </button>
