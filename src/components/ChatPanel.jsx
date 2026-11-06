@@ -244,28 +244,7 @@ export default function ChatPanel({
       >
       {/* macOS Sequoia Titlebar */}
       <div className="flex items-center justify-between border-b border-slate-200/80 dark:border-white/10 bg-white/60 dark:bg-white/[0.04] px-4 py-3 flex-shrink-0 backdrop-blur-md">
-        <div className="flex items-center gap-3">
-          {/* Traffic Lights Controls */}
-          <div className="flex items-center gap-1.5 group">
-            <button 
-              onClick={onClose} 
-              className="h-3 w-3 rounded-full bg-[#FF5F56] border border-[#E0443E] hover:opacity-80 transition-opacity cursor-pointer" 
-              title="Close Panel"
-            />
-            <button 
-              onClick={handleClear} 
-              className="h-3 w-3 rounded-full bg-[#FFBD2E] border border-[#DEA123] hover:opacity-80 transition-opacity cursor-pointer" 
-              title="Reset conversation"
-            />
-            <button 
-              onClick={onOpenSettings} 
-              className="h-3 w-3 rounded-full bg-[#27C93F] border border-[#1AAB29] hover:opacity-80 transition-opacity cursor-pointer" 
-              title="Open Settings"
-            />
-          </div>
-
-          <div className="h-4 w-px bg-slate-300 dark:bg-white/15 mx-0.5" />
-
+        <div className="flex items-center gap-2.5">
           {/* Apple Style App Badge */}
           <div className="h-7 w-7 rounded-lg bg-gradient-to-b from-slate-200 to-slate-100 dark:from-white/15 dark:to-white/5 border border-slate-300 dark:border-white/15 flex items-center justify-center text-xs font-semibold shadow-inner text-slate-700 dark:text-slate-200">
             
