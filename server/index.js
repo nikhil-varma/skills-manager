@@ -556,9 +556,13 @@ app.post('/api/ai/test', async (req, res) => {
 
 // Chat with SkillDesk AI scoped strictly to user skills
 app.post('/api/ai/chat', async (req, res) => {
+  console.log(`[AI Chat] Incoming chat request with ${req.body?.messages?.length || 0} messages`);
   const abortController = new AbortController();
-  req.on('close', () => {
+  
+  // Abort only when client disconnects (res 'close' before response is sent)
+  res.on('close', () => {
     if (!res.writableEnded) {
+      console.log(`[AI Chat] Client disconnected before response ended. Aborting LLM request.`);
       abortController.abort();
     }
   });
@@ -573,6 +577,7 @@ app.post('/api/ai/chat', async (req, res) => {
     const platforms = getPlatforms();
     const { skills } = scanPlatforms(platforms);
 
+    console.log(`[AI Chat] Calling chatWithSkills (${skills.length} skills)...`);
     const reply = await chatWithSkills({
       messages,
       skills,
@@ -580,11 +585,13 @@ app.post('/api/ai/chat', async (req, res) => {
       signal: abortController.signal
     });
 
+    console.log(`[AI Chat] Got reply (${reply?.content?.length || 0} chars). Sending response...`);
     if (!res.writableEnded) {
       res.json({ success: true, message: reply });
     }
   } catch (err) {
     if (abortController.signal.aborted) {
+      console.log(`[AI Chat] Request was aborted by client.`);
       return;
     }
     console.error('AI Chat Error:', err);

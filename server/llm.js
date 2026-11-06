@@ -140,12 +140,14 @@ export async function callLLM({ messages, config, systemPrompt, timeoutMs = 1200
       reqBody.temperature = temperature;
     }
 
+    console.log(`[callLLM] Sending fetch to ${url} (model: ${reqBody.model}, messages: ${chatMessages.length}, payload: ${JSON.stringify(reqBody).length} bytes)...`);
     const res = await fetch(url, {
       method: 'POST',
       headers,
       body: JSON.stringify(reqBody),
       signal: activeSignal
     });
+    console.log(`[callLLM] Received response status: ${res.status}`);
 
     if (!res.ok) {
       const errText = await res.text();
@@ -191,9 +193,12 @@ export async function callLLM({ messages, config, systemPrompt, timeoutMs = 1200
       throw new Error(formatErrorMessage(errText, res.status));
     }
 
+    console.log(`[callLLM] Awaiting res.json()...`);
     const data = await res.json();
     const choice = data.choices?.[0]?.message;
-    return (choice?.content || choice?.reasoning_content || '').trim();
+    const finalContent = (choice?.content || choice?.reasoning_content || '').trim();
+    console.log(`[callLLM] Finished! Content length: ${finalContent.length} chars`);
+    return finalContent;
   } catch (err) {
     const causeStr = `${err.message || ''} ${err.cause?.message || ''} ${err.cause?.code || ''}`;
     if (err.name === 'TimeoutError' || err.name === 'AbortError' || causeStr.includes('aborted') || causeStr.includes('timeout')) {
