@@ -85,20 +85,6 @@ pub fn run() {
         );
       }
 
-      // Apply macOS Sequoia native vibrancy
-      #[cfg(target_os = "macos")]
-      {
-        if let Some(window) = app.get_webview_window("main") {
-          use window_vibrancy::{apply_vibrancy, NSVisualEffectMaterial};
-          let _ = apply_vibrancy(
-            &window,
-            NSVisualEffectMaterial::UnderWindowBackground,
-            None,
-            None,
-          );
-        }
-      }
-
       // Spawn backend process if needed
       if let Some(child) = spawn_backend(app.handle()) {
         if let Some(state) = app.try_state::<ServerProcess>() {

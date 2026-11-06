@@ -281,7 +281,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f5f6f8] dark:bg-[#0b0f17] text-slate-900 dark:text-slate-100 flex flex-col transition-colors duration-200">
+    <div className="min-h-screen bg-[#f5f6f8] dark:bg-[#0b0f17] text-slate-900 dark:text-slate-100 flex flex-col transition-colors duration-200 overflow-x-hidden">
       <Navbar
         searchTerm={searchTerm}
         setSearchTerm={setSearchTerm}
