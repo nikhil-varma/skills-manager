@@ -18,7 +18,8 @@ import { fetchDiscoverTools, syncDiscoveredSelection, revealInFinder } from '../
 export default function AutoDiscoverModal({
   onClose,
   onSuccess,
-  showToast
+  showToast,
+  onRevealPath
 }) {
   const [data, setData] = useState({ globalTools: [], projectWorkspaces: [], totalFound: 0 });
   const [loading, setLoading] = useState(true);
@@ -244,10 +245,14 @@ export default function AutoDiscoverModal({
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
-                        revealInFinder(item.path);
+                        if (onRevealPath) {
+                          onRevealPath(item.path);
+                        } else {
+                          revealInFinder(item.path);
+                        }
                       }}
                       className="p-1 rounded text-slate-500 hover:text-slate-300 hover:bg-white/5 transition-colors"
-                      title="Reveal in Finder"
+                      title="Reveal in Finder or Copy Path"
                     >
                       <ExternalLink className="h-3.5 w-3.5" />
                     </button>

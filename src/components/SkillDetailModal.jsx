@@ -23,7 +23,8 @@ export default function SkillDetailModal({
   platforms,
   onClose,
   onRefresh,
-  showToast
+  showToast,
+  onRevealPath
 }) {
   const [detail, setDetail] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -186,9 +187,15 @@ export default function SkillDetailModal({
           <div className="flex items-center gap-2">
             {detail?.dirPath && (
               <button
-                onClick={() => revealInFinder(detail.dirPath)}
+                onClick={() => {
+                  if (onRevealPath) {
+                    onRevealPath(detail.dirPath);
+                  } else {
+                    revealInFinder(detail.dirPath);
+                  }
+                }}
                 className="p-2 rounded-lg bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 transition-colors"
-                title="Reveal in macOS Finder"
+                title="Reveal in macOS Finder or Copy Path"
               >
                 <ExternalLink className="h-4 w-4" />
               </button>

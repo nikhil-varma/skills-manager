@@ -207,7 +207,21 @@ export default function App() {
 
   const handleRevealPath = async (filePath) => {
     try {
-      await revealInFinder(filePath);
+      const res = await revealInFinder(filePath);
+      if (res.inDocker) {
+        if (navigator.clipboard) {
+          await navigator.clipboard.writeText(res.path || filePath);
+          showToast(`Running in Docker: path copied to clipboard (${res.path || filePath})`, 'info');
+        } else {
+          showToast(`Running in Docker: ${res.path || filePath}`, 'info');
+        }
+      } else if (res.notFound) {
+        showToast(res.message || `Folder does not exist yet: ${res.path || filePath}`, 'info');
+      } else if (!res.success && res.error) {
+        showToast(`Could not open Finder: ${res.error}`, 'error');
+      } else {
+        showToast('Revealed in macOS Finder', 'success');
+      }
     } catch (err) {
       showToast(err.message, 'error');
     }
@@ -394,6 +408,7 @@ export default function App() {
           onClose={() => setSelectedSkillName(null)}
           onRefresh={loadData}
           showToast={showToast}
+          onRevealPath={handleRevealPath}
         />
       )}
 
@@ -420,6 +435,7 @@ export default function App() {
           onClose={() => setIsDiscoverOpen(false)}
           onSuccess={loadData}
           showToast={showToast}
+          onRevealPath={handleRevealPath}
         />
       )}
 

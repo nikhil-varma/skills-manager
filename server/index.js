@@ -440,21 +440,49 @@ app.post('/api/skills/create', (req, res) => {
   }
 });
 
-// Reveal in macOS Finder
+// Reveal in macOS Finder or fallback to clipboard
 app.post('/api/actions/reveal-in-finder', (req, res) => {
   try {
     const { filePath } = req.body;
     if (!filePath) return res.status(400).json({ error: 'filePath is required' });
 
     const safePath = expandHome(filePath);
+    const friendlyPath = contractHome(filePath);
+
+    // If running in Docker (Linux container), GUI Finder cannot be invoked directly from container
+    if (process.platform !== 'darwin') {
+      return res.json({ 
+        success: false, 
+        inDocker: true, 
+        path: friendlyPath,
+        message: `Running inside Docker: host Finder cannot be opened directly. Path: ${friendlyPath}`
+      });
+    }
+
+    if (!fs.existsSync(safePath)) {
+      return res.json({ 
+        success: false, 
+        notFound: true, 
+        path: friendlyPath,
+        message: `Folder does not exist yet: ${friendlyPath}` 
+      });
+    }
+
     exec(`open -R "${safePath}"`, (err) => {
       if (err) {
-        return res.status(500).json({ error: err.message });
+        // Fallback to opening directory directly
+        exec(`open "${safePath}"`, (fallbackErr) => {
+          if (fallbackErr) {
+            return res.json({ success: false, error: err.message, path: friendlyPath });
+          }
+          res.json({ success: true, opened: true });
+        });
+        return;
       }
-      res.json({ success: true });
+      res.json({ success: true, revealed: true });
     });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.json({ success: false, error: err.message });
   }
 });
 
