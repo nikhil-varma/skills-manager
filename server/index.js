@@ -3,6 +3,7 @@ import cors from 'cors';
 import path from 'path';
 import { exec } from 'child_process';
 import { getPlatforms, savePlatforms, expandHome, contractHome } from './config.js';
+import { discoverAllOSTools } from './discover.js';
 import {
   scanPlatforms,
   getSkillDetail,
@@ -23,6 +24,72 @@ app.use(express.json());
 // Status check
 app.get('/api/status', (req, res) => {
   res.json({ status: 'ok', time: new Date().toISOString() });
+});
+
+// OS Auto-discovery endpoint
+app.get('/api/discover', (req, res) => {
+  try {
+    const discovered = discoverAllOSTools();
+    const currentPlatforms = getPlatforms();
+    const currentPaths = new Set(currentPlatforms.map(p => expandHome(p.path)));
+
+    // Mark whether each discovered tool is already added
+    const markAdded = (item) => ({
+      ...item,
+      isAdded: currentPaths.has(expandHome(item.path))
+    });
+
+    res.json({
+      globalTools: discovered.globalTools.map(markAdded),
+      projectWorkspaces: discovered.projectWorkspaces.map(markAdded),
+      totalFound: discovered.allDiscovered.length
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Add selected discovered tools to active platforms
+app.post('/api/discover/add-selected', (req, res) => {
+  try {
+    const { tools } = req.body; // array of tool objects to add
+    if (!Array.isArray(tools)) {
+      return res.status(400).json({ error: 'tools must be an array' });
+    }
+
+    const currentPlatforms = getPlatforms();
+    const existingIds = new Set(currentPlatforms.map(p => p.id));
+    const existingPaths = new Set(currentPlatforms.map(p => expandHome(p.path)));
+
+    const newPlatforms = [...currentPlatforms];
+
+    for (const tool of tools) {
+      const expPath = expandHome(tool.path);
+      if (existingPaths.has(expPath)) continue;
+
+      let id = tool.id || tool.name.toLowerCase().replace(/[^a-z0-9]/g, '-');
+      if (existingIds.has(id)) {
+        id = `${id}-${Date.now().toString(36)}`;
+      }
+      existingIds.add(id);
+      existingPaths.add(expPath);
+
+      newPlatforms.push({
+        id,
+        name: tool.name,
+        badge: tool.badge || tool.name.slice(0, 10),
+        path: contractHome(tool.path),
+        color: tool.color || '#6366F1',
+        icon: tool.icon || 'Folder',
+        description: tool.description || ''
+      });
+    }
+
+    savePlatforms(newPlatforms);
+    res.json({ success: true, platforms: newPlatforms });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // Get configured platforms & counts

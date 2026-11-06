@@ -6,6 +6,7 @@ import MatrixView from './components/MatrixView.jsx';
 import SkillDetailModal from './components/SkillDetailModal.jsx';
 import NewSkillModal from './components/NewSkillModal.jsx';
 import SettingsModal from './components/SettingsModal.jsx';
+import AutoDiscoverModal from './components/AutoDiscoverModal.jsx';
 import Toast from './components/Toast.jsx';
 import { 
   fetchSkills, 
@@ -34,6 +35,7 @@ export default function App() {
   const [selectedSkillName, setSelectedSkillName] = useState(null);
   const [isNewSkillOpen, setIsNewSkillOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isDiscoverOpen, setIsDiscoverOpen] = useState(false);
 
   // Toast
   const [toast, setToast] = useState(null);
@@ -167,6 +169,7 @@ export default function App() {
         loading={loading}
         onOpenNewSkill={() => setIsNewSkillOpen(true)}
         onOpenSettings={() => setIsSettingsOpen(true)}
+        onOpenDiscover={() => setIsDiscoverOpen(true)}
         totalSkills={totalSkills}
         activeFilter={activeFilter}
         setActiveFilter={setActiveFilter}
@@ -317,6 +320,14 @@ export default function App() {
         <SettingsModal
           platforms={platforms}
           onClose={() => setIsSettingsOpen(false)}
+          onSuccess={loadData}
+          showToast={showToast}
+        />
+      )}
+
+      {isDiscoverOpen && (
+        <AutoDiscoverModal
+          onClose={() => setIsDiscoverOpen(false)}
           onSuccess={loadData}
           showToast={showToast}
         />

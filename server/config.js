@@ -38,25 +38,43 @@ export const DEFAULT_PLATFORMS = [
     path: '~/.config/opencode/skills',
     color: '#059669', // emerald
     icon: 'Terminal',
-    description: 'OpenCode Interpreter skills'
+    description: 'OpenCode Interpreter global skills'
   },
   {
-    id: 'antigravity',
-    name: 'Antigravity',
-    badge: 'Antigravity',
-    path: '~/.gemini/antigravity/skills',
-    color: '#2563EB', // blue
-    icon: 'Sparkles',
-    description: 'Google Antigravity custom skills'
+    id: 'cursor',
+    name: 'Cursor',
+    badge: 'Cursor',
+    path: '~/.cursor/skills-cursor',
+    color: '#3B82F6', // blue
+    icon: 'Terminal',
+    description: 'Cursor IDE custom and agent skills'
+  },
+  {
+    id: 'codex',
+    name: 'OpenAI Codex',
+    badge: 'Codex',
+    path: '~/.codex/skills/.system',
+    color: '#10B981', // green
+    icon: 'Bot',
+    description: 'OpenAI Codex system and agent skills'
   },
   {
     id: 'antigravity-builtin',
-    name: 'Antigravity Builtin',
+    name: 'Antigravity Built-in',
     badge: 'AGY Builtin',
     path: '~/.gemini/antigravity/builtin/skills',
     color: '#0284C7', // sky blue
     icon: 'Sparkles',
-    description: 'Antigravity bundled default skills'
+    description: 'Google Antigravity bundled skills'
+  },
+  {
+    id: 'antigravity',
+    name: 'Antigravity Custom',
+    badge: 'Antigravity',
+    path: '~/.gemini/antigravity/skills',
+    color: '#2563EB', // royal blue
+    icon: 'Sparkles',
+    description: 'Google Antigravity custom user skills'
   },
   {
     id: 'shared',

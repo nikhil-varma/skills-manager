@@ -8,7 +8,8 @@ import {
   LayoutGrid, 
   Table, 
   Share2, 
-  SlidersHorizontal 
+  SlidersHorizontal,
+  Radar
 } from 'lucide-react';
 
 export default function Navbar({
@@ -20,6 +21,7 @@ export default function Navbar({
   loading,
   onOpenNewSkill,
   onOpenSettings,
+  onOpenDiscover,
   totalSkills,
   activeFilter,
   setActiveFilter,
@@ -107,6 +109,16 @@ export default function Navbar({
             title="Rescan file system"
           >
             <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin text-indigo-400' : ''}`} />
+          </button>
+
+          {/* Auto-Discover Tools Button */}
+          <button
+            onClick={onOpenDiscover}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 font-medium text-xs transition-colors"
+            title="Auto-scan macOS for AI tools & project skills"
+          >
+            <Radar className="h-4 w-4 animate-pulse text-indigo-400" />
+            <span className="hidden sm:inline">Auto-Detect Tools</span>
           </button>
 
           {/* Settings / Paths */}

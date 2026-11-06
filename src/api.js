@@ -122,6 +122,22 @@ export async function createSkill(payload) {
   return res.json();
 }
 
+export async function fetchDiscoverTools() {
+  const res = await fetch(`${BASE}/discover`);
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+export async function addDiscoveredTools(tools) {
+  const res = await fetch(`${BASE}/discover/add-selected`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ tools })
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
 export async function revealInFinder(filePath) {
   const res = await fetch(`${BASE}/actions/reveal-in-finder`, {
     method: 'POST',
