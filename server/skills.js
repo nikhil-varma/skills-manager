@@ -37,6 +37,61 @@ function inspectSkillDirectory(dirPath) {
   }
 }
 
+// Resilient frontmatter parser that handles unquoted colons and special YAML edge cases
+function safeParseMatter(raw) {
+  if (!raw || typeof raw !== 'string') {
+    return { data: {}, content: '' };
+  }
+
+  try {
+    return matter(raw);
+  } catch (yamlErr) {
+    // Fallback: manually parse frontmatter when YAML contains unquoted colons like "roles: Create"
+    try {
+      const match = raw.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/);
+      if (match) {
+        const frontmatterBlock = match[1];
+        const markdownBody = match[2] || '';
+        const data = {};
+
+        // Extract description
+        const descMatch = frontmatterBlock.match(/description:\s*([\s\S]*?)(?=\n[a-zA-Z0-9_-]+:|\r?\n$|$)/);
+        if (descMatch) {
+          data.description = descMatch[1].trim().replace(/^["']|["']$/g, '');
+        }
+
+        // Extract name
+        const nameMatch = frontmatterBlock.match(/name:\s*(.*)/);
+        if (nameMatch) {
+          data.name = nameMatch[1].trim().replace(/^["']|["']$/g, '');
+        }
+
+        // Extract license
+        const licMatch = frontmatterBlock.match(/license:\s*(.*)/);
+        if (licMatch) {
+          data.license = licMatch[1].trim().replace(/^["']|["']$/g, '');
+        }
+
+        // Extract version
+        const verMatch = frontmatterBlock.match(/version:\s*(.*)/);
+        if (verMatch) {
+          data.version = verMatch[1].trim().replace(/^["']|["']$/g, '');
+        }
+
+        // Extract author
+        const authMatch = frontmatterBlock.match(/author:\s*(.*)/);
+        if (authMatch) {
+          data.author = authMatch[1].trim().replace(/^["']|["']$/g, '');
+        }
+
+        return { data, content: markdownBody };
+      }
+    } catch (fallbackErr) {}
+
+    return { data: {}, content: raw };
+  }
+}
+
 export function scanPlatforms(platforms) {
   const skillsMap = new Map();
   const platformStats = [];
@@ -99,9 +154,9 @@ export function scanPlatforms(platforms) {
         if (skillFile && isValid) {
           try {
             const raw = fs.readFileSync(skillFile, 'utf-8');
-            parsed = matter(raw);
+            parsed = safeParseMatter(raw);
           } catch (err) {
-            console.error(`Failed to parse frontmatter for ${skillFile}`, err);
+            // Silently recover
           }
         }
 
@@ -192,9 +247,9 @@ export function getSkillDetail(skillName, platforms, preferredPlatformId) {
     if (skillFile) {
       try {
         rawContent = fs.readFileSync(skillFile, 'utf-8');
-        parsed = matter(rawContent);
+        parsed = safeParseMatter(rawContent);
       } catch (err) {
-        console.error('Error reading skill file:', err);
+        // Silently recover
       }
     }
 
