@@ -13,7 +13,8 @@
     "start": "node server/index.js",
     "tauri": "tauri",
     "tauri:dev": "concurrently -n \"SERVER,CLIENT,TAURI\" -c \"blue,magenta,cyan\" \"npm run server\" \"npm run client\" \"tauri dev\"",
-    "tauri:build": "npm run build && npm run build:server && tauri build"
+    "tauri:build": "npm run build && npm run build:server && tauri build",
+    "build:dmg": "bash scripts/build-dmg.sh"
   },
   "dependencies": {
     "cors": "^2.8.5",
