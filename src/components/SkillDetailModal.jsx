@@ -16,7 +16,7 @@ import {
   Check,
   AlertCircle
 } from 'lucide-react';
-import { fetchSkillDetail, updateSkillContent, linkSkill, copySkill, moveSkill, trashSkill, revealInFinder } from '../api.js';
+import { fetchSkillDetail, updateSkillContent, linkSkill, copySkill, moveSkill, trashSkill, unlinkSkill, revealInFinder } from '../api.js';
 
 export default function SkillDetailModal({
   skillName,
@@ -119,6 +119,20 @@ export default function SkillDetailModal({
       showToast(`Moved ${skillName} to ${targetPlatformId}`, 'success');
       onRefresh();
       onClose();
+    } catch (err) {
+      showToast(err.message, 'error');
+    } finally {
+      setActionProcessing(false);
+    }
+  };
+
+  const handleUnlink = async (pId, detach = false) => {
+    try {
+      setActionProcessing(true);
+      await unlinkSkill({ skillName, platformId: pId, detach });
+      showToast(detach ? `Detached ${skillName} to standalone copy` : `Un-symlinked ${skillName} from ${pId}`, 'success');
+      onRefresh();
+      await loadDetail();
     } catch (err) {
       showToast(err.message, 'error');
     } finally {
@@ -421,26 +435,63 @@ export default function SkillDetailModal({
                     </div>
                   </div>
 
-                  {/* Danger Zone */}
-                  <div className="rounded-xl border border-rose-500/20 bg-rose-500/5 p-5">
-                    <h4 className="text-sm font-semibold text-rose-300 flex items-center gap-2 mb-2">
-                      <Trash2 className="h-4 w-4" />
-                      Danger Zone
+                  {/* Active Platforms & Unlinking */}
+                  <div className="rounded-xl border border-white/10 bg-slate-900/60 p-5 space-y-3">
+                    <h4 className="text-sm font-semibold text-slate-200 flex items-center gap-2">
+                      <Link2 className="h-4 w-4 text-purple-400" />
+                      Manage Active Platforms & Symlinks
                     </h4>
-                    <p className="text-xs text-slate-400 mb-4">
-                      Remove this skill from specific assistant directories. If it is a symlink, only the symlink is removed; canonical files remain safe.
+                    <p className="text-xs text-slate-400">
+                      Un-symlink to disconnect an assistant, or detach it into an independent physical folder.
                     </p>
-                    <div className="flex flex-wrap gap-2">
-                      {platforms.map(p => (
-                        <button
-                          key={p.id}
-                          onClick={() => handleTrash(p.id)}
-                          disabled={actionProcessing}
-                          className="px-3 py-1.5 rounded-lg border border-rose-500/30 bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 text-xs transition-colors"
-                        >
-                          Remove from {p.name}
-                        </button>
-                      ))}
+                    <div className="divide-y divide-white/5 border border-white/5 rounded-xl bg-slate-950/60">
+                      {platforms.map(p => {
+                        const platDir = `${p.expandedPath}/${skillName}`;
+                        const isCurrentPlatform = detail.platformId === p.id;
+
+                        return (
+                          <div key={p.id} className="flex items-center justify-between p-3 text-xs">
+                            <div className="flex items-center gap-2.5">
+                              <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: p.color }} />
+                              <div>
+                                <span className="font-semibold text-slate-200">{p.name}</span>
+                                <span className="ml-2 font-mono text-[11px] text-slate-500">{p.path}</span>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                              {detail.isSymlink && isCurrentPlatform ? (
+                                <>
+                                  <button
+                                    onClick={() => handleUnlink(p.id, false)}
+                                    disabled={actionProcessing}
+                                    className="px-2.5 py-1 rounded-lg border border-purple-500/30 bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 transition-colors"
+                                    title="Remove this symlink without touching the canonical files"
+                                  >
+                                    Un-symlink
+                                  </button>
+                                  <button
+                                    onClick={() => handleUnlink(p.id, true)}
+                                    disabled={actionProcessing}
+                                    className="px-2.5 py-1 rounded-lg border border-indigo-500/30 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 transition-colors"
+                                    title="Convert this symlink to a standalone directory"
+                                  >
+                                    Detach to Copy
+                                  </button>
+                                </>
+                              ) : (
+                                <button
+                                  onClick={() => handleTrash(p.id)}
+                                  disabled={actionProcessing}
+                                  className="px-2.5 py-1 rounded-lg border border-rose-500/30 bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 transition-colors"
+                                >
+                                  Remove
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 </div>

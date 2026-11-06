@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import Navbar from './components/Navbar.jsx';
 import PlatformOverview from './components/PlatformOverview.jsx';
-import SkillCard from './components/SkillCard.jsx';
 import MatrixView from './components/MatrixView.jsx';
 import SkillDetailModal from './components/SkillDetailModal.jsx';
 import NewSkillModal from './components/NewSkillModal.jsx';
@@ -11,6 +10,7 @@ import Toast from './components/Toast.jsx';
 import { 
   fetchSkills, 
   linkSkill, 
+  unlinkSkill,
   copySkill, 
   moveSkill, 
   syncAllSkills, 
@@ -26,10 +26,9 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Filters & View
+  // Filters
   const [searchTerm, setSearchTerm] = useState('');
   const [activeFilter, setActiveFilter] = useState('all'); // 'all', platform.id, 'unsynced', 'symlinked'
-  const [viewMode, setViewMode] = useState('cards'); // 'cards' | 'matrix'
 
   // Modals
   const [selectedSkillName, setSelectedSkillName] = useState(null);
@@ -109,6 +108,16 @@ export default function App() {
     }
   };
 
+  const handleUnlinkSkill = async (skillName, platformId, detach = false) => {
+    try {
+      await unlinkSkill({ skillName, platformId, detach });
+      showToast(detach ? `Detached ${skillName} into standalone copy` : `Un-symlinked ${skillName} from ${platformId}`, 'success');
+      await loadData();
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
+  };
+
   const handleCopySkill = async (skillName, sourcePlatformId, targetPlatformId) => {
     try {
       await copySkill({ skillName, sourcePlatformId, targetPlatformId, overwrite: true });
@@ -163,8 +172,6 @@ export default function App() {
       <Navbar
         searchTerm={searchTerm}
         setSearchTerm={setSearchTerm}
-        viewMode={viewMode}
-        setViewMode={setViewMode}
         onRefresh={loadData}
         loading={loading}
         onOpenNewSkill={() => setIsNewSkillOpen(true)}
@@ -266,29 +273,13 @@ export default function App() {
               Reset Filters
             </button>
           </div>
-        ) : viewMode === 'cards' ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredSkills.map(skill => (
-              <SkillCard
-                key={skill.name}
-                skill={skill}
-                platforms={platforms}
-                onOpenDetail={(name) => setSelectedSkillName(name)}
-                onLinkSkill={handleLinkSkill}
-                onCopySkill={handleCopySkill}
-                onMoveSkill={handleMoveSkill}
-                onSyncAll={handleSyncAll}
-                onTrashSkill={handleTrashSkill}
-                onRevealPath={handleRevealPath}
-              />
-            ))}
-          </div>
         ) : (
           <MatrixView
             skills={filteredSkills}
             platforms={platforms}
             onOpenDetail={(name) => setSelectedSkillName(name)}
             onLinkSkill={handleLinkSkill}
+            onUnlinkSkill={handleUnlinkSkill}
             onSyncAll={handleSyncAll}
             onTrashSkill={handleTrashSkill}
             onRevealPath={handleRevealPath}

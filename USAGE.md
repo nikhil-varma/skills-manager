@@ -127,18 +127,16 @@ Then visit: `http://localhost:8080`
 
 ### Managing Skills (Move, Copy, Symlink)
 
-#### Symlink (Recommended)
-Instead of duplicating skills (which causes them to drift apart over time), symlinking links them to your canonical **Shared Hub** (`~/.agents/skills`):
-- Click on any skill card or row to open its details.
-- Go to the **Move & Sync** tab.
-- Select your target assistant (e.g., *OpenCode*).
-- Click **"Symlink (Share)"**.
-- Changes made in either tool will now automatically reflect across both!
+#### Symlink & Un-symlink
+- **To Symlink:** Click the **"+" (Add)** button in any assistant column to immediately link the skill to that assistant.
+- **To Un-symlink:** Click the **"×"** on the Symlink badge directly in the table. You will get two options:
+  - **Un-symlink (Remove):** Safely deletes the symlink without touching the canonical files in `~/.agents/skills`.
+  - **Detach to Copy:** Replaces the symlink with an independent, physical copy of the folder so you can customize it independently.
 
 #### Copy
 If you want an independent fork of a skill that you can modify without affecting the original:
-- In the **Move & Sync** tab, select the target assistant.
-- Click **"Copy"**.
+- Open the skill details and go to the **Move & Sync** tab.
+- Select the target assistant and click **"Copy"**.
 
 #### Move
 To transfer a skill entirely from one assistant to another:
@@ -148,9 +146,7 @@ To transfer a skill entirely from one assistant to another:
 
 ### Syncing a Skill to All Assistants
 Want a skill to be available across **Claude Code**, **OpenCode**, **Cursor**, and **Antigravity** all at once?
-- In **Cards View**: Click the **"Sync to All"** button on the bottom of the card.
-- In **Matrix View**: Click the **Sparkles (⚡)** icon next to the skill.
-- In **Card Options Menu**: Click `...` > **"Sync (Symlink) to All"**.
+- In the Table View, click the **Sparkles (⚡)** icon in the Actions column for that skill. It will immediately symlink the skill to all missing assistants.
 
 ---
 

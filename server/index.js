@@ -12,6 +12,7 @@ import {
   copySkill,
   moveSkill,
   trashSkill,
+  unlinkSkill,
   updateSkillFile,
   createNewSkill
 } from './skills.js';
@@ -280,6 +281,29 @@ app.post('/api/skills/sync-all', (req, res) => {
     }
 
     res.json({ success: true, results });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Unlink / Detach symlink
+app.post('/api/skills/unlink', (req, res) => {
+  try {
+    const { skillName, platformId, detach = false } = req.body;
+    const platforms = getPlatforms();
+
+    const plat = platforms.find(p => p.id === platformId);
+    if (!plat) {
+      return res.status(400).json({ error: 'Invalid platform' });
+    }
+
+    const result = unlinkSkill({
+      skillName,
+      platformPath: plat.expandedPath,
+      detach
+    });
+
+    res.json(result);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

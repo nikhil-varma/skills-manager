@@ -5,18 +5,12 @@ import {
   Plus, 
   Settings, 
   RefreshCw, 
-  LayoutGrid, 
-  Table, 
-  Share2, 
-  SlidersHorizontal,
-  Radar
+  Radar 
 } from 'lucide-react';
 
 export default function Navbar({
   searchTerm,
   setSearchTerm,
-  viewMode,
-  setViewMode,
   onRefresh,
   loading,
   onOpenNewSkill,
@@ -73,34 +67,8 @@ export default function Navbar({
           </div>
         </div>
 
-        {/* View Switcher & Action Buttons */}
+        {/* Action Buttons */}
         <div className="flex items-center gap-2">
-          {/* View Mode Toggle */}
-          <div className="flex items-center bg-slate-900/90 border border-white/10 rounded-lg p-0.5">
-            <button
-              onClick={() => setViewMode('cards')}
-              className={`p-1.5 rounded-md transition-colors ${
-                viewMode === 'cards'
-                  ? 'bg-indigo-600 text-white shadow-sm'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-              title="Cards View"
-            >
-              <LayoutGrid className="h-4 w-4" />
-            </button>
-            <button
-              onClick={() => setViewMode('matrix')}
-              className={`p-1.5 rounded-md transition-colors ${
-                viewMode === 'matrix'
-                  ? 'bg-indigo-600 text-white shadow-sm'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-              title="Comparison Matrix View"
-            >
-              <Table className="h-4 w-4" />
-            </button>
-          </div>
-
           {/* Refresh Button */}
           <button
             onClick={onRefresh}

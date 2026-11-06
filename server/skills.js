@@ -378,6 +378,35 @@ export function trashSkill({ skillName, platformPath }) {
   }
 }
 
+export function unlinkSkill({ skillName, platformPath, detach = false }) {
+  const targetDir = path.join(platformPath, skillName);
+
+  let isSymlink = false;
+  try {
+    const lstat = fs.lstatSync(targetDir);
+    isSymlink = lstat.isSymbolicLink();
+  } catch (err) {
+    throw new Error(`Skill not found at: ${targetDir}`);
+  }
+
+  if (!isSymlink) {
+    // If it's a real directory and user asked to remove
+    throw new Error(`Skill is a standalone directory, not a symlink.`);
+  }
+
+  if (detach) {
+    // Detach: resolve canonical files and replace symlink with an independent real copy
+    const realSource = fs.realpathSync(targetDir);
+    fs.unlinkSync(targetDir);
+    fs.cpSync(realSource, targetDir, { recursive: true });
+    return { success: true, detached: true, targetDir };
+  } else {
+    // Unlink: just remove the symlink pointer
+    fs.unlinkSync(targetDir);
+    return { success: true, unlinked: true, targetDir };
+  }
+}
+
 export function updateSkillFile({ skillName, platformPath, content }) {
   const skillDir = path.join(platformPath, skillName);
   if (!fs.existsSync(skillDir)) {

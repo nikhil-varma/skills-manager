@@ -83,6 +83,19 @@ export async function syncAllSkills({ skillName, sourcePlatformId, mode }) {
   return res.json();
 }
 
+export async function unlinkSkill({ skillName, platformId, detach = false }) {
+  const res = await fetch(`${BASE}/skills/unlink`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ skillName, platformId, detach })
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: 'Failed to unlink' }));
+    throw new Error(err.error || 'Failed to unlink skill');
+  }
+  return res.json();
+}
+
 export async function trashSkill({ skillName, platformId }) {
   const res = await fetch(`${BASE}/skills/trash`, {
     method: 'POST',
