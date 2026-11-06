@@ -47,7 +47,20 @@ Then open [http://localhost:5173](http://localhost:5173).
 
 ---
 
-### 2. Standalone / Production Mode
+### 3. Native macOS Desktop App (Tauri)
+Run SkillDesk directly as a native macOS Sequoia desktop application with native window vibrancy and traffic light integration:
+
+```bash
+# Run in desktop development mode (launches Vite, Node server, and native window)
+npm run tauri:dev
+
+# Or build the native macOS .app / DMG bundle
+npm run tauri:build
+```
+
+---
+
+### 4. Standalone / Production Mode
 Serves both backend API and frontend from a single port:
 
 ```bash

@@ -8,8 +8,13 @@
     "server": "nodemon --watch server server/index.js",
     "client": "vite",
     "build": "vite build",
+    "build:server": "mkdir -p src-tauri/bin && bun build server/index.js --compile --outfile src-tauri/bin/skilldesk-server",
     "preview": "vite preview",
-    "start": "node server/index.js"
+    "start": "node server/index.js",
+    "tauri": "tauri",
+    "tauri:dev": "concurrently -n \"SERVER,CLIENT,TAURI\" -c \"blue,magenta,cyan\" \"npm run server\" \"npm run client\" \"tauri dev\"",
+    "tauri:build": "npm run build && npm run build:server && tauri build",
+    "build:dmg": "bash scripts/build-dmg.sh"
   },
   "dependencies": {
     "cors": "^2.8.5",
@@ -23,6 +28,8 @@
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.0.0",
+    "@tauri-apps/api": "^2.12.4",
+    "@tauri-apps/cli": "^2.12.4",
     "@vitejs/plugin-react": "^4.3.4",
     "concurrently": "^9.1.2",
     "nodemon": "^3.1.9",
