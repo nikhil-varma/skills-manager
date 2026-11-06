@@ -6,3 +6,5 @@ skilldesk-server
 src-tauri/target/
 *.bun-build
 .*.bun-build
+SkillDesk.dmg
+*.dmg
