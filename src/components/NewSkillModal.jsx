@@ -42,23 +42,23 @@ export default function NewSkillModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 dark:bg-black/70 backdrop-blur-md animate-fade-in">
-      <div className="relative w-full max-w-lg max-h-[92vh] sm:max-h-[85vh] flex flex-col rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0f172a] shadow-2xl overflow-hidden text-slate-900 dark:text-slate-100">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/50 backdrop-blur-md animate-fade-in">
+      <div className="relative w-full max-w-lg max-h-[92vh] sm:max-h-[85vh] flex flex-col rounded-2xl border border-black/10 dark:border-white/15 bg-[#fafbfc]/95 dark:bg-[#1c1e26]/95 shadow-2xl backdrop-blur-2xl overflow-hidden text-slate-900 dark:text-slate-100">
         
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-slate-200 dark:border-white/10 px-4 sm:px-6 py-3.5 sm:py-4 bg-slate-50/90 dark:bg-slate-900/80">
+        <div className="flex items-center justify-between border-b border-black/[0.06] dark:border-white/10 px-4 sm:px-6 py-3.5 bg-black/[0.02] dark:bg-white/[0.02]">
           <div className="flex items-center gap-2.5">
-            <div className="h-8 w-8 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow-xs">
+            <div className="h-8 w-8 rounded-xl bg-[#007AFF] flex items-center justify-center text-white shadow-xs">
               <Plus className="h-4 w-4" />
             </div>
             <div>
-              <h3 className="font-bold text-sm text-slate-900 dark:text-white">Create New Agent Skill</h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400">Standard SKILL.md template with YAML frontmatter</p>
+              <h3 className="font-semibold text-sm text-slate-900 dark:text-white">Create New Agent Skill</h3>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400">Standard SKILL.md template with YAML frontmatter</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-white/10 transition-colors"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
           >
             <X className="h-4 w-4" />
           </button>
@@ -76,7 +76,7 @@ export default function NewSkillModal({
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g. react-performance-audit"
-              className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-white/10 rounded-lg px-3 py-2 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-600 font-mono text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+              className="w-full bg-white dark:bg-black/40 border border-black/10 dark:border-white/10 rounded-xl px-3 py-2 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-600 font-mono text-xs focus:outline-none focus:ring-1 focus:ring-[#007AFF]"
             />
             <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
               Will create folder name and name field in SKILL.md
@@ -92,7 +92,7 @@ export default function NewSkillModal({
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Provide a clear description of when and how the AI should trigger this skill..."
-              className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-white/10 rounded-lg px-3 py-2 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-600 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+              className="w-full bg-white dark:bg-black/40 border border-black/10 dark:border-white/10 rounded-xl px-3 py-2 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-600 text-xs focus:outline-none focus:ring-1 focus:ring-[#007AFF] resize-none"
             />
           </div>
 
@@ -106,7 +106,7 @@ export default function NewSkillModal({
                 value={author}
                 onChange={(e) => setAuthor(e.target.value)}
                 placeholder="Your name or team"
-                className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-white/10 rounded-lg px-3 py-2 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-600 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                className="w-full bg-white dark:bg-black/40 border border-black/10 dark:border-white/10 rounded-xl px-3 py-2 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-600 text-xs focus:outline-none focus:ring-1 focus:ring-[#007AFF]"
               />
             </div>
 
@@ -117,7 +117,7 @@ export default function NewSkillModal({
               <select
                 value={targetPlatformId}
                 onChange={(e) => setTargetPlatformId(e.target.value)}
-                className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-white/10 rounded-lg px-3 py-2 text-slate-900 dark:text-slate-100 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                className="w-full bg-white dark:bg-black/40 border border-black/10 dark:border-white/10 rounded-xl px-3 py-2 text-slate-900 dark:text-slate-100 text-xs focus:outline-none focus:ring-1 focus:ring-[#007AFF]"
               >
                 {platforms.map(p => (
                   <option key={p.id} value={p.id}>
@@ -130,15 +130,15 @@ export default function NewSkillModal({
 
           {/* Auto-link option */}
           <div className="pt-2">
-            <label className="flex items-start gap-2.5 cursor-pointer bg-indigo-50/70 dark:bg-indigo-500/5 border border-indigo-200 dark:border-indigo-500/20 rounded-xl p-3">
+            <label className="flex items-start gap-2.5 cursor-pointer bg-[#007AFF]/5 border border-[#007AFF]/20 rounded-xl p-3">
               <input
                 type="checkbox"
                 checked={linkToOthers}
                 onChange={(e) => setLinkToOthers(e.target.checked)}
-                className="mt-0.5 rounded border-slate-300 dark:border-white/20 text-indigo-600 focus:ring-indigo-500 bg-white dark:bg-slate-900"
+                className="mt-0.5 rounded border-black/20 dark:border-white/20 text-[#007AFF] focus:ring-[#007AFF] bg-white dark:bg-black/50 accent-[#007AFF]"
               />
               <div>
-                <span className="font-semibold text-indigo-900 dark:text-indigo-300 block">
+                <span className="font-semibold text-slate-900 dark:text-white block">
                   Automatically share with other assistants
                 </span>
                 <span className="text-[11px] text-slate-600 dark:text-slate-400 block mt-0.5">
@@ -149,18 +149,18 @@ export default function NewSkillModal({
           </div>
 
           {/* Footer buttons */}
-          <div className="pt-4 border-t border-slate-200 dark:border-white/5 flex items-center justify-end gap-2">
+          <div className="pt-4 border-t border-black/[0.06] dark:border-white/10 flex items-center justify-end gap-2">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 dark:text-slate-400 dark:hover:text-white dark:hover:bg-white/5 transition-colors"
+              className="px-3.5 sm:px-4 py-2 rounded-xl bg-black/5 hover:bg-black/10 dark:bg-white/5 dark:hover:bg-white/10 text-slate-700 dark:text-slate-300 font-medium transition-colors"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-medium shadow-md shadow-indigo-600/30 transition-all disabled:opacity-50"
+              className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#007AFF] hover:bg-[#0066d6] text-white font-semibold shadow-xs transition-all disabled:opacity-50"
             >
               <Sparkles className="h-3.5 w-3.5" />
               <span>{loading ? 'Creating...' : 'Create Skill'}</span>
