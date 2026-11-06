@@ -12,6 +12,7 @@ import {
   copySkill,
   moveSkill,
   trashSkill,
+  deleteSkillEverywhere,
   unlinkSkill,
   updateSkillFile,
   createNewSkill
@@ -352,11 +353,16 @@ app.post('/api/skills/unlink', (req, res) => {
   }
 });
 
-// Trash / Unlink skill
+// Trash / Remove skill from a specific platform or everywhere
 app.post('/api/skills/trash', (req, res) => {
   try {
-    const { skillName, platformId } = req.body;
+    const { skillName, platformId, deleteAll } = req.body;
     const platforms = getPlatforms();
+
+    if (platformId === 'all' || deleteAll) {
+      const result = deleteSkillEverywhere({ skillName, platforms });
+      return res.json(result);
+    }
 
     const plat = platforms.find(p => p.id === platformId);
     if (!plat) {
@@ -368,6 +374,20 @@ app.post('/api/skills/trash', (req, res) => {
       platformPath: plat.expandedPath
     });
 
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Delete skill completely across all platforms
+app.post('/api/skills/delete-completely', (req, res) => {
+  try {
+    const { skillName } = req.body;
+    if (!skillName) return res.status(400).json({ error: 'skillName is required' });
+
+    const platforms = getPlatforms();
+    const result = deleteSkillEverywhere({ skillName, platforms });
     res.json(result);
   } catch (err) {
     res.status(500).json({ error: err.message });

@@ -24,7 +24,9 @@ export default function SkillDetailModal({
   onClose,
   onRefresh,
   showToast,
-  onRevealPath
+  onRevealPath,
+  onTrashSkill,
+  onDeleteCompletely
 }) {
   const [detail, setDetail] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -33,6 +35,7 @@ export default function SkillDetailModal({
   const [editedContent, setEditedContent] = useState('');
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState('doc'); // 'doc', 'edit', 'files', 'manage'
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   // Manage actions state
   const [targetPlatformId, setTargetPlatformId] = useState(platforms[0]?.id || '');
@@ -142,7 +145,6 @@ export default function SkillDetailModal({
   };
 
   const handleTrash = async (pId) => {
-    if (!confirm(`Are you sure you want to remove "${skillName}" from ${pId}?`)) return;
     try {
       setActionProcessing(true);
       await trashSkill({ skillName, platformId: pId });
@@ -153,6 +155,23 @@ export default function SkillDetailModal({
       showToast(err.message, 'error');
     } finally {
       setActionProcessing(false);
+    }
+  };
+
+  const handleDeleteEverywhere = async () => {
+    try {
+      setActionProcessing(true);
+      if (onDeleteCompletely) {
+        await onDeleteCompletely(skillName);
+      } else {
+        await trashSkill({ skillName, platformId: 'all' });
+      }
+      onClose();
+    } catch (err) {
+      showToast(err.message, 'error');
+    } finally {
+      setActionProcessing(false);
+      setShowDeleteModal(false);
     }
   };
 
@@ -200,6 +219,13 @@ export default function SkillDetailModal({
                 <ExternalLink className="h-4 w-4" />
               </button>
             )}
+            <button
+              onClick={() => setShowDeleteModal(true)}
+              className="p-2 rounded-lg bg-rose-500/10 text-rose-400 hover:text-white hover:bg-rose-600 transition-colors"
+              title="Delete this skill"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
             <button
               onClick={onClose}
               className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
@@ -446,31 +472,36 @@ export default function SkillDetailModal({
                   <div className="rounded-xl border border-white/10 bg-slate-900/60 p-5 space-y-3">
                     <h4 className="text-sm font-semibold text-slate-200 flex items-center gap-2">
                       <Link2 className="h-4 w-4 text-purple-400" />
-                      Manage Active Platforms & Symlinks
+                      Installed Locations ({detail.allInstallations?.length || 1})
                     </h4>
                     <p className="text-xs text-slate-400">
                       Un-symlink to disconnect an assistant, or detach it into an independent physical folder.
                     </p>
                     <div className="divide-y divide-white/5 border border-white/5 rounded-xl bg-slate-950/60">
-                      {platforms.map(p => {
-                        const platDir = `${p.expandedPath}/${skillName}`;
-                        const isCurrentPlatform = detail.platformId === p.id;
-
+                      {(detail.allInstallations || [
+                        {
+                          platformId: detail.platformId,
+                          platformName: detail.platformName || detail.platformId,
+                          path: detail.dirPath,
+                          isSymlink: detail.isSymlink,
+                          color: '#6366f1'
+                        }
+                      ]).map(inst => {
                         return (
-                          <div key={p.id} className="flex items-center justify-between p-3 text-xs">
+                          <div key={inst.platformId} className="flex items-center justify-between p-3 text-xs">
                             <div className="flex items-center gap-2.5">
-                              <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: p.color }} />
+                              <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: inst.color || '#6366f1' }} />
                               <div>
-                                <span className="font-semibold text-slate-200">{p.name}</span>
-                                <span className="ml-2 font-mono text-[11px] text-slate-500">{p.path}</span>
+                                <span className="font-semibold text-slate-200">{inst.platformName}</span>
+                                <span className="ml-2 font-mono text-[11px] text-slate-500">{inst.path}</span>
                               </div>
                             </div>
 
                             <div className="flex items-center gap-2">
-                              {detail.isSymlink && isCurrentPlatform ? (
+                              {inst.isSymlink ? (
                                 <>
                                   <button
-                                    onClick={() => handleUnlink(p.id, false)}
+                                    onClick={() => handleUnlink(inst.platformId, false)}
                                     disabled={actionProcessing}
                                     className="px-2.5 py-1 rounded-lg border border-purple-500/30 bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 transition-colors"
                                     title="Remove this symlink without touching the canonical files"
@@ -478,7 +509,7 @@ export default function SkillDetailModal({
                                     Un-symlink
                                   </button>
                                   <button
-                                    onClick={() => handleUnlink(p.id, true)}
+                                    onClick={() => handleUnlink(inst.platformId, true)}
                                     disabled={actionProcessing}
                                     className="px-2.5 py-1 rounded-lg border border-indigo-500/30 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 transition-colors"
                                     title="Convert this symlink to a standalone directory"
@@ -488,9 +519,10 @@ export default function SkillDetailModal({
                                 </>
                               ) : (
                                 <button
-                                  onClick={() => handleTrash(p.id)}
+                                  onClick={() => handleTrash(inst.platformId)}
                                   disabled={actionProcessing}
                                   className="px-2.5 py-1 rounded-lg border border-rose-500/30 bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 transition-colors"
+                                  title={`Remove from ${inst.platformName}`}
                                 >
                                   Remove
                                 </button>
@@ -501,12 +533,127 @@ export default function SkillDetailModal({
                       })}
                     </div>
                   </div>
+
+                  {/* Danger Zone */}
+                  <div className="rounded-xl border border-rose-500/20 bg-rose-950/20 p-5 space-y-3">
+                    <h4 className="text-sm font-semibold text-rose-300 flex items-center gap-2">
+                      <Trash2 className="h-4 w-4 text-rose-400" />
+                      Danger Zone
+                    </h4>
+                    <p className="text-xs text-rose-200/70">
+                      Permanently remove this skill from this platform or from all connected platforms.
+                    </p>
+                    <div className="flex flex-wrap items-center gap-3 pt-1">
+                      <button
+                        onClick={() => handleTrash(detail.platformId)}
+                        disabled={actionProcessing}
+                        className="px-3 py-2 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 text-xs font-medium transition-colors"
+                      >
+                        Remove from {detail.platformName || detail.platformId}
+                      </button>
+                      <button
+                        onClick={() => setShowDeleteModal(true)}
+                        disabled={actionProcessing}
+                        className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold shadow-lg shadow-rose-900/30 transition-all"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                        <span>Delete Skill Everywhere ({(detail.allInstallations || []).length || 1} locations)</span>
+                      </button>
+                    </div>
+                  </div>
                 </div>
               )}
             </>
           )}
         </div>
       </div>
+
+      {/* Delete Skill Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-150">
+          <div className="w-full max-w-lg rounded-2xl border border-rose-500/30 bg-slate-950 p-6 shadow-2xl space-y-5 text-left text-slate-100">
+            <div className="flex items-start justify-between">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-xl bg-rose-500/15 border border-rose-500/30 flex items-center justify-center text-rose-400">
+                  <Trash2 className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-semibold text-white">Delete Skill</h3>
+                  <p className="text-xs text-slate-400 font-mono mt-0.5">{skillName}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowDeleteModal(false)}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <p className="text-xs text-slate-300">
+                Choose to remove this skill from a specific location or delete it everywhere:
+              </p>
+
+              <div className="max-h-60 overflow-y-auto space-y-2 rounded-xl border border-white/5 bg-slate-900/60 p-2.5">
+                {(detail?.allInstallations || [
+                  {
+                    platformId: detail?.platformId,
+                    platformName: detail?.platformName || detail?.platformId,
+                    path: detail?.dirPath,
+                    isSymlink: detail?.isSymlink,
+                    color: '#6366f1'
+                  }
+                ]).map(inst => (
+                  <div key={inst.platformId} className="flex items-center justify-between p-2.5 rounded-lg bg-slate-950/60 border border-white/5 text-xs">
+                    <div className="flex items-center gap-2.5">
+                      <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: inst.color || '#6366f1' }} />
+                      <div>
+                        <div className="font-semibold text-slate-200">{inst.platformName}</div>
+                        <div className="text-[10px] text-slate-500 font-mono">{inst.path}</div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full border ${inst.isSymlink ? 'border-purple-500/30 bg-purple-500/10 text-purple-300' : 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300'}`}>
+                        {inst.isSymlink ? 'Symlink' : 'Source'}
+                      </span>
+                      <button
+                        onClick={async () => {
+                          await handleTrash(inst.platformId);
+                          setShowDeleteModal(false);
+                        }}
+                        className="px-2.5 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/20 text-[11px] font-medium transition-colors"
+                        title={`Remove from ${inst.platformName}`}
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="pt-2 flex items-center justify-between border-t border-white/10">
+              <button
+                onClick={() => setShowDeleteModal(false)}
+                className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 text-xs font-medium transition-colors"
+              >
+                Cancel
+              </button>
+
+              <button
+                onClick={handleDeleteEverywhere}
+                disabled={actionProcessing}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold shadow-lg shadow-rose-900/30 transition-all disabled:opacity-40"
+              >
+                <Trash2 className="h-4 w-4" />
+                <span>Delete Everywhere</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

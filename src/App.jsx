@@ -15,6 +15,7 @@ import {
   moveSkill, 
   syncAllSkills, 
   trashSkill, 
+  deleteSkillCompletely,
   revealInFinder 
 } from './api.js';
 import { Sparkles, Layers, Filter, CheckCircle2, AlertCircle, ChevronDown } from 'lucide-react';
@@ -195,10 +196,20 @@ export default function App() {
   };
 
   const handleTrashSkill = async (skillName, platformId) => {
-    if (!confirm(`Are you sure you want to remove "${skillName}" from ${platformId}?`)) return;
     try {
       await trashSkill({ skillName, platformId });
       showToast(`Removed ${skillName} from ${platformId}`, 'success');
+      await loadData();
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
+  };
+
+  const handleDeleteCompletely = async (skillName) => {
+    try {
+      const res = await deleteSkillCompletely({ skillName });
+      const count = res.deletedFrom?.length || 0;
+      showToast(`Deleted "${skillName}" completely (${count} location${count === 1 ? '' : 's'} removed)`, 'success');
       await loadData();
     } catch (err) {
       showToast(err.message, 'error');
@@ -395,6 +406,7 @@ export default function App() {
             onUnlinkSkill={handleUnlinkSkill}
             onSyncAll={handleSyncAll}
             onTrashSkill={handleTrashSkill}
+            onDeleteCompletely={handleDeleteCompletely}
             onRevealPath={handleRevealPath}
           />
         )}
@@ -409,6 +421,8 @@ export default function App() {
           onRefresh={loadData}
           showToast={showToast}
           onRevealPath={handleRevealPath}
+          onTrashSkill={handleTrashSkill}
+          onDeleteCompletely={handleDeleteCompletely}
         />
       )}
 

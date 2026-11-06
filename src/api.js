@@ -109,6 +109,19 @@ export async function trashSkill({ skillName, platformId }) {
   return res.json();
 }
 
+export async function deleteSkillCompletely({ skillName }) {
+  const res = await fetch(`${BASE}/skills/delete-completely`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ skillName })
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: 'Failed to delete skill' }));
+    throw new Error(err.error || 'Failed to delete skill');
+  }
+  return res.json();
+}
+
 export async function updateSkillContent(name, platformId, content) {
   const res = await fetch(`${BASE}/skills/${encodeURIComponent(name)}/content`, {
     method: 'PUT',

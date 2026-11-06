@@ -268,6 +268,27 @@ export function getSkillDetail(skillName, platforms, preferredPlatformId) {
       }
     } catch (err) {}
 
+    const allInstallations = [];
+    for (const p of platforms) {
+      const pDir = path.join(p.expandedPath, skillName);
+      if (fs.existsSync(pDir)) {
+        let isLink = false;
+        try {
+          isLink = fs.lstatSync(pDir).isSymbolicLink();
+        } catch (e) {}
+        allInstallations.push({
+          platformId: p.id,
+          platformName: p.name,
+          badge: p.badge,
+          color: p.color,
+          path: p.path,
+          expandedPath: p.expandedPath,
+          dirPath: pDir,
+          isSymlink: isLink
+        });
+      }
+    }
+
     return {
       name: skillName,
       displayName: parsed.data.name || skillName,
@@ -281,8 +302,10 @@ export function getSkillDetail(skillName, platforms, preferredPlatformId) {
       resolvedPath,
       dirPath: skillDir,
       platformId: platform.id,
+      platformName: platform.name,
       files,
-      fileCount
+      fileCount,
+      allInstallations
     };
   }
 
@@ -419,18 +442,80 @@ export function trashSkill({ skillName, platformPath }) {
   // Safe removal to ~/.Trash or platform .trash
   const homeDir = process.env.HOST_HOME || os.homedir();
   const trashDir = path.join(homeDir, '.Trash');
+
+  const removeOrMove = (source, dest) => {
+    try {
+      fs.renameSync(source, dest);
+      return true;
+    } catch (err) {
+      // EXDEV fallback for cross-device moves or Docker volume mounts
+      try {
+        fs.cpSync(source, dest, { recursive: true });
+        fs.rmSync(source, { recursive: true, force: true });
+        return true;
+      } catch (cpErr) {
+        return false;
+      }
+    }
+  };
+
   if (fs.existsSync(trashDir)) {
     const trashTarget = path.join(trashDir, `${skillName}-${Date.now()}`);
-    fs.renameSync(targetDir, trashTarget);
-    return { success: true, trashedTo: trashTarget };
-  } else {
-    // Fallback: platform .trash folder
+    if (removeOrMove(targetDir, trashTarget)) {
+      return { success: true, trashedTo: trashTarget };
+    }
+  }
+
+  // Fallback: platform .trash folder
+  try {
     const fallbackTrash = path.join(platformPath, '.trash');
     if (!fs.existsSync(fallbackTrash)) fs.mkdirSync(fallbackTrash, { recursive: true });
     const fallbackTarget = path.join(fallbackTrash, `${skillName}-${Date.now()}`);
-    fs.renameSync(targetDir, fallbackTarget);
-    return { success: true, trashedTo: fallbackTarget };
+    if (removeOrMove(targetDir, fallbackTarget)) {
+      return { success: true, trashedTo: fallbackTarget };
+    }
+  } catch (err) {
+    // ignore
   }
+
+  // Final fallback: delete directly if trash fails
+  fs.rmSync(targetDir, { recursive: true, force: true });
+  return { success: true, deleted: true };
+}
+
+export function deleteSkillEverywhere({ skillName, platforms }) {
+  const deletedFrom = [];
+
+  // 1. Remove all symlinks first so broken symlinks are cleaned up cleanly
+  for (const plat of platforms) {
+    const targetDir = path.join(plat.expandedPath, skillName);
+    try {
+      if (fs.existsSync(targetDir)) {
+        const lstat = fs.lstatSync(targetDir);
+        if (lstat.isSymbolicLink()) {
+          fs.unlinkSync(targetDir);
+          deletedFrom.push({ platformId: plat.id, platformName: plat.name, type: 'symlink' });
+        }
+      }
+    } catch (err) {
+      // continue
+    }
+  }
+
+  // 2. Remove actual directory or remaining copies
+  for (const plat of platforms) {
+    const targetDir = path.join(plat.expandedPath, skillName);
+    try {
+      if (fs.existsSync(targetDir)) {
+        trashSkill({ skillName, platformPath: plat.expandedPath });
+        deletedFrom.push({ platformId: plat.id, platformName: plat.name, type: 'source' });
+      }
+    } catch (err) {
+      // continue
+    }
+  }
+
+  return { success: true, deletedFrom };
 }
 
 export function unlinkSkill({ skillName, platformPath, detach = false }) {
