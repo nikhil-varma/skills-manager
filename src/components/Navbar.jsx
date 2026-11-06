@@ -5,7 +5,9 @@ import {
   Plus, 
   Settings, 
   RefreshCw, 
-  Radar 
+  Radar,
+  Bot,
+  Sparkles
 } from 'lucide-react';
 
 export default function Navbar({
@@ -19,7 +21,10 @@ export default function Navbar({
   totalSkills,
   activeFilter,
   setActiveFilter,
-  platforms
+  platforms,
+  onToggleChat,
+  isChatOpen,
+  isLLMConfigured
 }) {
   return (
     <header className="sticky top-0 z-30 border-b border-white/5 bg-[#0b0f17]/90 backdrop-blur-xl px-6 py-3.5">
@@ -93,9 +98,30 @@ export default function Navbar({
           <button
             onClick={onOpenSettings}
             className="p-2 rounded-lg bg-slate-900 border border-white/10 text-slate-300 hover:text-white hover:bg-slate-800 transition-colors"
-            title="Configure platform paths"
+            title="Configure platform paths & AI provider"
           >
             <Settings className="h-4 w-4" />
+          </button>
+
+          {/* AI Skill Assistant Button */}
+          <button
+            onClick={onToggleChat}
+            className={`flex items-center gap-2 px-3 py-2 rounded-lg font-medium text-xs transition-all border ${
+              isChatOpen
+                ? 'bg-indigo-600 text-white border-indigo-500 shadow-md shadow-indigo-600/30'
+                : 'bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-indigo-500/10 hover:from-indigo-500/20 hover:to-purple-500/20 text-indigo-300 border-indigo-500/30 hover:border-indigo-400/50'
+            }`}
+            title={isLLMConfigured ? 'Open AI Skill Assistant' : 'Configure custom AI LLM provider in Settings'}
+          >
+            <div className="relative">
+              <Bot className="h-4 w-4" />
+              <span 
+                className={`absolute -top-0.5 -right-0.5 h-1.5 w-1.5 rounded-full ${
+                  isLLMConfigured ? 'bg-emerald-400' : 'bg-amber-400 animate-pulse'
+                }`} 
+              />
+            </div>
+            <span className="hidden sm:inline">AI Assistant</span>
           </button>
 
           {/* Create Skill */}

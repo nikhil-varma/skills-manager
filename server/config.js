@@ -167,10 +167,70 @@ export function savePlatforms(platforms) {
       });
     }
 
-    fs.writeFileSync(SETTINGS_FILE, JSON.stringify({ platforms: clean }, null, 2), 'utf-8');
+    // Preserve other settings if present
+    let current = {};
+    if (fs.existsSync(SETTINGS_FILE)) {
+      try {
+        current = JSON.parse(fs.readFileSync(SETTINGS_FILE, 'utf-8'));
+      } catch (e) {}
+    }
+    current.platforms = clean;
+
+    fs.writeFileSync(SETTINGS_FILE, JSON.stringify(current, null, 2), 'utf-8');
     return true;
   } catch (err) {
     console.error('Error saving settings:', err);
+    return false;
+  }
+}
+
+export const DEFAULT_LLM_CONFIG = {
+  provider: 'openai', // 'openai', 'anthropic', 'gemini', 'ollama', 'custom'
+  baseUrl: 'https://api.openai.com/v1',
+  apiKey: '',
+  model: 'gpt-4o-mini',
+  temperature: 0.2
+};
+
+export function getLLMConfig() {
+  try {
+    if (fs.existsSync(SETTINGS_FILE)) {
+      const data = JSON.parse(fs.readFileSync(SETTINGS_FILE, 'utf-8'));
+      if (data.llmProvider) {
+        return {
+          ...DEFAULT_LLM_CONFIG,
+          ...data.llmProvider
+        };
+      }
+    }
+  } catch (err) {
+    console.error('Error reading llmProvider settings:', err);
+  }
+  return { ...DEFAULT_LLM_CONFIG };
+}
+
+export function saveLLMConfig(llmConfig) {
+  try {
+    if (!fs.existsSync(CONFIG_DIR)) {
+      fs.mkdirSync(CONFIG_DIR, { recursive: true });
+    }
+
+    let current = {};
+    if (fs.existsSync(SETTINGS_FILE)) {
+      try {
+        current = JSON.parse(fs.readFileSync(SETTINGS_FILE, 'utf-8'));
+      } catch (e) {}
+    }
+
+    current.llmProvider = {
+      ...DEFAULT_LLM_CONFIG,
+      ...llmConfig
+    };
+
+    fs.writeFileSync(SETTINGS_FILE, JSON.stringify(current, null, 2), 'utf-8');
+    return true;
+  } catch (err) {
+    console.error('Error saving llm settings:', err);
     return false;
   }
 }

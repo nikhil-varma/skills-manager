@@ -3,8 +3,9 @@ import cors from 'cors';
 import path from 'path';
 import fs from 'fs';
 import { exec } from 'child_process';
-import { getPlatforms, savePlatforms, expandHome, contractHome } from './config.js';
+import { getPlatforms, savePlatforms, expandHome, contractHome, getLLMConfig, saveLLMConfig } from './config.js';
 import { discoverAllOSTools } from './discover.js';
+import { testLLMConnection, chatWithSkills } from './llm.js';
 import {
   scanPlatforms,
   getSkillDetail,
@@ -503,6 +504,72 @@ app.post('/api/actions/reveal-in-finder', (req, res) => {
     });
   } catch (err) {
     res.json({ success: false, error: err.message });
+  }
+});
+
+// --- AI Skill Assistant Endpoints ---
+
+// Get current AI LLM config
+app.get('/api/ai/config', (req, res) => {
+  try {
+    const config = getLLMConfig();
+    const isConfigured = Boolean(
+      config.provider === 'ollama' ||
+      (config.apiKey && config.apiKey.trim().length > 0) ||
+      config.baseUrl?.includes('localhost')
+    );
+    res.json({ config, isConfigured });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Save updated AI LLM config
+app.post('/api/ai/config', (req, res) => {
+  try {
+    const { config } = req.body;
+    if (!config) return res.status(400).json({ error: 'config is required' });
+    const success = saveLLMConfig(config);
+    if (!success) return res.status(500).json({ error: 'Failed to save LLM settings' });
+    res.json({ success: true, config });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Test connection to configured LLM
+app.post('/api/ai/test', async (req, res) => {
+  try {
+    const configToTest = req.body.config || getLLMConfig();
+    const result = await testLLMConnection(configToTest);
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Chat with SkillDesk AI scoped strictly to user skills
+app.post('/api/ai/chat', async (req, res) => {
+  try {
+    const { messages } = req.body;
+    if (!Array.isArray(messages)) {
+      return res.status(400).json({ error: 'messages array is required' });
+    }
+
+    const config = getLLMConfig();
+    const platforms = getPlatforms();
+    const { skills } = scanPlatforms(platforms);
+
+    const reply = await chatWithSkills({
+      messages,
+      skills,
+      config
+    });
+
+    res.json({ success: true, message: reply });
+  } catch (err) {
+    console.error('AI Chat Error:', err);
+    res.status(500).json({ error: err.message });
   }
 });
 

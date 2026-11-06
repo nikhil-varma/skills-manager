@@ -6,6 +6,7 @@ import SkillDetailModal from './components/SkillDetailModal.jsx';
 import NewSkillModal from './components/NewSkillModal.jsx';
 import SettingsModal from './components/SettingsModal.jsx';
 import AutoDiscoverModal from './components/AutoDiscoverModal.jsx';
+import ChatPanel from './components/ChatPanel.jsx';
 import Toast from './components/Toast.jsx';
 import { 
   fetchSkills, 
@@ -16,7 +17,8 @@ import {
   syncAllSkills, 
   trashSkill, 
   deleteSkillCompletely,
-  revealInFinder 
+  revealInFinder,
+  fetchLLMConfig 
 } from './api.js';
 import { Sparkles, Layers, Filter, CheckCircle2, AlertCircle, ChevronDown } from 'lucide-react';
 
@@ -36,11 +38,17 @@ export default function App() {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
 
-  // Modals
+  // Modals & Panels
   const [selectedSkillName, setSelectedSkillName] = useState(null);
   const [isNewSkillOpen, setIsNewSkillOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [settingsInitialTab, setSettingsInitialTab] = useState('locations');
   const [isDiscoverOpen, setIsDiscoverOpen] = useState(false);
+  const [isChatOpen, setIsChatOpen] = useState(false);
+
+  // AI LLM State
+  const [llmConfig, setLlmConfig] = useState(null);
+  const [isLLMConfigured, setIsLLMConfigured] = useState(false);
 
   // Toast
   const [toast, setToast] = useState(null);
@@ -68,8 +76,19 @@ export default function App() {
     }
   };
 
+  const loadLLMConfig = async () => {
+    try {
+      const res = await fetchLLMConfig();
+      setLlmConfig(res.config);
+      setIsLLMConfigured(res.isConfigured);
+    } catch (err) {
+      console.error('Failed to load LLM config:', err);
+    }
+  };
+
   useEffect(() => {
     loadData();
+    loadLLMConfig();
   }, []);
 
   // Reset filter to 'all' if the selected platform has 0 skills
@@ -246,12 +265,18 @@ export default function App() {
         onRefresh={loadData}
         loading={loading}
         onOpenNewSkill={() => setIsNewSkillOpen(true)}
-        onOpenSettings={() => setIsSettingsOpen(true)}
+        onOpenSettings={() => {
+          setSettingsInitialTab('locations');
+          setIsSettingsOpen(true);
+        }}
         onOpenDiscover={() => setIsDiscoverOpen(true)}
         totalSkills={totalSkills}
         activeFilter={activeFilter}
         setActiveFilter={setActiveFilter}
         platforms={platforms}
+        onToggleChat={() => setIsChatOpen(!isChatOpen)}
+        isChatOpen={isChatOpen}
+        isLLMConfigured={isLLMConfigured}
       />
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-6 py-6">
@@ -438,11 +463,29 @@ export default function App() {
       {isSettingsOpen && (
         <SettingsModal
           platforms={platforms}
+          initialTab={settingsInitialTab}
           onClose={() => setIsSettingsOpen(false)}
-          onSuccess={loadData}
+          onSuccess={() => {
+            loadData();
+            loadLLMConfig();
+          }}
           showToast={showToast}
         />
       )}
+
+      {/* Slide-out AI Assistant Chat Panel */}
+      <ChatPanel
+        isOpen={isChatOpen}
+        onClose={() => setIsChatOpen(false)}
+        onOpenSettings={() => {
+          setSettingsInitialTab('ai');
+          setIsSettingsOpen(true);
+        }}
+        onOpenSkill={(name) => setSelectedSkillName(name)}
+        totalSkills={totalSkills}
+        isLLMConfigured={isLLMConfigured}
+        llmConfig={llmConfig}
+      />
 
       {isDiscoverOpen && (
         <AutoDiscoverModal

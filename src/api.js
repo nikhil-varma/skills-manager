@@ -182,3 +182,43 @@ export async function revealInFinder(filePath) {
   });
   return res.json();
 }
+
+// AI Assistant endpoints
+export async function fetchLLMConfig() {
+  const res = await fetch(`${BASE}/ai/config`);
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+export async function saveLLMConfig(config) {
+  const res = await fetch(`${BASE}/ai/config`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ config })
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+export async function testLLMConnection(config) {
+  const res = await fetch(`${BASE}/ai/test`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ config })
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+export async function sendAIChat(messages) {
+  const res = await fetch(`${BASE}/ai/chat`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ messages })
+  });
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({ error: 'AI service failed' }));
+    throw new Error(errData.error || 'Failed to communicate with AI');
+  }
+  return res.json();
+}
