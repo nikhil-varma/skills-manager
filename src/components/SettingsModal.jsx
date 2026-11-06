@@ -395,33 +395,40 @@ export default function SettingsModal({
                 </div>
 
                 {/* API Key */}
-                {currentPreset.needsKey && (
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-slate-300 flex items-center justify-between">
-                      <span>API Key</span>
-                      <span className="text-[10px] text-slate-500">Stored locally in ~/.config/skills-manager</span>
-                    </label>
-                    <div className="relative">
-                      <input
-                        type={showApiKey ? 'text' : 'password'}
-                        value={llmConfig.apiKey || ''}
-                        onChange={(e) => {
-                          setTestResult(null);
-                          setLlmConfig({ ...llmConfig, apiKey: e.target.value });
-                        }}
-                        placeholder={currentPreset.keyPlaceholder}
-                        className="w-full bg-slate-950 border border-white/10 rounded-lg pl-3 pr-10 py-2 text-slate-100 font-mono text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowApiKey(!showApiKey)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200"
-                      >
-                        {showApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                      </button>
-                    </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-slate-300 flex items-center justify-between">
+                    <span>
+                      API Key{' '}
+                      {currentPreset.id === 'custom' || currentPreset.id === 'ollama' ? (
+                        <span className="text-slate-400 font-normal text-[11px]">(Optional for local / LAN)</span>
+                      ) : null}
+                    </span>
+                    <span className="text-[10px] text-slate-500">
+                      {currentPreset.id === 'custom'
+                        ? 'Required only for OpenRouter, Groq, or secured servers'
+                        : 'Stored locally in ~/.config/skills-manager'}
+                    </span>
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showApiKey ? 'text' : 'password'}
+                      value={llmConfig.apiKey || ''}
+                      onChange={(e) => {
+                        setTestResult(null);
+                        setLlmConfig({ ...llmConfig, apiKey: e.target.value });
+                      }}
+                      placeholder={currentPreset.keyPlaceholder || 'Enter API Key or Bearer token'}
+                      className="w-full bg-slate-950 border border-white/10 rounded-lg pl-3 pr-10 py-2 text-slate-100 font-mono text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowApiKey(!showApiKey)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200"
+                    >
+                      {showApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
                   </div>
-                )}
+                </div>
 
                 {/* Model Name & Suggestions */}
                 <div className="space-y-1.5">

@@ -107,13 +107,7 @@ export async function callLLM({ messages, config, systemPrompt, timeoutMs = 6000
 
     if (apiKey) {
       headers['Authorization'] = `Bearer ${apiKey}`;
-    } else if (
-      provider !== 'ollama' &&
-      provider !== 'custom' &&
-      !baseUrl.includes('localhost') &&
-      !baseUrl.includes('127.0.0.1') &&
-      !baseUrl.includes('host.docker.internal')
-    ) {
+    } else if (provider === 'openai') {
       throw new Error(`API Key is required for provider "${provider}"`);
     }
 
@@ -226,14 +220,9 @@ export async function chatWithSkills({ messages, skills = [], config, signal }) 
     throw new Error('LLM provider is not configured. Please open Settings and configure your AI Provider.');
   }
 
-  const isLocal = config.provider === 'ollama' || 
-                  config.provider === 'custom' || 
-                  config.baseUrl?.includes('localhost') || 
-                  config.baseUrl?.includes('127.0.0.1') || 
-                  config.baseUrl?.includes('host.docker.internal');
-
-  if (!isLocal && !config.apiKey) {
-    throw new Error(`API key is required for ${config.provider || 'custom'}. Open Settings to enter your key.`);
+  const isKeyRequired = config.provider === 'openai' || config.provider === 'gemini';
+  if (isKeyRequired && !config.apiKey) {
+    throw new Error(`API key is required for ${config.provider}. Open Settings to enter your key.`);
   }
 
   // Format skills catalog concisely into compact knowledge entries
