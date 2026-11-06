@@ -83,8 +83,8 @@ export default function MatrixView({
         <thead>
           <tr className="border-b border-white/10 bg-slate-900/95 text-slate-400 font-semibold uppercase tracking-wider text-[11px]">
             <th className="py-3.5 px-4 min-w-[280px]">Skill Name & Description</th>
-            {visiblePlatforms.map(plat => (
-              <th key={plat.id} className="py-3.5 px-3 text-center min-w-[140px]">
+            {visiblePlatforms.map((plat, idx) => (
+              <th key={`${plat.id}-${plat.path || idx}`} className="py-3.5 px-3 text-center min-w-[140px]">
                 <div className="flex items-center justify-center gap-1.5">
                   <span className="h-2 w-2 rounded-full" style={{ backgroundColor: plat.color }} />
                   <span className="text-slate-200">{plat.badge || plat.name}</span>
@@ -136,7 +136,7 @@ export default function MatrixView({
                 </td>
 
                 {/* Platform columns */}
-                {visiblePlatforms.map(plat => {
+                {visiblePlatforms.map((plat, idx) => {
                   const platStatus = skill.platforms[plat.id];
                   const isInstalled = !!platStatus?.installed;
                   const isSymlink = !!platStatus?.isSymlink;
@@ -145,7 +145,7 @@ export default function MatrixView({
                   const isLoading = loadingAction === menuKey;
 
                   return (
-                    <td key={plat.id} className="py-2.5 px-3 text-center relative">
+                    <td key={`${plat.id}-${plat.path || idx}`} className="py-2.5 px-3 text-center relative">
                       {isInstalled ? (
                         <div className="relative inline-flex items-center">
                           {/* Installed Pill */}

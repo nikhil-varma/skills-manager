@@ -75,7 +75,7 @@ export default function PlatformOverview({
 
               return (
                 <div
-                  key={plat.id}
+                  key={`${plat.id}-${plat.path}`}
                   onClick={() => setActiveFilter(isSelected ? 'all' : plat.id)}
                   className={`cursor-pointer group relative overflow-hidden rounded-xl border p-4 transition-all duration-200 ${
                     isSelected

@@ -97,24 +97,44 @@ const CONFIG_DIR = path.join(HOME, '.config', 'skills-manager');
 const SETTINGS_FILE = path.join(CONFIG_DIR, 'settings.json');
 
 export function getPlatforms() {
+  let rawPlatforms = DEFAULT_PLATFORMS;
+
   try {
     if (fs.existsSync(SETTINGS_FILE)) {
       const data = JSON.parse(fs.readFileSync(SETTINGS_FILE, 'utf-8'));
       if (Array.isArray(data.platforms) && data.platforms.length > 0) {
-        return data.platforms.map(p => ({
-          ...p,
-          expandedPath: expandHome(p.path)
-        }));
+        rawPlatforms = data.platforms;
       }
     }
   } catch (err) {
     console.error('Error reading settings:', err);
   }
 
-  return DEFAULT_PLATFORMS.map(p => ({
-    ...p,
-    expandedPath: expandHome(p.path)
-  }));
+  // Deduplicate by path and guarantee strictly unique IDs
+  const seenPaths = new Set();
+  const seenIds = new Set();
+  const clean = [];
+
+  for (const p of rawPlatforms) {
+    const exp = expandHome(p.path);
+    if (seenPaths.has(exp)) continue;
+    seenPaths.add(exp);
+
+    let id = p.id || 'plat';
+    let counter = 1;
+    while (seenIds.has(id)) {
+      id = `${p.id}-${counter++}`;
+    }
+    seenIds.add(id);
+
+    clean.push({
+      ...p,
+      id,
+      expandedPath: exp
+    });
+  }
+
+  return clean;
 }
 
 export function savePlatforms(platforms) {
@@ -122,7 +142,32 @@ export function savePlatforms(platforms) {
     if (!fs.existsSync(CONFIG_DIR)) {
       fs.mkdirSync(CONFIG_DIR, { recursive: true });
     }
-    fs.writeFileSync(SETTINGS_FILE, JSON.stringify({ platforms }, null, 2), 'utf-8');
+
+    // Deduplicate before saving
+    const seenPaths = new Set();
+    const seenIds = new Set();
+    const clean = [];
+
+    for (const p of platforms) {
+      const exp = expandHome(p.path);
+      if (seenPaths.has(exp)) continue;
+      seenPaths.add(exp);
+
+      let id = p.id || 'plat';
+      let counter = 1;
+      while (seenIds.has(id)) {
+        id = `${p.id}-${counter++}`;
+      }
+      seenIds.add(id);
+
+      clean.push({
+        ...p,
+        id,
+        path: contractHome(p.path)
+      });
+    }
+
+    fs.writeFileSync(SETTINGS_FILE, JSON.stringify({ platforms: clean }, null, 2), 'utf-8');
     return true;
   } catch (err) {
     console.error('Error saving settings:', err);

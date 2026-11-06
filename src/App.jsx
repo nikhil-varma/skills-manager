@@ -327,7 +327,7 @@ export default function App() {
                   .filter(p => (p.count || 0) > 0)
                   .map(p => (
                     <button
-                      key={p.id}
+                      key={`${p.id}-${p.path}`}
                       onClick={() => setActiveFilter(p.id)}
                       className={`px-3 py-1.5 rounded-lg font-medium transition-colors ${
                         activeFilter === p.id
