@@ -1,4 +1,10 @@
-const BASE = '/api';
+const isTauri = typeof window !== 'undefined' && (
+  Boolean(window.__TAURI_INTERNALS__) ||
+  Boolean(window.__TAURI__) ||
+  window.location.protocol === 'tauri:' ||
+  window.location.hostname === 'tauri.localhost'
+);
+const BASE = isTauri ? 'http://127.0.0.1:3001/api' : '/api';
 
 export async function fetchSkills() {
   const res = await fetch(`${BASE}/skills`);

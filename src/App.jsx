@@ -281,7 +281,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f5f6f8] dark:bg-[#0b0f17] text-slate-900 dark:text-slate-100 flex flex-col transition-colors duration-200">
+    <div className="h-screen bg-[#f5f6f8] dark:bg-[#0b0f17] text-slate-900 dark:text-slate-100 flex flex-col transition-colors duration-200 overflow-hidden">
       <Navbar
         searchTerm={searchTerm}
         setSearchTerm={setSearchTerm}
@@ -304,119 +304,121 @@ export default function App() {
         onToggleTheme={toggleTheme}
       />
 
-      <div className={`flex-1 flex flex-col lg:flex-row w-full transition-all duration-300 ${isChatOpen ? 'max-w-[1920px] mx-auto' : 'max-w-7xl mx-auto'}`}>
-        <main className="flex-1 min-w-0 px-3.5 sm:px-6 py-4 sm:py-6">
-          {/* Platform Overview Cards */}
-          <PlatformOverview
-            platforms={platforms}
-            activeFilter={activeFilter}
-            setActiveFilter={setActiveFilter}
-            onRevealFolder={handleRevealPath}
-          />
+      <div className="flex-1 flex flex-col lg:flex-row w-full overflow-hidden">
+        <main className="flex-1 min-w-0 overflow-y-auto px-3.5 sm:px-6 py-4 sm:py-6">
+          <div className={`w-full mx-auto transition-all duration-300 ${isChatOpen ? 'max-w-[1600px]' : 'max-w-7xl'}`}>
+            {/* Platform Overview Cards */}
+            <PlatformOverview
+              platforms={platforms}
+              activeFilter={activeFilter}
+              setActiveFilter={setActiveFilter}
+              onRevealFolder={handleRevealPath}
+            />
 
-          {/* Collapsible Filter Section */}
-          <div className="mb-6 rounded-2xl border border-slate-200/80 dark:border-white/5 bg-white/70 dark:bg-slate-900/40 backdrop-blur-md overflow-hidden transition-all duration-300 shadow-xs">
-          <div
-            onClick={() => setIsFiltersExpanded(!isFiltersExpanded)}
-            className="flex flex-wrap items-center justify-between gap-2.5 sm:gap-3 px-3.5 sm:px-5 py-2.5 sm:py-3 bg-slate-100/70 hover:bg-slate-100 dark:bg-slate-900/60 dark:hover:bg-slate-900/90 transition-colors cursor-pointer select-none"
-          >
-            <div className="flex items-center gap-3">
-              <div className="h-7 w-7 rounded-lg bg-[#007AFF]/10 border border-[#007AFF]/20 flex items-center justify-center text-[#007AFF]">
-                <Filter className="h-3.5 w-3.5" />
-              </div>
-              <div className="flex items-center gap-2 text-xs">
-                <span className="font-semibold text-slate-700 dark:text-slate-300">Filter:</span>
-                <span className="px-2.5 py-1 rounded-lg bg-[#007AFF] text-white font-medium shadow-xs">
-                  {activeFilterName}
-                </span>
-                {activeFilter !== 'all' && (
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setActiveFilter('all');
-                    }}
-                    className="text-[11px] text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white underline ml-1"
-                  >
-                    Reset
-                  </button>
-                )}
-              </div>
-            </div>
-
-            <div className="flex items-center gap-4 text-xs">
-              <span className="text-slate-500 dark:text-slate-400 text-[11px]">
-                Showing <strong className="text-slate-800 dark:text-slate-200">{filteredSkills.length}</strong> of {skills.length} skills
-              </span>
-              <button
-                type="button"
-                className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-200/60 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-700 dark:text-slate-300 transition-colors text-xs"
-              >
-                <span>{isFiltersExpanded ? 'Hide Filters' : 'Show Filters'}</span>
-                <ChevronDown className={`h-3.5 w-3.5 transition-transform duration-200 ${isFiltersExpanded ? 'rotate-180 text-[#007AFF]' : ''}`} />
-              </button>
-            </div>
-          </div>
-
-          {isFiltersExpanded && (
-            <div className="p-4 border-t border-slate-200/80 dark:border-white/5 bg-slate-50/50 dark:bg-slate-950/40 animate-fade-in">
-              <div className="flex flex-wrap items-center gap-1.5 text-xs">
-                <button
-                  onClick={() => setActiveFilter('all')}
-                  className={`px-3 py-1.5 rounded-lg font-medium transition-colors ${
-                    activeFilter === 'all'
-                      ? 'bg-slate-200 dark:bg-white/10 text-slate-900 dark:text-white border border-slate-300 dark:border-white/20'
-                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/5'
-                  }`}
-                >
-                  All Skills ({skills.length})
-                </button>
-
-                {filterStats.unsynced > 0 && (
-                  <button
-                    onClick={() => setActiveFilter('unsynced')}
-                    className={`px-3 py-1.5 rounded-lg font-medium transition-colors ${
-                      activeFilter === 'unsynced'
-                        ? 'bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30'
-                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/5'
-                    }`}
-                  >
-                    Needs Sync ({filterStats.unsynced})
-                  </button>
-                )}
-
-                {filterStats.symlinked > 0 && (
-                  <button
-                    onClick={() => setActiveFilter('symlinked')}
-                    className={`px-3 py-1.5 rounded-lg font-medium transition-colors ${
-                      activeFilter === 'symlinked'
-                        ? 'bg-purple-500/20 text-purple-700 dark:text-purple-300 border border-purple-500/30'
-                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/5'
-                    }`}
-                  >
-                    Symlinked ({filterStats.symlinked})
-                  </button>
-                )}
-
-                {platforms
-                  .filter(p => (p.count || 0) > 0)
-                  .map(p => (
+          {/* Collapsible Filter Section (Native macOS Segmented Style) */}
+          <div className="mb-5 rounded-2xl border border-black/[0.06] dark:border-white/10 bg-white/75 dark:bg-[#1a1c24]/75 backdrop-blur-xl overflow-hidden transition-all duration-300 shadow-2xs">
+            <div
+              onClick={() => setIsFiltersExpanded(!isFiltersExpanded)}
+              className="flex flex-wrap items-center justify-between gap-2.5 sm:gap-3 px-3.5 sm:px-4 py-2.5 bg-black/[0.02] hover:bg-black/[0.04] dark:bg-white/[0.02] dark:hover:bg-white/[0.04] transition-colors cursor-pointer select-none"
+            >
+              <div className="flex items-center gap-2.5">
+                <div className="h-6 w-6 rounded-md bg-[#007AFF]/10 border border-[#007AFF]/20 flex items-center justify-center text-[#007AFF]">
+                  <Filter className="h-3.5 w-3.5" />
+                </div>
+                <div className="flex items-center gap-2 text-xs">
+                  <span className="font-medium text-slate-600 dark:text-slate-400">Filter:</span>
+                  <span className="px-2.5 py-0.5 rounded-full bg-[#007AFF]/15 text-[#007AFF] dark:text-[#0A84FF] font-medium text-[11px] border border-[#007AFF]/25">
+                    {activeFilterName}
+                  </span>
+                  {activeFilter !== 'all' && (
                     <button
-                      key={`${p.id}-${p.path}`}
-                      onClick={() => setActiveFilter(p.id)}
-                      className={`px-3 py-1.5 rounded-lg font-medium transition-colors ${
-                        activeFilter === p.id
-                          ? 'bg-[#007AFF] text-white shadow-sm'
-                          : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/5'
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setActiveFilter('all');
+                      }}
+                      className="text-[11px] text-slate-400 hover:text-[#007AFF] underline ml-0.5"
+                    >
+                      Reset
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 text-xs">
+                <span className="text-slate-500 dark:text-slate-400 text-[11px]">
+                  Showing <strong className="text-slate-800 dark:text-slate-200">{filteredSkills.length}</strong> of {skills.length} skills
+                </span>
+                <button
+                  type="button"
+                  className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-black/[0.04] dark:bg-white/[0.06] hover:bg-black/[0.08] dark:hover:bg-white/[0.1] text-slate-700 dark:text-slate-300 transition-colors text-xs font-medium"
+                >
+                  <span>{isFiltersExpanded ? 'Hide' : 'Filter by Assistant'}</span>
+                  <ChevronDown className={`h-3 w-3 transition-transform duration-200 ${isFiltersExpanded ? 'rotate-180 text-[#007AFF]' : ''}`} />
+                </button>
+              </div>
+            </div>
+
+            {isFiltersExpanded && (
+              <div className="p-3 border-t border-black/[0.06] dark:border-white/10 bg-black/[0.01] dark:bg-black/20 animate-fade-in">
+                {/* macOS Segmented Capsule Container */}
+                <div className="p-1 rounded-xl bg-black/[0.04] dark:bg-black/40 border border-black/[0.06] dark:border-white/10 inline-flex flex-wrap gap-1 text-xs">
+                  <button
+                    onClick={() => setActiveFilter('all')}
+                    className={`px-3 py-1 rounded-lg font-medium text-xs transition-all ${
+                      activeFilter === 'all'
+                        ? 'bg-white dark:bg-white/15 text-slate-900 dark:text-white shadow-xs font-semibold'
+                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                    }`}
+                  >
+                    All Skills ({skills.length})
+                  </button>
+
+                  {filterStats.unsynced > 0 && (
+                    <button
+                      onClick={() => setActiveFilter('unsynced')}
+                      className={`px-3 py-1 rounded-lg font-medium text-xs transition-all ${
+                        activeFilter === 'unsynced'
+                          ? 'bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30 shadow-xs font-semibold'
+                          : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                       }`}
                     >
-                      {p.badge || p.name} ({p.count})
+                      Needs Sync ({filterStats.unsynced})
                     </button>
-                  ))}
+                  )}
+
+                  {filterStats.symlinked > 0 && (
+                    <button
+                      onClick={() => setActiveFilter('symlinked')}
+                      className={`px-3 py-1 rounded-lg font-medium text-xs transition-all ${
+                        activeFilter === 'symlinked'
+                          ? 'bg-purple-500/20 text-purple-700 dark:text-purple-300 border border-purple-500/30 shadow-xs font-semibold'
+                          : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                      }`}
+                    >
+                      Symlinked ({filterStats.symlinked})
+                    </button>
+                  )}
+
+                  {platforms
+                    .filter(p => (p.count || 0) > 0)
+                    .map(p => (
+                      <button
+                        key={`${p.id}-${p.path}`}
+                        onClick={() => setActiveFilter(p.id)}
+                        className={`px-3 py-1 rounded-lg font-medium text-xs transition-all ${
+                          activeFilter === p.id
+                            ? 'bg-[#007AFF] text-white shadow-xs font-semibold'
+                            : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                        }`}
+                      >
+                        {p.badge || p.name} ({p.count})
+                      </button>
+                    ))}
+                </div>
               </div>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
 
         {/* Content Body */}
         {loading && skills.length === 0 ? (
@@ -460,7 +462,8 @@ export default function App() {
             onRevealPath={handleRevealPath}
           />
         )}
-      </main>
+          </div>
+        </main>
 
         {/* AI Skill Assistant (Inline Page Panel on the right) */}
         <ChatPanel

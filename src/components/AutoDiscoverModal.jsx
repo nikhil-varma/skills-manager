@@ -5,7 +5,6 @@ import {
   CheckCircle2, 
   Plus, 
   Bot, 
-  Terminal, 
   Folder, 
   Sparkles, 
   ExternalLink,
@@ -92,22 +91,21 @@ export default function AutoDiscoverModal({
   };
 
   const currentList = activeTab === 'global' ? data.globalTools : data.projectWorkspaces;
-  const activeCountInCurrent = currentList.filter(i => selectedTools.has(i.path)).length;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 dark:bg-black/75 backdrop-blur-md animate-fade-in">
-      <div className="relative w-full max-w-3xl max-h-[92vh] sm:max-h-[85vh] flex flex-col rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0f172a] shadow-2xl overflow-hidden text-slate-900 dark:text-slate-100">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/50 backdrop-blur-md animate-fade-in">
+      <div className="relative w-full max-w-3xl max-h-[92vh] sm:max-h-[85vh] flex flex-col rounded-2xl border border-black/10 dark:border-white/15 bg-[#fafbfc]/95 dark:bg-[#1c1e26]/95 shadow-2xl backdrop-blur-2xl overflow-hidden text-slate-900 dark:text-slate-100">
         
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-slate-200 dark:border-white/10 px-4 sm:px-6 py-3.5 sm:py-4 bg-slate-50/90 dark:bg-slate-900/80">
+        <div className="flex items-center justify-between border-b border-black/[0.06] dark:border-white/10 px-4 sm:px-6 py-3.5 bg-black/[0.02] dark:bg-white/[0.02]">
           <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
-            <div className="h-8 w-8 sm:h-9 sm:w-9 rounded-xl bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-white shadow-lg shadow-indigo-500/20 flex-shrink-0">
+            <div className="h-8 w-8 sm:h-9 sm:w-9 rounded-xl bg-[#007AFF]/15 border border-[#007AFF]/30 flex items-center justify-center text-[#007AFF] shadow-xs flex-shrink-0">
               <Radar className="h-4 w-4 sm:h-5 sm:w-5 animate-pulse" />
             </div>
             <div className="min-w-0">
-              <h3 className="font-bold text-sm sm:text-base text-slate-900 dark:text-white flex items-center gap-2 truncate">
+              <h3 className="font-semibold text-sm sm:text-base text-slate-900 dark:text-white flex items-center gap-2 truncate">
                 <span>Tool & Skill Discovery</span>
-                <span className="text-[10px] sm:text-[11px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                <span className="text-[10px] sm:text-[11px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25">
                   {data.totalFound} found
                 </span>
               </h3>
@@ -119,35 +117,35 @@ export default function AutoDiscoverModal({
 
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-white/10 transition-colors flex-shrink-0 ml-2"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors flex-shrink-0 ml-2"
           >
             <X className="h-4 w-4" />
           </button>
         </div>
 
-        {/* Tabs & Bulk Action */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-200 dark:border-white/5 bg-slate-100/70 dark:bg-slate-900/50 px-4 sm:px-6 py-2.5 gap-2">
-          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+        {/* Tabs & Bulk Action (macOS Segmented Capsule Control) */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-black/[0.06] dark:border-white/10 bg-black/[0.015] dark:bg-white/[0.015] px-4 sm:px-6 py-2.5 gap-2">
+          <div className="p-1 rounded-xl bg-black/[0.04] dark:bg-black/40 border border-black/[0.06] dark:border-white/10 inline-flex gap-1 overflow-x-auto no-scrollbar">
             <button
               onClick={() => setActiveTab('global')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1.5 ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 ${
                 activeTab === 'global'
-                  ? 'bg-indigo-600 text-white shadow-xs'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-transparent'
+                  ? 'bg-white dark:bg-white/15 text-slate-900 dark:text-white shadow-xs font-semibold'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
-              <Bot className="h-3.5 w-3.5" />
+              <Bot className="h-3.5 w-3.5 text-[#007AFF]" />
               <span>Global Assistants ({data.globalTools.length})</span>
             </button>
             <button
               onClick={() => setActiveTab('projects')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1.5 ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 ${
                 activeTab === 'projects'
-                  ? 'bg-indigo-600 text-white shadow-xs'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-200/60 dark:hover:bg-transparent'
+                  ? 'bg-white dark:bg-white/15 text-slate-900 dark:text-white shadow-xs font-semibold'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
-              <Folder className="h-3.5 w-3.5" />
+              <Folder className="h-3.5 w-3.5 text-[#AF52DE]" />
               <span>Project Repositories ({data.projectWorkspaces.length})</span>
             </button>
           </div>
@@ -156,11 +154,11 @@ export default function AutoDiscoverModal({
             <button
               type="button"
               onClick={() => selectAll(currentList)}
-              className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-medium"
+              className="text-[#007AFF] hover:underline font-medium"
             >
               Select All
             </button>
-            <span className="text-slate-300 dark:text-slate-600">|</span>
+            <span className="text-black/20 dark:text-white/20">|</span>
             <button
               type="button"
               onClick={() => deselectAll(currentList)}
@@ -172,14 +170,14 @@ export default function AutoDiscoverModal({
         </div>
 
         {/* List Body */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-3">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-2.5">
           {loading ? (
             <div className="py-20 text-center text-slate-400 flex flex-col items-center justify-center gap-3">
-              <Radar className="h-8 w-8 text-indigo-500 animate-spin" />
-              <p className="text-sm text-slate-500 dark:text-slate-400">Scanning macOS filesystem for AI assistants & skills...</p>
+              <Radar className="h-8 w-8 text-[#007AFF] animate-spin" />
+              <p className="text-xs text-slate-500 dark:text-slate-400">Scanning macOS filesystem for AI assistants & skills...</p>
             </div>
           ) : currentList.length === 0 ? (
-            <div className="py-16 text-center text-slate-500 text-sm">
+            <div className="py-16 text-center text-slate-500 text-xs">
               No matching locations found in this category.
             </div>
           ) : (
@@ -190,13 +188,13 @@ export default function AutoDiscoverModal({
                 <div
                   key={item.path}
                   onClick={() => toggleSelect(item.path)}
-                  className={`flex items-center justify-between p-3.5 rounded-xl border transition-all cursor-pointer ${
+                  className={`flex items-center justify-between p-3 rounded-xl border transition-all cursor-pointer ${
                     isChecked
-                      ? 'bg-indigo-50/70 dark:bg-indigo-950/40 border-indigo-500/40 dark:border-indigo-500/50 shadow-xs ring-1 ring-indigo-500/20'
-                      : 'bg-slate-50/70 dark:bg-slate-900/60 border-slate-200 dark:border-white/5 hover:border-slate-300 dark:hover:border-white/15 hover:bg-slate-100 dark:hover:bg-slate-900/90'
+                      ? 'bg-[#007AFF]/5 border-[#007AFF]/40 dark:border-[#007AFF]/50 shadow-2xs'
+                      : 'bg-white/70 dark:bg-white/5 border-black/[0.06] dark:border-white/10 hover:border-black/15 dark:hover:border-white/20 hover:bg-black/[0.02] dark:hover:bg-white/[0.08]'
                   }`}
                 >
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
                     <input
                       type="checkbox"
                       checked={isChecked}
@@ -205,28 +203,28 @@ export default function AutoDiscoverModal({
                         toggleSelect(item.path);
                       }}
                       onClick={(e) => e.stopPropagation()}
-                      className="rounded border-slate-300 dark:border-white/20 text-indigo-600 focus:ring-indigo-500 bg-white dark:bg-slate-900 h-4 w-4 cursor-pointer"
+                      className="rounded border-black/20 dark:border-white/20 text-[#007AFF] focus:ring-[#007AFF] bg-white dark:bg-black/50 h-4 w-4 cursor-pointer accent-[#007AFF]"
                     />
 
                     <div
-                      className="h-8 w-8 rounded-lg flex items-center justify-center text-white"
-                      style={{ backgroundColor: `${item.color || '#6366F1'}25` }}
+                      className="h-8 w-8 rounded-lg flex items-center justify-center text-white flex-shrink-0"
+                      style={{ backgroundColor: `${item.color || '#007AFF'}20` }}
                     >
                       {activeTab === 'global' ? (
                         <Bot className="h-4 w-4" style={{ color: item.color }} />
                       ) : (
-                        <Folder className="h-4 w-4 text-purple-500 dark:text-purple-400" />
+                        <Folder className="h-4 w-4 text-[#AF52DE]" />
                       )}
                     </div>
 
-                    <div>
+                    <div className="min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="font-semibold text-slate-800 dark:text-slate-200 text-sm">
+                        <span className="font-semibold text-slate-800 dark:text-slate-200 text-xs truncate">
                           {item.name}
                         </span>
                         {isChecked && (
                           <span className="flex items-center gap-1 text-[10px] text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.2 rounded border border-emerald-500/20 font-medium">
-                            <Check className="h-3 w-3" /> Added to SkillDesk
+                            <Check className="h-3 w-3" /> Active
                           </span>
                         )}
                       </div>
@@ -236,8 +234,8 @@ export default function AutoDiscoverModal({
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-3">
-                    <span className="text-xs font-mono font-semibold px-2.5 py-1 rounded-full bg-slate-200/70 dark:bg-white/5 border border-slate-300 dark:border-white/10 text-slate-700 dark:text-slate-300">
+                  <div className="flex items-center gap-2.5 flex-shrink-0 ml-2">
+                    <span className="text-[11px] font-mono font-semibold px-2 py-0.5 rounded-full bg-black/[0.04] dark:bg-white/10 border border-black/[0.06] dark:border-white/10 text-slate-700 dark:text-slate-300">
                       {item.count} skills
                     </span>
 
@@ -251,7 +249,7 @@ export default function AutoDiscoverModal({
                           revealInFinder(item.path);
                         }
                       }}
-                      className="p-1 rounded text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-200/50 dark:hover:bg-white/5 transition-colors"
+                      className="p-1 rounded-md text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
                       title="Reveal in Finder or Copy Path"
                     >
                       <ExternalLink className="h-3.5 w-3.5" />
@@ -264,22 +262,22 @@ export default function AutoDiscoverModal({
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-slate-200 dark:border-white/5 bg-slate-50/90 dark:bg-slate-900/60 flex items-center justify-between text-xs">
-          <div className="text-slate-600 dark:text-slate-400">
-            <strong className="text-indigo-600 dark:text-indigo-400 font-mono">{selectedTools.size}</strong> locations selected in SkillDesk
+        <div className="p-3.5 sm:p-4 border-t border-black/[0.06] dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02] flex items-center justify-between text-xs">
+          <div className="text-slate-500 text-[11px]">
+            <strong className="text-[#007AFF] font-mono">{selectedTools.size}</strong> locations active in SkillDesk
           </div>
 
           <div className="flex items-center gap-2">
             <button
               onClick={onClose}
-              className="px-4 py-2 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 dark:text-slate-400 dark:hover:text-white dark:hover:bg-white/5 transition-colors"
+              className="px-3.5 sm:px-4 py-2 rounded-xl bg-black/5 hover:bg-black/10 dark:bg-white/5 dark:hover:bg-white/10 text-slate-700 dark:text-slate-300 font-medium transition-colors"
             >
               Cancel
             </button>
             <button
               onClick={handleSave}
               disabled={saving}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-medium shadow-md shadow-indigo-600/30 transition-all disabled:opacity-50"
+              className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#007AFF] hover:bg-[#0066d6] text-white font-semibold shadow-xs transition-all disabled:opacity-50"
             >
               <Sparkles className="h-3.5 w-3.5" />
               <span>{saving ? 'Saving...' : 'Apply Selection'}</span>
