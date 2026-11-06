@@ -20,7 +20,7 @@ import {
   revealInFinder,
   fetchLLMConfig 
 } from './api.js';
-import { Sparkles, Layers, Filter, CheckCircle2, AlertCircle, ChevronDown } from 'lucide-react';
+import { Sparkles, Layers, Filter, CheckCircle2, AlertCircle, ChevronDown, Bot } from 'lucide-react';
 
 export default function App() {
   const [skills, setSkills] = useState([]);
@@ -304,8 +304,8 @@ export default function App() {
         onToggleTheme={toggleTheme}
       />
 
-      <div className={`flex-1 flex w-full transition-all duration-300 ${isChatOpen ? 'max-w-[1920px] mx-auto' : 'max-w-7xl mx-auto'}`}>
-        <main className="flex-1 min-w-0 px-6 py-6">
+      <div className={`flex-1 flex flex-col lg:flex-row w-full transition-all duration-300 ${isChatOpen ? 'max-w-[1920px] mx-auto' : 'max-w-7xl mx-auto'}`}>
+        <main className="flex-1 min-w-0 px-3.5 sm:px-6 py-4 sm:py-6">
           {/* Platform Overview Cards */}
           <PlatformOverview
             platforms={platforms}
@@ -318,7 +318,7 @@ export default function App() {
           <div className="mb-6 rounded-2xl border border-slate-200/80 dark:border-white/5 bg-white/70 dark:bg-slate-900/40 backdrop-blur-md overflow-hidden transition-all duration-300 shadow-xs">
           <div
             onClick={() => setIsFiltersExpanded(!isFiltersExpanded)}
-            className="flex flex-wrap items-center justify-between gap-3 px-5 py-3 bg-slate-100/70 hover:bg-slate-100 dark:bg-slate-900/60 dark:hover:bg-slate-900/90 transition-colors cursor-pointer select-none"
+            className="flex flex-wrap items-center justify-between gap-2.5 sm:gap-3 px-3.5 sm:px-5 py-2.5 sm:py-3 bg-slate-100/70 hover:bg-slate-100 dark:bg-slate-900/60 dark:hover:bg-slate-900/90 transition-colors cursor-pointer select-none"
           >
             <div className="flex items-center gap-3">
               <div className="h-7 w-7 rounded-lg bg-[#007AFF]/10 border border-[#007AFF]/20 flex items-center justify-center text-[#007AFF]">
@@ -521,6 +521,21 @@ export default function App() {
           showToast={showToast}
           onRevealPath={handleRevealPath}
         />
+      )}
+
+      {/* Mobile Floating Action Button for AI Assistant */}
+      {!isChatOpen && (
+        <button
+          onClick={() => setIsChatOpen(true)}
+          className="lg:hidden fixed bottom-5 right-5 z-40 flex items-center gap-2 px-3.5 py-2.5 rounded-full bg-[#007AFF] text-white shadow-xl shadow-[#007AFF]/35 active:scale-95 transition-all text-xs font-semibold"
+          aria-label="Open AI Assistant"
+        >
+          <div className="relative">
+            <Bot className="h-4 w-4" />
+            <span className={`absolute -top-1 -right-1 h-2 w-2 rounded-full ${isLLMConfigured ? 'bg-emerald-300' : 'bg-amber-300 animate-pulse'}`} />
+          </div>
+          <span>AI Assistant</span>
+        </button>
       )}
 
       <Toast toast={toast} onClose={() => setToast(null)} />

@@ -80,212 +80,372 @@ export default function MatrixView({
   const visiblePlatforms = platforms.filter(plat => plat.exists || (plat.count || 0) > 0);
 
   return (
-    <div className="overflow-x-auto rounded-2xl border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-slate-900/60 shadow-xl backdrop-blur-md">
-      <table className="w-full text-left text-xs border-collapse">
-        <thead>
-          <tr className="border-b border-slate-200/80 dark:border-white/10 bg-slate-100/90 dark:bg-slate-900/95 text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider text-[11px]">
-            <th className="py-3.5 px-4 min-w-[280px]">Skill Name & Description</th>
-            {visiblePlatforms.map((plat, idx) => (
-              <th key={`${plat.id}-${plat.path || idx}`} className="py-3.5 px-3 text-center min-w-[140px]">
-                <div className="flex items-center justify-center gap-1.5">
-                  <span className="h-2 w-2 rounded-full" style={{ backgroundColor: plat.color }} />
-                  <span className="text-slate-700 dark:text-slate-200">{plat.badge || plat.name}</span>
-                </div>
-              </th>
-            ))}
-            <th className="py-3.5 px-4 text-right min-w-[110px]">Actions</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-slate-200/60 dark:divide-white/5">
-          {skills.map(skill => {
-            const installedPlatforms = visiblePlatforms.filter(p => skill.platforms[p.id]?.installed);
-            const primarySource = installedPlatforms.find(p => p.id === 'shared') || installedPlatforms[0];
-            const hasMissing = installedPlatforms.length < visiblePlatforms.length;
+    <div className="overflow-hidden rounded-2xl border border-slate-200/80 dark:border-white/10 bg-white/80 dark:bg-slate-900/60 shadow-xl backdrop-blur-md">
+      
+      {/* 1. Mobile Cards View (shown on screens < md) */}
+      <div className="divide-y divide-slate-200/70 dark:divide-white/5 block md:hidden">
+        {skills.map(skill => {
+          const installedPlatforms = visiblePlatforms.filter(p => skill.platforms[p.id]?.installed);
+          const primarySource = installedPlatforms.find(p => p.id === 'shared') || installedPlatforms[0];
+          const hasMissing = installedPlatforms.length < visiblePlatforms.length;
+          const uninstalledPlatforms = visiblePlatforms.filter(p => !skill.platforms[p.id]?.installed);
 
-            return (
-              <tr 
-                key={skill.name}
-                className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors group"
-              >
-                {/* Skill Name & Description */}
-                <td className="py-3 px-4">
-                  <div className="flex items-start gap-2.5">
+          return (
+            <div key={skill.name} className="p-3.5 space-y-2.5 hover:bg-slate-50/60 dark:hover:bg-slate-800/30 transition-colors">
+              {/* Header: Name, description, quick actions */}
+              <div className="flex items-start justify-between gap-2">
+                <div 
+                  onClick={() => onOpenDetail(skill.name)} 
+                  className="cursor-pointer group flex-1 min-w-0"
+                >
+                  <div className="font-semibold text-sm text-slate-900 dark:text-slate-100 group-hover:text-[#007AFF] transition-colors flex items-center gap-1.5">
+                    <FileText className="h-3.5 w-3.5 text-[#007AFF] flex-shrink-0" />
+                    <span className="truncate">{skill.displayName || skill.name}</span>
+                  </div>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 mt-0.5 leading-relaxed">
+                    {skill.description || 'No description provided'}
+                  </p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className="font-mono text-[10px] text-slate-400 dark:text-slate-500 truncate">{skill.name}</span>
+                    {skill.metadata?.version && (
+                      <span className="text-[10px] text-slate-400 dark:text-slate-500">v{skill.metadata.version}</span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Quick Action Icons */}
+                <div className="flex items-center gap-1 flex-shrink-0">
+                  {hasMissing && primarySource && (
                     <button
-                      onClick={() => onOpenDetail(skill.name)}
-                      className="p-1 rounded-lg bg-[#007AFF]/10 text-[#007AFF] hover:bg-[#007AFF]/20 transition-colors mt-0.5 flex-shrink-0"
-                      title="Inspect SKILL.md"
+                      onClick={() => handleSyncAll(skill.name, primarySource.id)}
+                      disabled={loadingAction === `${skill.name}-syncall`}
+                      className="p-1.5 rounded-lg bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-600 dark:text-indigo-300 border border-indigo-500/20 text-xs transition-colors"
+                      title="Sync (Symlink) to all platforms"
                     >
-                      <FileText className="h-3.5 w-3.5" />
+                      <Sparkles className="h-3.5 w-3.5" />
                     </button>
-                    <div>
-                      <div 
-                        className="font-semibold text-slate-900 dark:text-slate-100 group-hover:text-[#007AFF] dark:group-hover:text-sky-300 transition-colors cursor-pointer text-sm"
-                        onClick={() => onOpenDetail(skill.name)}
-                      >
-                        {skill.displayName || skill.name}
-                      </div>
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-1 max-w-sm mt-0.5">
-                        {skill.description || 'No description provided'}
-                      </p>
-                      <div className="flex items-center gap-2 mt-1">
-                        <span className="font-mono text-[10px] text-slate-400 dark:text-slate-500">{skill.name}</span>
-                        {skill.metadata?.version && (
-                          <span className="text-[10px] text-slate-400 dark:text-slate-500">v{skill.metadata.version}</span>
+                  )}
+                  {primarySource && skill.platforms[primarySource.id]?.path && (
+                    <button
+                      onClick={() => onRevealPath(skill.platforms[primarySource.id].path)}
+                      className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
+                      title="Reveal in Finder or Copy Path"
+                    >
+                      <ExternalLink className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+                  <button
+                    onClick={() => setDeleteTargetSkill(skill)}
+                    className="p-1.5 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 transition-colors"
+                    title="Delete skill"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Installed Platform Badges & Add Links */}
+              <div className="space-y-1 pt-1">
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider mr-0.5">
+                    Installed:
+                  </span>
+                  {installedPlatforms.map(plat => {
+                    const platStatus = skill.platforms[plat.id];
+                    const isSymlink = !!platStatus?.isSymlink;
+                    const menuKey = `mobile-${skill.name}-${plat.id}`;
+                    const isMenuOpen = activeMenu === menuKey;
+
+                    return (
+                      <div key={plat.id} className="relative inline-flex items-center">
+                        <span
+                          className="inline-flex items-center gap-1 pl-2 pr-1 py-0.5 rounded-full text-[10px] font-medium border"
+                          style={{
+                            backgroundColor: `${plat.color}15`,
+                            borderColor: `${plat.color}40`,
+                            color: plat.color
+                          }}
+                        >
+                          {isSymlink ? <Link2 className="h-2.5 w-2.5" /> : <Check className="h-2.5 w-2.5" />}
+                          <span>{plat.badge || plat.name}</span>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setActiveMenu(isMenuOpen ? null : menuKey);
+                            }}
+                            className="ml-0.5 p-0.5 rounded-full hover:bg-black/10 dark:hover:bg-white/20 transition-colors"
+                            title="Manage installation"
+                          >
+                            <X className="h-2.5 w-2.5" />
+                          </button>
+                        </span>
+
+                        {/* Mobile Popover */}
+                        {isMenuOpen && (
+                          <>
+                            <div className="fixed inset-0 z-40" onClick={() => setActiveMenu(null)} />
+                            <div className="absolute top-6 left-0 z-50 w-44 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-950 p-1.5 shadow-2xl text-left text-xs">
+                              {isSymlink ? (
+                                <>
+                                  <button
+                                    onClick={() => handleUnlink(skill.name, plat.id, false)}
+                                    className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-rose-600 dark:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-500/10 font-medium"
+                                  >
+                                    <Unlink className="h-3.5 w-3.5" />
+                                    <span>Un-symlink</span>
+                                  </button>
+                                  <button
+                                    onClick={() => handleUnlink(skill.name, plat.id, true)}
+                                    className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-indigo-600 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-500/10"
+                                  >
+                                    <Copy className="h-3.5 w-3.5" />
+                                    <span>Detach to Copy</span>
+                                  </button>
+                                </>
+                              ) : (
+                                <button
+                                  onClick={() => handleTrash(skill.name, plat.id)}
+                                  className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                  <span>Remove from {plat.name}</span>
+                                </button>
+                              )}
+                            </div>
+                          </>
                         )}
                       </div>
-                    </div>
+                    );
+                  })}
+
+                  {/* Add pills for missing locations */}
+                  {uninstalledPlatforms.slice(0, 3).map(plat => (
+                    <button
+                      key={plat.id}
+                      disabled={!primarySource || loadingAction === `${skill.name}-${plat.id}`}
+                      onClick={() => primarySource && handleLink(skill.name, primarySource.id, plat.id)}
+                      className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[10px] border border-dashed border-slate-300 dark:border-white/10 text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-300 hover:border-indigo-400/60"
+                      title={`Link to ${plat.name}`}
+                    >
+                      <Plus className="h-2.5 w-2.5" />
+                      <span>{plat.badge || plat.name}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* 2. Desktop Matrix Table View (shown on md+) */}
+      <div className="hidden md:block overflow-x-auto">
+        <table className="w-full text-left text-xs border-collapse">
+          <thead>
+            <tr className="border-b border-slate-200/80 dark:border-white/10 bg-slate-100/90 dark:bg-slate-900/95 text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider text-[11px]">
+              <th className="py-3.5 px-4 min-w-[280px]">Skill Name & Description</th>
+              {visiblePlatforms.map((plat, idx) => (
+                <th key={`${plat.id}-${plat.path || idx}`} className="py-3.5 px-3 text-center min-w-[140px]">
+                  <div className="flex items-center justify-center gap-1.5">
+                    <span className="h-2 w-2 rounded-full" style={{ backgroundColor: plat.color }} />
+                    <span className="text-slate-700 dark:text-slate-200">{plat.badge || plat.name}</span>
                   </div>
-                </td>
+                </th>
+              ))}
+              <th className="py-3.5 px-4 text-right min-w-[110px]">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-200/60 dark:divide-white/5">
+            {skills.map(skill => {
+              const installedPlatforms = visiblePlatforms.filter(p => skill.platforms[p.id]?.installed);
+              const primarySource = installedPlatforms.find(p => p.id === 'shared') || installedPlatforms[0];
+              const hasMissing = installedPlatforms.length < visiblePlatforms.length;
 
-                {/* Platform columns */}
-                {visiblePlatforms.map((plat, idx) => {
-                  const platStatus = skill.platforms[plat.id];
-                  const isInstalled = !!platStatus?.installed;
-                  const isSymlink = !!platStatus?.isSymlink;
-                  const menuKey = `${skill.name}-${plat.id}`;
-                  const isMenuOpen = activeMenu === menuKey;
-                  const isLoading = loadingAction === menuKey;
-
-                  return (
-                    <td key={`${plat.id}-${plat.path || idx}`} className="py-2.5 px-3 text-center relative">
-                      {isInstalled ? (
-                        <div className="relative inline-flex items-center">
-                          {/* Installed Pill */}
-                          <div 
-                            className="inline-flex items-center gap-1.5 pl-2.5 pr-1.5 py-1 rounded-full text-[11px] font-medium border transition-all"
-                            style={{
-                              backgroundColor: `${plat.color}15`,
-                              borderColor: `${plat.color}40`,
-                              color: plat.color
-                            }}
-                            title={isSymlink ? `Symlink -> ${platStatus.symlinkDisplay || platStatus.symlinkTarget}` : 'Direct standalone files'}
-                          >
-                            {isSymlink ? (
-                              <Link2 className="h-3 w-3 flex-shrink-0" />
-                            ) : (
-                              <Check className="h-3 w-3 flex-shrink-0" />
-                            )}
-                            <span>{isSymlink ? 'Symlink' : 'Active'}</span>
-
-                            {/* Unlink / Action button right on pill */}
-                            <button
-                              disabled={isLoading}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setActiveMenu(isMenuOpen ? null : menuKey);
-                              }}
-                              className="ml-0.5 p-0.5 rounded-full hover:bg-white/20 text-current transition-colors"
-                              title={isSymlink ? "Symlink options (Unlink or Detach)" : `Remove from ${plat.name}`}
-                            >
-                              <X className="h-3 w-3" />
-                            </button>
-                          </div>
-
-                          {/* Popover Menu for Unlinking / Removing */}
-                          {isMenuOpen && (
-                            <>
-                              <div 
-                                className="fixed inset-0 z-40" 
-                                onClick={() => setActiveMenu(null)} 
-                              />
-                              <div className="absolute top-8 left-1/2 -translate-x-1/2 z-50 w-44 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-950 p-1.5 shadow-2xl backdrop-blur-xl text-left text-xs">
-                                {isSymlink ? (
-                                  <>
-                                    <button
-                                      onClick={() => handleUnlink(skill.name, plat.id, false)}
-                                      className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-rose-600 dark:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-500/10 font-medium"
-                                    >
-                                      <Unlink className="h-3.5 w-3.5" />
-                                      <span>Un-symlink (Remove)</span>
-                                    </button>
-                                    <button
-                                      onClick={() => handleUnlink(skill.name, plat.id, true)}
-                                      className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-indigo-600 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-500/10"
-                                      title="Convert symlink into a standalone physical copy"
-                                    >
-                                      <Copy className="h-3.5 w-3.5" />
-                                      <span>Detach to Copy</span>
-                                    </button>
-                                  </>
-                                ) : (
-                                  <button
-                                    onClick={() => handleTrash(skill.name, plat.id)}
-                                    className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10"
-                                  >
-                                    <Trash2 className="h-3.5 w-3.5" />
-                                    <span>Remove from {plat.name}</span>
-                                  </button>
-                                )}
-                              </div>
-                            </>
+              return (
+                <tr 
+                  key={skill.name}
+                  className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors group"
+                >
+                  {/* Skill Name & Description */}
+                  <td className="py-3 px-4">
+                    <div className="flex items-start gap-2.5">
+                      <button
+                        onClick={() => onOpenDetail(skill.name)}
+                        className="p-1 rounded-lg bg-[#007AFF]/10 text-[#007AFF] hover:bg-[#007AFF]/20 transition-colors mt-0.5 flex-shrink-0"
+                        title="Inspect SKILL.md"
+                      >
+                        <FileText className="h-3.5 w-3.5" />
+                      </button>
+                      <div>
+                        <div 
+                          className="font-semibold text-slate-900 dark:text-slate-100 group-hover:text-[#007AFF] dark:group-hover:text-sky-300 transition-colors cursor-pointer text-sm"
+                          onClick={() => onOpenDetail(skill.name)}
+                        >
+                          {skill.displayName || skill.name}
+                        </div>
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-1 max-w-sm mt-0.5">
+                          {skill.description || 'No description provided'}
+                        </p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="font-mono text-[10px] text-slate-400 dark:text-slate-500">{skill.name}</span>
+                          {skill.metadata?.version && (
+                            <span className="text-[10px] text-slate-400 dark:text-slate-500">v{skill.metadata.version}</span>
                           )}
                         </div>
-                      ) : (
+                      </div>
+                    </div>
+                  </td>
+
+                  {/* Platform columns */}
+                  {visiblePlatforms.map((plat, idx) => {
+                    const platStatus = skill.platforms[plat.id];
+                    const isInstalled = !!platStatus?.installed;
+                    const isSymlink = !!platStatus?.isSymlink;
+                    const menuKey = `${skill.name}-${plat.id}`;
+                    const isMenuOpen = activeMenu === menuKey;
+                    const isLoading = loadingAction === menuKey;
+
+                    return (
+                      <td key={`${plat.id}-${plat.path || idx}`} className="py-2.5 px-3 text-center relative">
+                        {isInstalled ? (
+                          <div className="relative inline-flex items-center">
+                            {/* Installed Pill */}
+                            <div 
+                              className="inline-flex items-center gap-1.5 pl-2.5 pr-1.5 py-1 rounded-full text-[11px] font-medium border transition-all"
+                              style={{
+                                backgroundColor: `${plat.color}15`,
+                                borderColor: `${plat.color}40`,
+                                color: plat.color
+                              }}
+                              title={isSymlink ? `Symlink -> ${platStatus.symlinkDisplay || platStatus.symlinkTarget}` : 'Direct standalone files'}
+                            >
+                              {isSymlink ? (
+                                <Link2 className="h-3 w-3 flex-shrink-0" />
+                              ) : (
+                                <Check className="h-3 w-3 flex-shrink-0" />
+                              )}
+                              <span>{isSymlink ? 'Symlink' : 'Active'}</span>
+
+                              {/* Unlink / Action button right on pill */}
+                              <button
+                                disabled={isLoading}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setActiveMenu(isMenuOpen ? null : menuKey);
+                                }}
+                                className="ml-0.5 p-0.5 rounded-full hover:bg-black/10 dark:hover:bg-white/20 text-current transition-colors"
+                                title={isSymlink ? "Symlink options (Unlink or Detach)" : `Remove from ${plat.name}`}
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
+                            </div>
+
+                            {/* Popover Menu for Unlinking / Removing */}
+                            {isMenuOpen && (
+                              <>
+                                <div 
+                                  className="fixed inset-0 z-40" 
+                                  onClick={() => setActiveMenu(null)} 
+                                />
+                                <div className="absolute top-8 left-1/2 -translate-x-1/2 z-50 w-44 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-950 p-1.5 shadow-2xl backdrop-blur-xl text-left text-xs">
+                                  {isSymlink ? (
+                                    <>
+                                      <button
+                                        onClick={() => handleUnlink(skill.name, plat.id, false)}
+                                        className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-rose-600 dark:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-500/10 font-medium"
+                                      >
+                                        <Unlink className="h-3.5 w-3.5" />
+                                        <span>Un-symlink (Remove)</span>
+                                      </button>
+                                      <button
+                                        onClick={() => handleUnlink(skill.name, plat.id, true)}
+                                        className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-indigo-600 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-500/10"
+                                        title="Convert symlink into a standalone physical copy"
+                                      >
+                                        <Copy className="h-3.5 w-3.5" />
+                                        <span>Detach to Copy</span>
+                                      </button>
+                                    </>
+                                  ) : (
+                                    <button
+                                      onClick={() => handleTrash(skill.name, plat.id)}
+                                      className="flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10"
+                                    >
+                                      <Trash2 className="h-3.5 w-3.5" />
+                                      <span>Remove from {plat.name}</span>
+                                    </button>
+                                  )}
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        ) : (
+                          <button
+                            disabled={!primarySource || isLoading}
+                            onClick={() => primarySource && handleLink(skill.name, primarySource.id, plat.id)}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] border border-dashed border-slate-300 dark:border-white/10 text-slate-400 dark:text-slate-500 hover:border-indigo-400/70 hover:text-indigo-600 dark:hover:text-indigo-300 hover:bg-indigo-50/50 dark:hover:bg-indigo-500/5 transition-all disabled:opacity-40"
+                            title={primarySource ? `Link from ${primarySource.name}` : 'Not available to link'}
+                          >
+                            <Plus className="h-3 w-3" />
+                            <span>{isLoading ? '...' : 'Add'}</span>
+                          </button>
+                        )}
+                      </td>
+                    );
+                  })}
+
+                  {/* Actions column */}
+                  <td className="py-3 px-4 text-right">
+                    <div className="flex items-center justify-end gap-1.5">
+                      {hasMissing && primarySource && (
                         <button
-                          disabled={!primarySource || isLoading}
-                          onClick={() => primarySource && handleLink(skill.name, primarySource.id, plat.id)}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] border border-dashed border-white/10 text-slate-500 hover:border-indigo-400/50 hover:text-indigo-300 hover:bg-indigo-500/5 transition-all disabled:opacity-40"
-                          title={primarySource ? `Link from ${primarySource.name}` : 'Not available to link'}
+                          onClick={() => handleSyncAll(skill.name, primarySource.id)}
+                          disabled={loadingAction === `${skill.name}-syncall`}
+                          className="p-1.5 rounded-lg bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-600 dark:text-indigo-300 border border-indigo-500/20 text-xs transition-colors"
+                          title="Sync (Symlink) to all platforms"
                         >
-                          <Plus className="h-3 w-3" />
-                          <span>{isLoading ? '...' : 'Add'}</span>
+                          <Sparkles className="h-3.5 w-3.5" />
                         </button>
                       )}
-                    </td>
-                  );
-                })}
-
-                {/* Actions column */}
-                <td className="py-3 px-4 text-right">
-                  <div className="flex items-center justify-end gap-1.5">
-                    {hasMissing && primarySource && (
+                      {primarySource && skill.platforms[primarySource.id]?.path && (
+                        <button
+                          onClick={() => onRevealPath(skill.platforms[primarySource.id].path)}
+                          className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
+                          title="Reveal in macOS Finder"
+                        >
+                          <ExternalLink className="h-3.5 w-3.5" />
+                        </button>
+                      )}
                       <button
-                        onClick={() => handleSyncAll(skill.name, primarySource.id)}
-                        disabled={loadingAction === `${skill.name}-syncall`}
-                        className="p-1.5 rounded-lg bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 border border-indigo-500/20 text-xs transition-colors"
-                        title="Sync (Symlink) to all platforms"
+                        onClick={() => setDeleteTargetSkill(skill)}
+                        className="p-1.5 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 transition-colors"
+                        title="Delete skill"
                       >
-                        <Sparkles className="h-3.5 w-3.5" />
+                        <Trash2 className="h-3.5 w-3.5" />
                       </button>
-                    )}
-                    {primarySource && skill.platforms[primarySource.id]?.path && (
-                      <button
-                        onClick={() => onRevealPath(skill.platforms[primarySource.id].path)}
-                        className="p-1.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-white/5 transition-colors"
-                        title="Reveal in macOS Finder"
-                      >
-                        <ExternalLink className="h-3.5 w-3.5" />
-                      </button>
-                    )}
-                    <button
-                      onClick={() => setDeleteTargetSkill(skill)}
-                      className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
-                      title="Delete skill"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
 
-      {/* Pagination Footer */}
-      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200/80 dark:border-white/10 bg-slate-100/70 dark:bg-slate-900/90 px-5 py-3 text-xs">
-        <div className="text-slate-600 dark:text-slate-400">
+      {/* Pagination Footer (Mobile & Desktop Responsive) */}
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-slate-200/80 dark:border-white/10 bg-slate-100/70 dark:bg-slate-900/90 px-3.5 sm:px-5 py-3 text-xs w-full">
+        <div className="text-slate-600 dark:text-slate-400 text-center sm:text-left text-[11px] sm:text-xs">
           Showing <span className="font-semibold text-slate-800 dark:text-slate-200">{totalFiltered === 0 ? 0 : (currentPage - 1) * pageSize + 1}–{Math.min(currentPage * pageSize, totalFiltered)}</span> of <span className="font-semibold text-slate-800 dark:text-slate-200">{totalFiltered}</span> skills
           {totalFiltered !== totalSkills && (
-            <span className="text-slate-400 dark:text-slate-500 ml-1">
-              (searched across all {totalSkills} skills)
+            <span className="text-slate-400 dark:text-slate-500 ml-1 hidden xs:inline">
+              (of {totalSkills} total)
             </span>
           )}
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto">
           {/* Page Size Selector */}
-          <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400">
+          <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400 text-[11px] sm:text-xs">
             <span>Per page:</span>
             <select
               value={pageSize}
@@ -320,8 +480,8 @@ export default function MatrixView({
               <ChevronLeft className="h-4 w-4" />
             </button>
 
-            <span className="px-2 text-slate-700 dark:text-slate-300 font-mono text-[11px]">
-              Page <strong className="text-[#007AFF]">{currentPage}</strong> of {Math.ceil(totalFiltered / pageSize) || 1}
+            <span className="px-1.5 text-slate-700 dark:text-slate-300 font-mono text-[11px]">
+              <strong className="text-[#007AFF]">{currentPage}</strong>/{Math.ceil(totalFiltered / pageSize) || 1}
             </span>
 
             <button
@@ -346,21 +506,21 @@ export default function MatrixView({
 
       {/* Delete Skill Confirmation Modal */}
       {deleteTargetSkill && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-150">
-          <div className="w-full max-w-lg rounded-2xl border border-rose-500/30 bg-white dark:bg-slate-950 p-6 shadow-2xl space-y-5 text-left text-slate-900 dark:text-slate-100">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-150">
+          <div className="w-full max-w-lg rounded-2xl border border-rose-500/30 bg-white dark:bg-slate-950 p-5 sm:p-6 shadow-2xl space-y-4 sm:space-y-5 text-left text-slate-900 dark:text-slate-100 max-h-[92vh] overflow-y-auto">
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-xl bg-rose-500/15 border border-rose-500/30 flex items-center justify-center text-rose-400">
+                <div className="h-9 w-9 sm:h-10 sm:w-10 rounded-xl bg-rose-500/15 border border-rose-500/30 flex items-center justify-center text-rose-500 dark:text-rose-400 flex-shrink-0">
                   <Trash2 className="h-5 w-5" />
                 </div>
-                <div>
+                <div className="min-w-0">
                   <h3 className="text-base font-semibold text-slate-900 dark:text-white">Delete Skill</h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 font-mono mt-0.5">{deleteTargetSkill.name}</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 font-mono mt-0.5 truncate">{deleteTargetSkill.name}</p>
                 </div>
               </div>
               <button
                 onClick={() => setDeleteTargetSkill(null)}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-white/10 transition-colors"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -371,7 +531,7 @@ export default function MatrixView({
                 Choose to remove this skill from an individual location or delete it everywhere:
               </p>
 
-              <div className="max-h-64 overflow-y-auto space-y-2 rounded-xl border border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-slate-900/60 p-2.5">
+              <div className="max-h-56 sm:max-h-64 overflow-y-auto space-y-2 rounded-xl border border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-slate-900/60 p-2.5">
                 {visiblePlatforms
                   .filter(p => deleteTargetSkill.platforms[p.id]?.installed)
                   .map((plat, idx) => {
@@ -379,16 +539,16 @@ export default function MatrixView({
                     const isSymlink = status?.isSymlink;
                     return (
                       <div key={`${plat.id}-${plat.path || idx}`} className="flex items-center justify-between p-2.5 rounded-lg bg-white dark:bg-slate-950/60 border border-slate-200 dark:border-white/5 text-xs">
-                        <div className="flex items-center gap-2.5">
-                          <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: plat.color }} />
-                          <div>
-                            <div className="font-semibold text-slate-800 dark:text-slate-200">{plat.name}</div>
-                            <div className="text-[10px] text-slate-500 font-mono">{plat.path}</div>
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <span className="h-2.5 w-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: plat.color }} />
+                          <div className="min-w-0">
+                            <div className="font-semibold text-slate-800 dark:text-slate-200 truncate">{plat.name}</div>
+                            <div className="text-[10px] text-slate-500 font-mono truncate">{plat.path}</div>
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-2">
-                          <span className={`text-[10px] px-2 py-0.5 rounded-full border ${isSymlink ? 'border-purple-500/30 bg-purple-500/10 text-purple-300' : 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300'}`}>
+                        <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+                          <span className={`text-[10px] px-2 py-0.5 rounded-full border ${isSymlink ? 'border-purple-500/30 bg-purple-500/10 text-purple-700 dark:text-purple-300' : 'border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'}`}>
                             {isSymlink ? 'Symlink' : 'Source'}
                           </span>
                           <button
@@ -396,7 +556,7 @@ export default function MatrixView({
                               await handleTrash(deleteTargetSkill.name, plat.id);
                               setDeleteTargetSkill(null);
                             }}
-                            className="px-2.5 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/20 text-[11px] font-medium transition-colors"
+                            className="px-2.5 py-1 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-300 border border-rose-500/20 text-[11px] font-medium transition-colors"
                             title={`Remove from ${plat.name}`}
                           >
                             Remove
@@ -408,7 +568,7 @@ export default function MatrixView({
               </div>
             </div>
 
-            <div className="pt-2 flex items-center justify-between border-t border-slate-200 dark:border-white/10">
+            <div className="pt-2 flex items-center justify-between border-t border-slate-200 dark:border-white/10 gap-2">
               <button
                 onClick={() => setDeleteTargetSkill(null)}
                 className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-white/5 dark:hover:bg-white/10 text-slate-700 dark:text-slate-300 text-xs font-medium transition-colors"

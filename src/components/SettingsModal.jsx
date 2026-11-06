@@ -207,15 +207,15 @@ export default function SettingsModal({
   const currentPreset = PROVIDER_PRESETS.find(p => p.id === llmConfig.provider) || PROVIDER_PRESETS[0];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 dark:bg-black/70 backdrop-blur-md animate-fade-in">
-      <div className="relative w-full max-w-2xl rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0f172a] shadow-2xl overflow-hidden text-slate-900 dark:text-slate-100 flex flex-col max-h-[85vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 dark:bg-black/70 backdrop-blur-md animate-fade-in">
+      <div className="relative w-full max-w-2xl rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0f172a] shadow-2xl overflow-hidden text-slate-900 dark:text-slate-100 flex flex-col max-h-[92vh] sm:max-h-[85vh]">
         
         {/* Header & Tabs */}
-        <div className="border-b border-slate-200 dark:border-white/10 bg-slate-50/90 dark:bg-slate-900/90 px-6 pt-5 pb-0">
-          <div className="flex items-center justify-between mb-4">
+        <div className="border-b border-slate-200 dark:border-white/10 bg-slate-50/90 dark:bg-slate-900/90 px-4 sm:px-6 pt-4 sm:pt-5 pb-0">
+          <div className="flex items-center justify-between mb-3 sm:mb-4">
             <div>
-              <h3 className="font-bold text-base text-slate-900 dark:text-white">SkillDesk Settings</h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400">Manage tool paths and custom AI assistant configuration</p>
+              <h3 className="font-bold text-sm sm:text-base text-slate-900 dark:text-white">SkillDesk Settings</h3>
+              <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400">Manage tool paths and custom AI assistant configuration</p>
             </div>
             <button
               onClick={onClose}
@@ -226,7 +226,7 @@ export default function SettingsModal({
           </div>
 
           {/* Tab Navigation */}
-          <div className="flex items-center gap-2 -mb-px">
+          <div className="flex items-center gap-2 -mb-px overflow-x-auto no-scrollbar">
             <button
               onClick={() => setActiveTab('locations')}
               className={`flex items-center gap-2 px-4 py-2.5 text-xs font-semibold border-b-2 transition-all ${
@@ -262,7 +262,7 @@ export default function SettingsModal({
         </div>
 
         {/* Modal Body */}
-        <div className="p-6 space-y-5 text-xs flex-1 overflow-y-auto">
+        <div className="p-4 sm:p-6 space-y-4 sm:space-y-5 text-xs flex-1 overflow-y-auto">
           {activeTab === 'locations' ? (
             <div className="space-y-5">
               {/* Platform paths list */}
@@ -530,24 +530,24 @@ export default function SettingsModal({
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-slate-200 dark:border-white/5 bg-slate-50/90 dark:bg-slate-900/60 flex items-center justify-between text-xs">
-          <div className="text-slate-500 text-[11px]">
+        <div className="p-3.5 sm:p-4 border-t border-slate-200 dark:border-white/5 bg-slate-50/90 dark:bg-slate-900/60 flex items-center justify-between text-xs gap-2">
+          <div className="text-slate-500 text-[11px] truncate">
             {activeTab === 'ai' && (
-              <span>Scoped strictly to discover & recommend your skills</span>
+              <span className="hidden sm:inline">Scoped strictly to discover & recommend your skills</span>
             )}
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-shrink-0">
             <button
               onClick={onClose}
-              className="px-4 py-2 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 dark:text-slate-400 dark:hover:text-white dark:hover:bg-white/5 transition-colors"
+              className="px-3 sm:px-4 py-2 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 dark:text-slate-400 dark:hover:text-white dark:hover:bg-white/5 transition-colors"
             >
               Cancel
             </button>
             <button
               onClick={handleSave}
               disabled={saving}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-medium shadow-md shadow-indigo-600/30 transition-all disabled:opacity-50"
+              className="flex items-center gap-1.5 px-3.5 sm:px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-medium shadow-md shadow-indigo-600/30 transition-all disabled:opacity-50"
             >
               <Save className="h-3.5 w-3.5" />
               <span>{saving ? 'Saving...' : 'Save Settings'}</span>

@@ -37,24 +37,24 @@ export default function PlatformOverview({
       <button
         type="button"
         onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full flex items-center justify-between px-5 py-3.5 bg-slate-100/70 hover:bg-slate-100 dark:bg-slate-900/60 dark:hover:bg-slate-900/90 transition-colors text-left group"
+        className="w-full flex items-center justify-between px-3.5 sm:px-5 py-3 sm:py-3.5 bg-slate-100/70 hover:bg-slate-100 dark:bg-slate-900/60 dark:hover:bg-slate-900/90 transition-colors text-left group"
       >
-        <div className="flex items-center gap-3">
-          <div className="h-7 w-7 rounded-lg bg-[#007AFF]/10 border border-[#007AFF]/20 flex items-center justify-center text-[#007AFF]">
+        <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+          <div className="h-7 w-7 rounded-lg bg-[#007AFF]/10 border border-[#007AFF]/20 flex items-center justify-center text-[#007AFF] flex-shrink-0">
             <Layers className="h-4 w-4" />
           </div>
-          <div>
-            <span className="font-semibold text-xs text-slate-800 dark:text-slate-200 group-hover:text-slate-950 dark:group-hover:text-white transition-colors">
-              Connected Assistants & Workspaces
+          <div className="flex flex-col sm:flex-row sm:items-center min-w-0">
+            <span className="font-semibold text-xs text-slate-800 dark:text-slate-200 group-hover:text-slate-950 dark:group-hover:text-white transition-colors truncate">
+              Connected Assistants
             </span>
-            <span className="ml-2.5 text-[11px] font-mono text-slate-500 dark:text-slate-400">
-              {activeCount} active locations • {totalSkillsCount} total skills installed
+            <span className="sm:ml-2.5 text-[10px] sm:text-[11px] font-mono text-slate-500 dark:text-slate-400 truncate">
+              {activeCount} active locations • {totalSkillsCount} skills
             </span>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 group-hover:text-slate-800 dark:group-hover:text-slate-200 transition-colors">
-          <span className="text-[11px] font-medium">
+        <div className="flex items-center gap-1.5 sm:gap-2 text-xs text-slate-500 dark:text-slate-400 group-hover:text-slate-800 dark:group-hover:text-slate-200 transition-colors flex-shrink-0 ml-2">
+          <span className="text-[11px] font-medium hidden xs:inline">
             {isExpanded ? 'Collapse' : `Expand (${platforms.length})`}
           </span>
           <ChevronDown 
@@ -67,8 +67,8 @@ export default function PlatformOverview({
 
       {/* Expanded Grid */}
       {isExpanded && (
-        <div className="p-5 border-t border-slate-200/80 dark:border-white/5 bg-slate-50/50 dark:bg-slate-950/40 animate-fade-in">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+        <div className="p-3.5 sm:p-5 border-t border-slate-200/80 dark:border-white/5 bg-slate-50/50 dark:bg-slate-950/40 animate-fade-in">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3.5">
             {platforms.map((plat) => {
               const IconComponent = ICONS[plat.icon] || Bot;
               const isSelected = activeFilter === plat.id;

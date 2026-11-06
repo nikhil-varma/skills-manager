@@ -42,11 +42,11 @@ export default function NewSkillModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 dark:bg-black/70 backdrop-blur-md animate-fade-in">
-      <div className="relative w-full max-w-lg rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0f172a] shadow-2xl overflow-hidden text-slate-900 dark:text-slate-100">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 dark:bg-black/70 backdrop-blur-md animate-fade-in">
+      <div className="relative w-full max-w-lg max-h-[92vh] sm:max-h-[85vh] flex flex-col rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0f172a] shadow-2xl overflow-hidden text-slate-900 dark:text-slate-100">
         
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-slate-200 dark:border-white/10 px-6 py-4 bg-slate-50/90 dark:bg-slate-900/80">
+        <div className="flex items-center justify-between border-b border-slate-200 dark:border-white/10 px-4 sm:px-6 py-3.5 sm:py-4 bg-slate-50/90 dark:bg-slate-900/80">
           <div className="flex items-center gap-2.5">
             <div className="h-8 w-8 rounded-xl bg-indigo-600 flex items-center justify-center text-white shadow-xs">
               <Plus className="h-4 w-4" />
@@ -65,7 +65,7 @@ export default function NewSkillModal({
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-4 text-xs">
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 text-xs">
           <div>
             <label className="block font-medium text-slate-700 dark:text-slate-300 mb-1">
               Skill Name / Identifier <span className="text-rose-500">*</span>
@@ -96,7 +96,7 @@ export default function NewSkillModal({
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block font-medium text-slate-700 dark:text-slate-300 mb-1">
                 Author
