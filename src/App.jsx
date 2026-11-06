@@ -17,7 +17,7 @@ import {
   trashSkill, 
   revealInFinder 
 } from './api.js';
-import { Sparkles, Layers, Filter, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Sparkles, Layers, Filter, CheckCircle2, AlertCircle, ChevronDown } from 'lucide-react';
 
 export default function App() {
   const [skills, setSkills] = useState([]);
@@ -29,6 +29,7 @@ export default function App() {
   // Filters
   const [searchTerm, setSearchTerm] = useState('');
   const [activeFilter, setActiveFilter] = useState('all'); // 'all', platform.id, 'unsynced', 'symlinked'
+  const [isFiltersExpanded, setIsFiltersExpanded] = useState(false); // Collapsed by default
 
   // Modals
   const [selectedSkillName, setSelectedSkillName] = useState(null);
@@ -87,6 +88,14 @@ export default function App() {
 
     return { unsynced, symlinked };
   }, [skills, platforms]);
+
+  const activeFilterName = useMemo(() => {
+    if (activeFilter === 'all') return `All Skills (${skills.length})`;
+    if (activeFilter === 'unsynced') return `Needs Sync (${filterStats.unsynced})`;
+    if (activeFilter === 'symlinked') return `Symlinked (${filterStats.symlinked})`;
+    const plat = platforms.find(p => p.id === activeFilter);
+    return plat ? `${plat.badge || plat.name} (${plat.count || 0})` : activeFilter;
+  }, [activeFilter, skills.length, filterStats, platforms]);
 
   // Filter skills
   const filteredSkills = useMemo(() => {
@@ -215,69 +224,108 @@ export default function App() {
           onRevealFolder={handleRevealPath}
         />
 
-        {/* Filter Pills */}
-        <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
-          <div className="flex flex-wrap items-center gap-1.5 text-xs">
-            <span className="text-slate-500 mr-1 flex items-center gap-1">
-              <Filter className="h-3 w-3" /> Filter:
-            </span>
-            <button
-              onClick={() => setActiveFilter('all')}
-              className={`px-3 py-1.5 rounded-lg font-medium transition-colors ${
-                activeFilter === 'all'
-                  ? 'bg-white/10 text-white border border-white/20'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'
-              }`}
-            >
-              All Skills ({skills.length})
-            </button>
+        {/* Collapsible Filter Section */}
+        <div className="mb-6 rounded-2xl border border-white/5 bg-slate-900/40 backdrop-blur-md overflow-hidden transition-all duration-300">
+          <div
+            onClick={() => setIsFiltersExpanded(!isFiltersExpanded)}
+            className="flex flex-wrap items-center justify-between gap-3 px-5 py-3 bg-slate-900/60 hover:bg-slate-900/90 transition-colors cursor-pointer select-none"
+          >
+            <div className="flex items-center gap-3">
+              <div className="h-7 w-7 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
+                <Filter className="h-3.5 w-3.5" />
+              </div>
+              <div className="flex items-center gap-2 text-xs">
+                <span className="font-semibold text-slate-300">Filter:</span>
+                <span className="px-2.5 py-1 rounded-lg bg-indigo-600/30 text-indigo-200 border border-indigo-500/30 font-medium">
+                  {activeFilterName}
+                </span>
+                {activeFilter !== 'all' && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setActiveFilter('all');
+                    }}
+                    className="text-[11px] text-slate-400 hover:text-white underline ml-1"
+                  >
+                    Reset
+                  </button>
+                )}
+              </div>
+            </div>
 
-            {filterStats.unsynced > 0 && (
+            <div className="flex items-center gap-4 text-xs">
+              <span className="text-slate-400 text-[11px]">
+                Showing <strong className="text-slate-200">{filteredSkills.length}</strong> of {skills.length} skills
+              </span>
               <button
-                onClick={() => setActiveFilter('unsynced')}
-                className={`px-3 py-1.5 rounded-lg font-medium transition-colors ${
-                  activeFilter === 'unsynced'
-                    ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'
-                }`}
+                type="button"
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 transition-colors text-xs"
               >
-                Needs Sync ({filterStats.unsynced})
+                <span>{isFiltersExpanded ? 'Hide Filters' : 'Show Filters'}</span>
+                <ChevronDown className={`h-3.5 w-3.5 transition-transform duration-200 ${isFiltersExpanded ? 'rotate-180 text-indigo-400' : ''}`} />
               </button>
-            )}
+            </div>
+          </div>
 
-            {filterStats.symlinked > 0 && (
-              <button
-                onClick={() => setActiveFilter('symlinked')}
-                className={`px-3 py-1.5 rounded-lg font-medium transition-colors ${
-                  activeFilter === 'symlinked'
-                    ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'
-                }`}
-              >
-                Symlinked ({filterStats.symlinked})
-              </button>
-            )}
-
-            {platforms
-              .filter(p => (p.count || 0) > 0)
-              .map(p => (
+          {isFiltersExpanded && (
+            <div className="p-4 border-t border-white/5 bg-slate-950/40 animate-fade-in">
+              <div className="flex flex-wrap items-center gap-1.5 text-xs">
                 <button
-                  key={p.id}
-                  onClick={() => setActiveFilter(p.id)}
+                  onClick={() => setActiveFilter('all')}
                   className={`px-3 py-1.5 rounded-lg font-medium transition-colors ${
-                    activeFilter === p.id
-                      ? 'bg-indigo-600 text-white shadow-sm'
+                    activeFilter === 'all'
+                      ? 'bg-white/10 text-white border border-white/20'
                       : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'
                   }`}
                 >
-                  {p.badge || p.name} ({p.count})
+                  All Skills ({skills.length})
                 </button>
-              ))}
-          </div>
 
-          <div className="text-xs text-slate-400">
-            Showing <strong className="text-slate-200">{filteredSkills.length}</strong> of {skills.length} skills
-          </div>
+                {filterStats.unsynced > 0 && (
+                  <button
+                    onClick={() => setActiveFilter('unsynced')}
+                    className={`px-3 py-1.5 rounded-lg font-medium transition-colors ${
+                      activeFilter === 'unsynced'
+                        ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                        : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'
+                    }`}
+                  >
+                    Needs Sync ({filterStats.unsynced})
+                  </button>
+                )}
+
+                {filterStats.symlinked > 0 && (
+                  <button
+                    onClick={() => setActiveFilter('symlinked')}
+                    className={`px-3 py-1.5 rounded-lg font-medium transition-colors ${
+                      activeFilter === 'symlinked'
+                        ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
+                        : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'
+                    }`}
+                  >
+                    Symlinked ({filterStats.symlinked})
+                  </button>
+                )}
+
+                {platforms
+                  .filter(p => (p.count || 0) > 0)
+                  .map(p => (
+                    <button
+                      key={p.id}
+                      onClick={() => setActiveFilter(p.id)}
+                      className={`px-3 py-1.5 rounded-lg font-medium transition-colors ${
+                        activeFilter === p.id
+                          ? 'bg-indigo-600 text-white shadow-sm'
+                          : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'
+                      }`}
+                    >
+                      {p.badge || p.name} ({p.count})
+                    </button>
+                  ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Content Body */}
