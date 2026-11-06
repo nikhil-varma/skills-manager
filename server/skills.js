@@ -362,7 +362,8 @@ export function trashSkill({ skillName, platformPath }) {
   }
 
   // Safe removal to ~/.Trash or platform .trash
-  const trashDir = path.join(os.homedir(), '.Trash');
+  const homeDir = process.env.HOST_HOME || os.homedir();
+  const trashDir = path.join(homeDir, '.Trash');
   if (fs.existsSync(trashDir)) {
     const trashTarget = path.join(trashDir, `${skillName}-${Date.now()}`);
     fs.renameSync(targetDir, trashTarget);

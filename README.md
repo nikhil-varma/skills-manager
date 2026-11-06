@@ -19,7 +19,24 @@ An elegant macOS app to discover, inspect, and manage AI Agent skills across all
 
 ## Quick Start
 
-### 1. Development Mode
+### 1. Run with Docker (Share with Anyone — Zero Setup)
+Anyone on Mac or Linux with Docker installed can run SkillDesk with a single command:
+
+```bash
+docker compose up -d
+```
+or simply:
+```bash
+./run-docker.sh
+```
+
+Then open **http://localhost:3001** in your browser.
+
+> **How Docker shares with your host:** The `docker-compose.yml` mounts `${HOME}:/host_home:rw`, allowing the container to scan, read, create, copy, and symlink skills across your actual host machine!
+
+---
+
+### 2. Local Development Mode (Node.js)
 Runs the backend API (`:3001`) and Vite frontend (`:5173`) with hot module reloading:
 
 ```bash

@@ -2,7 +2,7 @@ import path from 'path';
 import os from 'os';
 import fs from 'fs';
 
-const HOME = os.homedir();
+const HOME = process.env.HOST_HOME || os.homedir();
 
 export function expandHome(filePath) {
   if (!filePath) return filePath;

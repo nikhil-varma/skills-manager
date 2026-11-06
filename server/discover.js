@@ -3,7 +3,7 @@ import path from 'path';
 import os from 'os';
 import { expandHome, contractHome } from './config.js';
 
-const HOME = os.homedir();
+const HOME = process.env.HOST_HOME || os.homedir();
 
 // Known global AI assistant paths
 const KNOWN_GLOBAL_TOOLS = [

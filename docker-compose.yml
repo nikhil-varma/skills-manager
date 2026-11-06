@@ -1,0 +1,15 @@
+services:
+  skilldesk:
+    build: .
+    container_name: skilldesk
+    ports:
+      - "3001:3001"
+    environment:
+      - HOST_HOME=/host_home
+      - PORT=3001
+    volumes:
+      # Mount host user's home directory so container discovers and manages host skills
+      - ${HOME}:/host_home:rw
+      # Persist settings in host user's ~/.config
+      - ${HOME}/.config/skills-manager:/root/.config/skills-manager:rw
+    restart: unless-stopped
