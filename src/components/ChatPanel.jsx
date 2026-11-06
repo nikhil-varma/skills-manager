@@ -240,7 +240,7 @@ export default function ChatPanel({
 
       {/* Responsive Chat Panel: Slide-over drawer on mobile, docked column on desktop */}
       <aside 
-        className="fixed inset-y-0 right-0 z-50 w-full sm:w-[420px] lg:static lg:w-[420px] xl:w-[460px] 2xl:w-[490px] flex-shrink-0 border-l border-slate-200/80 dark:border-white/10 bg-[#f8f9fb]/95 dark:bg-[#13161f]/90 macos-glass flex flex-col h-full lg:h-[calc(100vh-65px)] lg:sticky lg:top-[65px] text-slate-800 dark:text-slate-100 transition-all duration-300 shadow-2xl animate-in slide-in-from-right"
+        className="fixed inset-y-0 right-0 z-50 w-full sm:w-[420px] lg:static lg:w-[420px] xl:w-[460px] 2xl:w-[490px] flex-shrink-0 border-l border-slate-200/80 dark:border-white/10 bg-[#f8f9fb]/95 dark:bg-[#13161f]/90 macos-glass flex flex-col h-full text-slate-800 dark:text-slate-100 transition-all duration-300 shadow-2xl lg:shadow-none animate-in slide-in-from-right"
       >
       {/* macOS Sequoia Titlebar */}
       <div className="flex items-center justify-between border-b border-slate-200/80 dark:border-white/10 bg-white/60 dark:bg-white/[0.04] px-4 py-3 flex-shrink-0 backdrop-blur-md">

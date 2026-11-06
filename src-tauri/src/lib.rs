@@ -14,7 +14,7 @@ fn is_backend_running() -> bool {
   .is_ok()
 }
 
-fn spawn_backend(_app: &AppHandle) -> Option<Child> {
+fn spawn_backend(app: &AppHandle) -> Option<Child> {
   if is_backend_running() {
     println!("[SkillDesk Tauri] Backend server is already running on port 3001.");
     return None;
@@ -22,47 +22,55 @@ fn spawn_backend(_app: &AppHandle) -> Option<Child> {
 
   println!("[SkillDesk Tauri] Starting background server process on port 3001...");
 
-  // Look for server/index.js in parent or current directory
-  let candidates = [
+  // 1. Priority 1: Check bundled binary in app resources (for standalone DMG on any Mac)
+  if let Ok(res_dir) = app.path().resource_dir() {
+    let bundled_candidates = [
+      res_dir.join("bin/skilldesk-server"),
+      res_dir.join("skilldesk-server"),
+      res_dir.join("../Resources/bin/skilldesk-server"),
+      res_dir.join("../Resources/skilldesk-server"),
+    ];
+
+    for path in bundled_candidates {
+      if path.exists() {
+        if let Ok(child) = Command::new(&path).env("PORT", "3001").spawn() {
+          println!("[SkillDesk Tauri] Spawned bundled server binary: {:?}", path);
+          return Some(child);
+        }
+      }
+    }
+  }
+
+  // 2. Priority 2: Local project binary (development / workspace build)
+  let local_bin_candidates = [
+    std::env::current_dir().unwrap_or_default().join("src-tauri/bin/skilldesk-server"),
+    std::env::current_dir().unwrap_or_default().join("bin/skilldesk-server"),
+    std::env::current_dir().unwrap_or_default().join("../src-tauri/bin/skilldesk-server"),
+    std::env::current_dir().unwrap_or_default().join("skilldesk-server"),
+  ];
+
+  for path in local_bin_candidates {
+    if path.exists() {
+      if let Ok(child) = Command::new(&path).env("PORT", "3001").spawn() {
+        println!("[SkillDesk Tauri] Spawned local compiled binary: {:?}", path);
+        return Some(child);
+      }
+    }
+  }
+
+  // 3. Fallback: Node.js or Bun script
+  let script_candidates = [
     std::env::current_dir().unwrap_or_default().join("server/index.js"),
     std::env::current_dir().unwrap_or_default().join("../server/index.js"),
   ];
 
-  let server_script = candidates.into_iter().find(|p| p.exists());
-
-  if let Some(script_path) = server_script {
-    // Try node first, then bun
-    let node_res = Command::new("node")
-      .arg(&script_path)
-      .env("PORT", "3001")
-      .spawn();
-
-    if let Ok(child) = node_res {
+  if let Some(script_path) = script_candidates.into_iter().find(|p| p.exists()) {
+    if let Ok(child) = Command::new("node").arg(&script_path).env("PORT", "3001").spawn() {
       println!("[SkillDesk Tauri] Spawned backend using node: {:?}", script_path);
       return Some(child);
     }
-
-    let bun_res = Command::new("bun")
-      .arg("run")
-      .arg(&script_path)
-      .env("PORT", "3001")
-      .spawn();
-
-    if let Ok(child) = bun_res {
+    if let Ok(child) = Command::new("bun").arg("run").arg(&script_path).env("PORT", "3001").spawn() {
       println!("[SkillDesk Tauri] Spawned backend using bun: {:?}", script_path);
-      return Some(child);
-    }
-  }
-
-  // Also check if compiled binary skilldesk-server exists
-  let bin_candidates = [
-    std::env::current_dir().unwrap_or_default().join("skilldesk-server"),
-    std::env::current_dir().unwrap_or_default().join("../skilldesk-server"),
-  ];
-
-  if let Some(bin_path) = bin_candidates.into_iter().find(|p| p.exists()) {
-    if let Ok(child) = Command::new(&bin_path).env("PORT", "3001").spawn() {
-      println!("[SkillDesk Tauri] Spawned compiled binary: {:?}", bin_path);
       return Some(child);
     }
   }

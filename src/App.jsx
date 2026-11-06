@@ -281,7 +281,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f5f6f8] dark:bg-[#0b0f17] text-slate-900 dark:text-slate-100 flex flex-col transition-colors duration-200 overflow-x-hidden">
+    <div className="h-screen bg-[#f5f6f8] dark:bg-[#0b0f17] text-slate-900 dark:text-slate-100 flex flex-col transition-colors duration-200 overflow-hidden">
       <Navbar
         searchTerm={searchTerm}
         setSearchTerm={setSearchTerm}
@@ -304,15 +304,16 @@ export default function App() {
         onToggleTheme={toggleTheme}
       />
 
-      <div className={`flex-1 flex flex-col lg:flex-row w-full transition-all duration-300 ${isChatOpen ? 'max-w-[1920px] mx-auto' : 'max-w-7xl mx-auto'}`}>
-        <main className="flex-1 min-w-0 px-3.5 sm:px-6 py-4 sm:py-6">
-          {/* Platform Overview Cards */}
-          <PlatformOverview
-            platforms={platforms}
-            activeFilter={activeFilter}
-            setActiveFilter={setActiveFilter}
-            onRevealFolder={handleRevealPath}
-          />
+      <div className="flex-1 flex flex-col lg:flex-row w-full overflow-hidden">
+        <main className="flex-1 min-w-0 overflow-y-auto px-3.5 sm:px-6 py-4 sm:py-6">
+          <div className={`w-full mx-auto transition-all duration-300 ${isChatOpen ? 'max-w-[1600px]' : 'max-w-7xl'}`}>
+            {/* Platform Overview Cards */}
+            <PlatformOverview
+              platforms={platforms}
+              activeFilter={activeFilter}
+              setActiveFilter={setActiveFilter}
+              onRevealFolder={handleRevealPath}
+            />
 
           {/* Collapsible Filter Section */}
           <div className="mb-6 rounded-2xl border border-slate-200/80 dark:border-white/5 bg-white/70 dark:bg-slate-900/40 backdrop-blur-md overflow-hidden transition-all duration-300 shadow-xs">
@@ -460,7 +461,8 @@ export default function App() {
             onRevealPath={handleRevealPath}
           />
         )}
-      </main>
+          </div>
+        </main>
 
         {/* AI Skill Assistant (Inline Page Panel on the right) */}
         <ChatPanel
