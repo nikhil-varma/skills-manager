@@ -28,7 +28,7 @@ export default function Navbar({
 }) {
   return (
     <header className="sticky top-0 z-30 border-b border-white/5 bg-[#0b0f17]/90 backdrop-blur-xl px-6 py-3.5">
-      <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className={`w-full mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all duration-300 ${isChatOpen ? 'max-w-[1920px]' : 'max-w-7xl'}`}>
         
         {/* Brand */}
         <div className="flex items-center gap-3">

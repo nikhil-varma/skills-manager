@@ -279,18 +279,18 @@ export default function App() {
         isLLMConfigured={isLLMConfigured}
       />
 
-      <main className="flex-1 max-w-7xl w-full mx-auto px-6 py-6">
-        
-        {/* Platform Overview Cards */}
-        <PlatformOverview
-          platforms={platforms}
-          activeFilter={activeFilter}
-          setActiveFilter={setActiveFilter}
-          onRevealFolder={handleRevealPath}
-        />
+      <div className={`flex-1 flex w-full transition-all duration-300 ${isChatOpen ? 'max-w-[1920px] mx-auto' : 'max-w-7xl mx-auto'}`}>
+        <main className="flex-1 min-w-0 px-6 py-6">
+          {/* Platform Overview Cards */}
+          <PlatformOverview
+            platforms={platforms}
+            activeFilter={activeFilter}
+            setActiveFilter={setActiveFilter}
+            onRevealFolder={handleRevealPath}
+          />
 
-        {/* Collapsible Filter Section */}
-        <div className="mb-6 rounded-2xl border border-white/5 bg-slate-900/40 backdrop-blur-md overflow-hidden transition-all duration-300">
+          {/* Collapsible Filter Section */}
+          <div className="mb-6 rounded-2xl border border-white/5 bg-slate-900/40 backdrop-blur-md overflow-hidden transition-all duration-300">
           <div
             onClick={() => setIsFiltersExpanded(!isFiltersExpanded)}
             className="flex flex-wrap items-center justify-between gap-3 px-5 py-3 bg-slate-900/60 hover:bg-slate-900/90 transition-colors cursor-pointer select-none"
@@ -437,6 +437,21 @@ export default function App() {
         )}
       </main>
 
+        {/* AI Skill Assistant (Inline Page Panel on the right) */}
+        <ChatPanel
+          isOpen={isChatOpen}
+          onClose={() => setIsChatOpen(false)}
+          onOpenSettings={() => {
+            setSettingsInitialTab('ai');
+            setIsSettingsOpen(true);
+          }}
+          onOpenSkill={(name) => setSelectedSkillName(name)}
+          totalSkills={totalSkills}
+          isLLMConfigured={isLLMConfigured}
+          llmConfig={llmConfig}
+        />
+      </div>
+
       {/* Modals */}
       {selectedSkillName && (
         <SkillDetailModal
@@ -472,20 +487,6 @@ export default function App() {
           showToast={showToast}
         />
       )}
-
-      {/* Slide-out AI Assistant Chat Panel */}
-      <ChatPanel
-        isOpen={isChatOpen}
-        onClose={() => setIsChatOpen(false)}
-        onOpenSettings={() => {
-          setSettingsInitialTab('ai');
-          setIsSettingsOpen(true);
-        }}
-        onOpenSkill={(name) => setSelectedSkillName(name)}
-        totalSkills={totalSkills}
-        isLLMConfigured={isLLMConfigured}
-        llmConfig={llmConfig}
-      />
 
       {isDiscoverOpen && (
         <AutoDiscoverModal

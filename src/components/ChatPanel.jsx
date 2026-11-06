@@ -189,47 +189,39 @@ export default function ChatPanel({
   if (!isOpen) return null;
 
   return (
-    <>
-      {/* Backdrop for small screens */}
-      <div 
-        className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm md:hidden animate-fade-in"
-        onClick={onClose}
-      />
-
-      {/* Slide-out Chat Panel */}
-      <aside 
-        className="fixed top-0 right-0 h-full w-[450px] max-w-[95vw] z-50 bg-[#0c121e]/95 backdrop-blur-2xl border-l border-white/10 shadow-2xl flex flex-col text-slate-100 transition-all duration-300 animate-in slide-in-from-right"
-      >
-        {/* Panel Header */}
-        <div className="flex items-center justify-between border-b border-white/10 bg-slate-900/90 px-5 py-3.5">
-          <div className="flex items-center gap-3">
-            <div className="h-9 w-9 rounded-xl bg-gradient-to-tr from-indigo-500 via-indigo-600 to-purple-500 flex items-center justify-center shadow-lg shadow-indigo-500/20 ring-1 ring-white/20">
-              <Bot className="h-5 w-5 text-white" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="font-bold text-sm text-white flex items-center gap-1.5">
-                  SkillDesk AI
-                  <span className="text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.2 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
-                    Assistant
-                  </span>
-                </h3>
-              </div>
-              <p className="text-[11px] text-slate-400 flex items-center gap-1.5 font-mono">
-                {isLLMConfigured ? (
-                  <>
-                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-                    <span>{llmConfig?.model || 'Configured'}</span>
-                  </>
-                ) : (
-                  <>
-                    <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
-                    <span className="text-amber-400 font-sans">Setup required</span>
-                  </>
-                )}
-              </p>
-            </div>
+    <aside 
+      className="w-[420px] xl:w-[460px] 2xl:w-[500px] flex-shrink-0 border-l border-white/10 bg-[#0c121e]/90 backdrop-blur-2xl flex flex-col h-[calc(100vh-65px)] sticky top-[65px] z-20 text-slate-100 transition-all duration-300 animate-in slide-in-from-right-2"
+    >
+      {/* Panel Header */}
+      <div className="flex items-center justify-between border-b border-white/10 bg-slate-900/90 px-4 py-3 flex-shrink-0">
+        <div className="flex items-center gap-3">
+          <div className="h-8 w-8 rounded-xl bg-gradient-to-tr from-indigo-500 via-indigo-600 to-purple-500 flex items-center justify-center shadow-lg shadow-indigo-500/20 ring-1 ring-white/20">
+            <Bot className="h-4 w-4 text-white" />
           </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h3 className="font-bold text-xs text-white flex items-center gap-1.5">
+                SkillDesk AI
+                <span className="text-[9px] font-semibold uppercase tracking-wider px-1.5 py-0.2 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                  Assistant
+                </span>
+              </h3>
+            </div>
+            <p className="text-[10px] text-slate-400 flex items-center gap-1.5 font-mono">
+              {isLLMConfigured ? (
+                <>
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                  <span className="truncate max-w-[130px]">{llmConfig?.model || 'Configured'}</span>
+                </>
+              ) : (
+                <>
+                  <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
+                  <span className="text-amber-400 font-sans">Setup required</span>
+                </>
+              )}
+            </p>
+          </div>
+        </div>
 
           <div className="flex items-center gap-1.5">
             {loading && (
@@ -446,6 +438,5 @@ export default function ChatPanel({
           </div>
         </div>
       </aside>
-    </>
   );
 }
