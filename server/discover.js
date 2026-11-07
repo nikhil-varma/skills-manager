@@ -92,7 +92,52 @@ const SCAN_ROOTS = [
   '~/src'
 ];
 
-function scanProjectSkills(rootDir, maxDepth = 4) {
+function getProjectInfo(fullPath) {
+  const home = os.homedir();
+  let curr = path.dirname(fullPath);
+
+  while (curr && curr !== '/' && curr !== home) {
+    const base = path.basename(curr);
+    if (base === 'skills' || base === 'skills-cursor' || base.startsWith('.')) {
+      curr = path.dirname(curr);
+      continue;
+    }
+    break;
+  }
+
+  let searchDir = curr;
+  let repoRoot = null;
+
+  while (searchDir && searchDir !== '/' && searchDir !== home && 
+         !['projects', 'work', 'Desktop', 'Projects', 'Developer', 'repos'].includes(path.basename(searchDir))) {
+    const hasGit = fs.existsSync(path.join(searchDir, '.git'));
+    const hasPkg = fs.existsSync(path.join(searchDir, 'package.json'));
+    const hasCargo = fs.existsSync(path.join(searchDir, 'Cargo.toml'));
+    const hasPy = fs.existsSync(path.join(searchDir, 'pyproject.toml'));
+
+    if (hasGit) {
+      repoRoot = searchDir;
+      break;
+    }
+    if ((hasPkg || hasCargo || hasPy) && !repoRoot) {
+      repoRoot = searchDir;
+    }
+
+    searchDir = path.dirname(searchDir);
+  }
+
+  const projectRoot = repoRoot || curr;
+  const projectName = path.basename(projectRoot);
+  const relPath = path.relative(projectRoot, fullPath);
+
+  return {
+    projectRoot: contractHome(projectRoot),
+    projectName,
+    relPath: relPath || path.basename(fullPath)
+  };
+}
+
+function scanProjectSkills(rootDir, maxDepth = 4, seenPaths = new Set()) {
   const absRoot = expandHome(rootDir);
   if (!fs.existsSync(absRoot)) return [];
 
@@ -102,6 +147,11 @@ function scanProjectSkills(rootDir, maxDepth = 4) {
     if (depth > maxDepth) return;
 
     try {
+      let realDir = currentDir;
+      try { realDir = fs.realpathSync(currentDir); } catch (e) {}
+      if (seenPaths.has(realDir)) return;
+      seenPaths.add(realDir);
+
       const entries = fs.readdirSync(currentDir, { withFileTypes: true });
 
       for (const entry of entries) {
@@ -116,19 +166,24 @@ function scanProjectSkills(rootDir, maxDepth = 4) {
             try {
               const subItems = fs.readdirSync(fullPath);
               if (subItems.some(i => !i.startsWith('.'))) {
-                const parentRepo = path.basename(path.dirname(fullPath));
-                const grandparent = path.basename(path.dirname(path.dirname(fullPath)));
-                const cleanBadge = parentRepo.startsWith('.') ? grandparent : parentRepo;
+                const { projectRoot, projectName, relPath } = getProjectInfo(fullPath);
+                const count = subItems.filter(i => !i.startsWith('.')).length;
+                const displayName = relPath === 'skills' ? `${projectName} (skills)` : `${projectName} (${relPath})`;
 
                 results.push({
-                  id: `project-${cleanBadge.toLowerCase().replace(/[^a-z0-9]/g, '-')}`,
-                  name: `${cleanBadge} (${entry.name})`,
-                  badge: cleanBadge.slice(0, 10),
+                  id: `project-${projectName.toLowerCase().replace(/[^a-z0-9]/g, '-')}-${relPath.toLowerCase().replace(/[^a-z0-9]/g, '-')}`,
+                  name: displayName,
+                  projectName,
+                  projectRoot,
+                  relPath,
+                  badge: projectName.slice(0, 12),
                   path: contractHome(fullPath),
                   expandedPath: fullPath,
                   color: '#8B5CF6',
                   icon: 'Folder',
-                  description: `Project skills from ${contractHome(fullPath)}`
+                  description: `${projectName} / ${relPath}`,
+                  count,
+                  exists: true
                 });
                 continue; // don't recurse into skills folder itself
               }
@@ -174,8 +229,9 @@ export function discoverAllOSTools() {
   }
 
   // 2. Scan project workspaces
+  const seenPaths = new Set();
   for (const root of SCAN_ROOTS) {
-    const projects = scanProjectSkills(root);
+    const projects = scanProjectSkills(root, 4, seenPaths);
     for (const p of projects) {
       if (!discoveredProjects.some(existing => existing.path === p.path)) {
         try {
