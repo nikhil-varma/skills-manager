@@ -243,49 +243,50 @@ export default function SkillDetailModal({
         </div>
 
         {/* Navigation Tabs (macOS Segmented Capsule Control) */}
-        <div className="flex items-center justify-between border-b border-black/[0.06] dark:border-white/10 bg-black/[0.015] dark:bg-white/[0.015] px-4 sm:px-6 py-2.5 overflow-x-auto no-scrollbar gap-2">
+        <div className="flex items-center justify-between border-b border-black/[0.06] dark:border-white/10 bg-black/[0.015] dark:bg-white/[0.015] px-4 sm:px-6 py-3 sm:py-3.5 overflow-x-auto no-scrollbar gap-2">
           <div className="p-1 rounded-xl bg-black/[0.04] dark:bg-black/40 border border-black/[0.06] dark:border-white/10 inline-flex gap-1 flex-nowrap">
             <button
               onClick={() => { setActiveTab('doc'); setIsEditing(false); }}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+              className={`h-9 px-3.5 rounded-lg text-xs sm:text-[13px] font-medium transition-all flex items-center gap-1.5 ${
                 activeTab === 'doc' && !isEditing
                   ? 'bg-white dark:bg-white/15 text-slate-900 dark:text-white shadow-xs font-semibold'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
-              Documentation
+              <FileText className="h-4 w-4 text-[#007AFF]" />
+              <span>Documentation</span>
             </button>
             <button
               onClick={() => { setActiveTab('edit'); setIsEditing(true); }}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 ${
+              className={`h-9 px-3.5 rounded-lg text-xs sm:text-[13px] font-medium transition-all flex items-center gap-1.5 ${
                 isEditing
                   ? 'bg-white dark:bg-white/15 text-slate-900 dark:text-white shadow-xs font-semibold'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
-              <Edit3 className="h-3.5 w-3.5" />
+              <Edit3 className="h-4 w-4 text-amber-500" />
               <span>Edit SKILL.md</span>
             </button>
             <button
               onClick={() => { setActiveTab('files'); setIsEditing(false); }}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 ${
+              className={`h-9 px-3.5 rounded-lg text-xs sm:text-[13px] font-medium transition-all flex items-center gap-1.5 ${
                 activeTab === 'files'
                   ? 'bg-white dark:bg-white/15 text-slate-900 dark:text-white shadow-xs font-semibold'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
-              <Folder className="h-3.5 w-3.5" />
+              <Folder className="h-4 w-4 text-[#AF52DE]" />
               <span>Files ({detail?.fileCount || 0})</span>
             </button>
             <button
               onClick={() => { setActiveTab('manage'); setIsEditing(false); }}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 ${
+              className={`h-9 px-3.5 rounded-lg text-xs sm:text-[13px] font-medium transition-all flex items-center gap-1.5 ${
                 activeTab === 'manage'
                   ? 'bg-white dark:bg-white/15 text-slate-900 dark:text-white shadow-xs font-semibold'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
-              <ArrowRightLeft className="h-3.5 w-3.5" />
+              <ArrowRightLeft className="h-4 w-4 text-emerald-500" />
               <span>Move & Sync</span>
             </button>
           </div>
@@ -294,9 +295,9 @@ export default function SkillDetailModal({
             <button
               onClick={handleSaveContent}
               disabled={saving}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#007AFF] hover:bg-[#0066d6] text-white text-xs font-semibold shadow-xs transition-colors disabled:opacity-50"
+              className="h-9 flex items-center gap-1.5 px-4 rounded-xl bg-[#007AFF] hover:bg-[#0066d6] text-white text-xs font-semibold shadow-xs transition-colors disabled:opacity-50"
             >
-              <Save className="h-3.5 w-3.5" />
+              <Save className="h-4 w-4" />
               <span>{saving ? 'Saving...' : 'Save Changes'}</span>
             </button>
           )}

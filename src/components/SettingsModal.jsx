@@ -215,13 +215,13 @@ export default function SettingsModal({
           <div className="p-1 rounded-xl bg-black/[0.04] dark:bg-black/40 border border-black/[0.06] dark:border-white/10 inline-flex gap-1 overflow-x-auto no-scrollbar">
             <button
               onClick={() => setActiveTab('locations')}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+              className={`h-9 flex items-center gap-2 px-3.5 rounded-lg text-xs sm:text-[13px] font-medium transition-all ${
                 activeTab === 'locations'
                   ? 'bg-white dark:bg-white/15 text-slate-900 dark:text-white shadow-xs font-semibold'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
-              <Folder className="h-3.5 w-3.5 text-[#007AFF]" />
+              <Folder className="h-4 w-4 text-[#007AFF]" />
               <span>Assistant Locations</span>
               <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-black/[0.05] dark:bg-white/10 text-slate-600 dark:text-slate-300 font-mono">
                 {platformList.length}
@@ -230,13 +230,13 @@ export default function SettingsModal({
 
             <button
               onClick={() => setActiveTab('ai')}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+              className={`h-9 flex items-center gap-2 px-3.5 rounded-lg text-xs sm:text-[13px] font-medium transition-all ${
                 activeTab === 'ai'
                   ? 'bg-white dark:bg-white/15 text-slate-900 dark:text-white shadow-xs font-semibold'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
-              <Sparkles className="h-3.5 w-3.5 text-[#007AFF]" />
+              <Sparkles className="h-4 w-4 text-[#007AFF]" />
               <span>AI Skill Assistant</span>
               {llmConfig.apiKey || llmConfig.provider === 'ollama' ? (
                 <span className="h-2 w-2 rounded-full bg-[#34C759] shadow-2xs" title="Configured" />

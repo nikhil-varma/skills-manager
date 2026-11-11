@@ -305,29 +305,29 @@ export default function AutoDiscoverModal({
         </div>
 
         {/* Tab Selection & Search Bar */}
-        <div className="border-b border-black/[0.06] dark:border-white/10 bg-black/[0.015] dark:bg-white/[0.015] px-4 sm:px-6 py-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+        <div className="border-b border-black/[0.06] dark:border-white/10 bg-black/[0.015] dark:bg-white/[0.015] px-4 sm:px-6 py-3 sm:py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
           {/* Main Category Tabs */}
           <div className="p-1 rounded-xl bg-black/[0.04] dark:bg-black/40 border border-black/[0.06] dark:border-white/10 inline-flex gap-1 overflow-x-auto no-scrollbar">
             <button
               onClick={() => setActiveTab('projects')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 ${
+              className={`h-9 px-3.5 rounded-lg text-xs sm:text-[13px] font-medium transition-all flex items-center gap-1.5 ${
                 activeTab === 'projects'
                   ? 'bg-white dark:bg-white/15 text-slate-900 dark:text-white shadow-xs font-semibold'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
-              <Folder className="h-3.5 w-3.5 text-[#AF52DE]" />
+              <Folder className="h-4 w-4 text-[#AF52DE]" />
               <span>Project Repositories ({data.projectWorkspaces.length})</span>
             </button>
             <button
               onClick={() => setActiveTab('global')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 ${
+              className={`h-9 px-3.5 rounded-lg text-xs sm:text-[13px] font-medium transition-all flex items-center gap-1.5 ${
                 activeTab === 'global'
                   ? 'bg-white dark:bg-white/15 text-slate-900 dark:text-white shadow-xs font-semibold'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
-              <Bot className="h-3.5 w-3.5 text-[#007AFF]" />
+              <Bot className="h-4 w-4 text-[#007AFF]" />
               <span>Global Assistants ({data.globalTools.length})</span>
             </button>
           </div>
