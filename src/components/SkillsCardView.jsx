@@ -934,7 +934,7 @@ export default function SkillsCardView({
                 }`}
               >
                 {/* Left: Checkbox, Star, Icon, Name, Slug (Guaranteed Minimum Width) */}
-                <div className="flex items-center gap-2.5 w-56 sm:w-64 md:w-80 lg:w-96 flex-shrink-0 min-w-0">
+                <div className="flex items-center gap-2.5 w-64 sm:w-72 md:w-96 lg:w-[28rem] flex-shrink-0 min-w-0">
                   {/* Multi-Select Checkbox */}
                   <button
                     type="button"
@@ -1015,6 +1015,18 @@ export default function SkillsCardView({
                         </span>
                       )}
                     </div>
+                    {/* Authoritative Source of Truth in Compact View */}
+                    {skill.canonicalSource && (
+                      <div 
+                        className="flex items-center gap-1 mt-0.5 text-[10px] text-slate-400 dark:text-slate-500 font-mono truncate"
+                        title={`Authoritative Source of Truth: ${skill.canonicalSource.path} (${skill.canonicalSource.reason})`}
+                      >
+                        <span className="text-slate-500 dark:text-slate-400 font-sans font-medium flex-shrink-0 text-[9px] uppercase tracking-wider">Source of Truth:</span>
+                        <span className="truncate text-slate-700 dark:text-slate-300 bg-black/[0.03] dark:bg-white/[0.05] px-1.5 py-0.2 rounded border border-black/[0.04] dark:border-white/5">
+                          {skill.canonicalSource.displayPath || skill.canonicalSource.path}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -1022,19 +1034,25 @@ export default function SkillsCardView({
                 <div className="flex-1 min-w-0 hidden md:flex items-center gap-1.5 overflow-hidden">
                   {installedPlatforms.slice(0, 4).map(plat => {
                     const isSym = skill.platforms[plat.id]?.isSymlink;
+                    const isCanonical = skill.canonicalSource?.platformId === plat.id;
                     return (
                       <span
                         key={plat.id}
                         className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium border flex-shrink-0 ${
-                          isSym
+                          isCanonical
+                            ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/25 ring-1 ring-emerald-500/20'
+                            : isSym
                             ? 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20'
                             : 'bg-black/[0.03] dark:bg-white/[0.05] text-slate-700 dark:text-slate-300 border-black/[0.06] dark:border-white/10'
                         }`}
-                        title={`${plat.name} (${isSym ? 'Symlink' : 'Source/Copy'})`}
+                        title={`${plat.name} (${isCanonical ? 'Authoritative Source of Truth' : isSym ? 'Symlink' : 'Source/Copy'})`}
                       >
                         <span className="h-1.5 w-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: plat.color }} />
                         <span className="truncate max-w-[85px]">{plat.badge || plat.name}</span>
-                        {isSym && <Link2 className="h-2.5 w-2.5 text-purple-500 flex-shrink-0" />}
+                        {isCanonical && (
+                          <span className="text-[9px] font-bold text-emerald-600 dark:text-emerald-400 flex-shrink-0">★</span>
+                        )}
+                        {isSym && !isCanonical && <Link2 className="h-2.5 w-2.5 text-purple-500 flex-shrink-0" />}
                       </span>
                     );
                   })}
