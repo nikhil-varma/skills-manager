@@ -24,6 +24,7 @@ import {
   Plus
 } from 'lucide-react';
 import { fetchSkillDetail, alignSkillWithCanonical, revealInFinder } from '../api.js';
+import { formatTimeAgo, formatDateTime } from '../utils/time.js';
 
 function formatTimestamp(isoStr) {
   if (!isoStr) return 'Unknown';
@@ -219,6 +220,14 @@ export default function DriftAlignModal({
     return detail?.allInstallations?.find(i => i.platformId === compareTargetId);
   }, [detail, compareTargetId]);
 
+  const newestInstallation = useMemo(() => {
+    if (!detail?.allInstallations) return null;
+    const sorted = [...detail.allInstallations]
+      .filter(i => i.mtime)
+      .sort((a, b) => new Date(b.mtime).getTime() - new Date(a.mtime).getTime());
+    return sorted[0] || null;
+  }, [detail]);
+
   // Count distinct hashes across installations
   const distinctHashCount = useMemo(() => {
     const hashes = new Set();
@@ -338,14 +347,27 @@ export default function DriftAlignModal({
 
               {/* Step 1: Source Selection */}
               <div>
-                <label className="block font-semibold text-xs text-slate-800 dark:text-slate-200 uppercase tracking-wider mb-2">
-                  1. Select Source Location (Authoritative Copy)
-                </label>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
+                  <label className="block font-semibold text-xs text-slate-800 dark:text-slate-200 uppercase tracking-wider">
+                    1. Select Source Location (Authoritative Copy)
+                  </label>
+                  {newestInstallation && (
+                    <button
+                      type="button"
+                      onClick={() => handleSelectSource(newestInstallation.platformId)}
+                      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 text-[11px] font-semibold transition-all active:scale-95"
+                    >
+                      <Zap className="h-3 w-3 fill-emerald-500 text-emerald-500" />
+                      <span>Use Newest: {newestInstallation.platformName} ({formatTimeAgo(newestInstallation.mtime)})</span>
+                    </button>
+                  )}
+                </div>
 
                 <div className="space-y-2">
                   {detail?.allInstallations?.map(inst => {
                     const isSource = inst.platformId === selectedSourceId;
                     const isSym = inst.isSymlink;
+                    const isNewest = newestInstallation && inst.platformId === newestInstallation.platformId;
 
                     return (
                       <div
@@ -369,7 +391,7 @@ export default function DriftAlignModal({
 
                           {/* Platform badge */}
                           <div className="min-w-0">
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 flex-wrap">
                               <span
                                 className="h-2 w-2 rounded-full flex-shrink-0"
                                 style={{ backgroundColor: inst.color || '#007AFF' }}
@@ -382,6 +404,13 @@ export default function DriftAlignModal({
                                 <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.2 rounded-full bg-[#007AFF] text-white shadow-2xs">
                                   <Check className="h-2.5 w-2.5" />
                                   Source
+                                </span>
+                              )}
+
+                              {isNewest && (
+                                <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.2 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30">
+                                  <Zap className="h-2.5 w-2.5 fill-emerald-500 text-emerald-500" />
+                                  ⚡ Newest Revision
                                 </span>
                               )}
 
@@ -407,9 +436,17 @@ export default function DriftAlignModal({
                         {/* Metadata Pills */}
                         <div className="flex items-center gap-2.5 flex-wrap sm:flex-nowrap justify-start sm:justify-end text-[11px] font-mono text-slate-500 dark:text-slate-400 flex-shrink-0">
                           {inst.mtime && (
-                            <span className="flex items-center gap-1" title={`Modified: ${inst.mtime}`}>
-                              <Clock className="h-3 w-3 text-slate-400" />
-                              {formatTimestamp(inst.mtime)}
+                            <span 
+                              className={`flex items-center gap-1 px-2 py-0.5 rounded-md ${
+                                isNewest 
+                                  ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 font-semibold border border-emerald-500/20' 
+                                  : 'text-slate-500 dark:text-slate-400'
+                              }`} 
+                              title={`Modified: ${inst.mtime} (${formatDateTime(inst.mtime)})`}
+                            >
+                              <Clock className="h-3 w-3" />
+                              <span>{formatTimeAgo(inst.mtime)}</span>
+                              <span className="opacity-75 font-normal text-[10px]">({formatTimestamp(inst.mtime)})</span>
                             </span>
                           )}
 

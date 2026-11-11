@@ -33,8 +33,10 @@ import {
   X,
   Zap,
   Share2,
-  GitFork
+  GitFork,
+  Clock
 } from 'lucide-react';
+import { formatTimeAgo, formatDateTime } from '../utils/time.js';
 
 export default function SkillsCardView({
   skills,
@@ -124,6 +126,12 @@ export default function SkillsCardView({
 
       if (sortBy === 'deployed') {
         if (bInstalledCount !== aInstalledCount) return bInstalledCount - aInstalledCount;
+        return a.name.localeCompare(b.name);
+      }
+      if (sortBy === 'recently-updated') {
+        const tA = a.latestMtime ? new Date(a.latestMtime).getTime() : 0;
+        const tB = b.latestMtime ? new Date(b.latestMtime).getTime() : 0;
+        if (tB !== tA) return tB - tA;
         return a.name.localeCompare(b.name);
       }
       if (sortBy === 'needs-sync') {
@@ -339,6 +347,7 @@ export default function SkillsCardView({
               className="px-2.5 py-1.5 rounded-xl bg-black/[0.03] dark:bg-white/[0.06] border border-black/[0.06] dark:border-white/10 text-slate-800 dark:text-slate-200 text-xs font-medium focus:outline-none cursor-pointer"
             >
               <option value="deployed">Most Deployed First</option>
+              <option value="recently-updated">⚡ Recently Updated First</option>
               <option value="starred">★ Starred First</option>
               <option value="needs-sync">Needs Sync First</option>
               <option value="name-asc">Name (A → Z)</option>
@@ -583,6 +592,28 @@ export default function SkillsCardView({
                           #{t}
                         </button>
                       ))}
+                    </div>
+                  )}
+
+                  {/* Last Updated & Drift Authority Indicator */}
+                  {skill.hasDrift ? (
+                    <div 
+                      onClick={() => onAlignSkill && onAlignSkill(skill)}
+                      className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/25 text-[11px] font-medium cursor-pointer hover:bg-amber-500/15 transition-colors"
+                      title="Content Drift Detected: copies differ. Click to align with the newest revision."
+                    >
+                      <Zap className="h-3 w-3 fill-amber-500 text-amber-500 flex-shrink-0" />
+                      <span className="truncate">
+                        Newest in <strong>{skill.latestPlatformName || 'an assistant'}</strong> ({formatTimeAgo(skill.latestMtime)})
+                      </span>
+                    </div>
+                  ) : skill.latestMtime && (
+                    <div className="flex items-center gap-1.5 text-[11px] text-slate-400 dark:text-slate-500">
+                      <Clock className="h-3 w-3 flex-shrink-0" />
+                      <span>Updated {formatTimeAgo(skill.latestMtime)}</span>
+                      {skill.latestPlatformName && (
+                        <span className="text-[10px] opacity-75">via {skill.latestPlatformName}</span>
+                      )}
                     </div>
                   )}
 
@@ -951,9 +982,26 @@ export default function SkillsCardView({
                         </span>
                       )}
                     </div>
-                    <p className="text-[11px] font-mono text-slate-400 dark:text-slate-500 truncate mt-0.5">
-                      {skill.name}
-                    </p>
+                    <div className="flex items-center gap-2 mt-0.5 min-w-0">
+                      <p className="text-[11px] font-mono text-slate-400 dark:text-slate-500 truncate">
+                        {skill.name}
+                      </p>
+                      {skill.hasDrift ? (
+                        <span 
+                          onClick={(e) => { e.stopPropagation(); onAlignSkill && onAlignSkill(skill); }}
+                          className="text-[10px] font-medium text-amber-600 dark:text-amber-400 truncate flex items-center gap-1 hover:underline cursor-pointer"
+                          title={`Click to align. Newest edit in ${skill.latestPlatformName} ${formatTimeAgo(skill.latestMtime)}`}
+                        >
+                          <Zap className="h-2.5 w-2.5 fill-amber-500 flex-shrink-0" />
+                          <span>Newest: {skill.latestPlatformName} ({formatTimeAgo(skill.latestMtime)})</span>
+                        </span>
+                      ) : skill.latestMtime && (
+                        <span className="text-[10px] text-slate-400 dark:text-slate-500 truncate flex items-center gap-1">
+                          <Clock className="h-2.5 w-2.5 flex-shrink-0" />
+                          <span>{formatTimeAgo(skill.latestMtime)}</span>
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
 

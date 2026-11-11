@@ -261,9 +261,21 @@ export function scanPlatforms(platforms) {
     if (stat) stat.count = count;
   }
 
-  // Compute cross-platform drift and specification compliance (inspired by skilldock & anthropics/skills)
+  // Compute cross-platform drift, specification compliance, and newest modification tracking
   for (const skill of skillsMap.values()) {
-    const installed = Object.values(skill.platforms).filter(p => p.installed && p.isValid);
+    const installed = Object.entries(skill.platforms)
+      .filter(([platId, info]) => info.installed && info.isValid)
+      .map(([platId, info]) => {
+        const pObj = platforms.find(p => p.id === platId);
+        return {
+          platformId: platId,
+          platformName: pObj ? pObj.name : platId,
+          mtime: info.mtime,
+          mtimeMs: info.mtime ? new Date(info.mtime).getTime() : 0,
+          fileHash: info.fileHash
+        };
+      });
+
     const hashes = new Set();
     for (const inst of installed) {
       if (inst.fileHash) hashes.add(inst.fileHash);
@@ -272,6 +284,14 @@ export function scanPlatforms(platforms) {
     skill.hasDrift = hashes.size > 1;
     skill.driftCount = hashes.size;
     skill.specValidation = validateSkillSpec(skill.name, skill.metadata, skill.description);
+
+    // Track the newest modification timestamp and the platform hosting it
+    const sortedByMtime = [...installed].filter(i => i.mtimeMs > 0).sort((a, b) => b.mtimeMs - a.mtimeMs);
+    if (sortedByMtime.length > 0) {
+      skill.latestMtime = sortedByMtime[0].mtime;
+      skill.latestPlatformId = sortedByMtime[0].platformId;
+      skill.latestPlatformName = sortedByMtime[0].platformName;
+    }
   }
 
   // Convert map to sorted array
@@ -364,6 +384,12 @@ export function getSkillDetail(skillName, platforms, preferredPlatformId) {
     const hasDrift = hashes.size > 1;
     const specValidation = validateSkillSpec(skillName, parsed.data, parsed.content);
 
+    // Identify newest revision
+    const sortedInstallations = [...allInstallations]
+      .filter(i => i.mtime)
+      .sort((a, b) => new Date(b.mtime).getTime() - new Date(a.mtime).getTime());
+    const newestInstallation = sortedInstallations[0] || null;
+
     return {
       name: skillName,
       displayName: parsed.data.name || skillName,
@@ -381,6 +407,8 @@ export function getSkillDetail(skillName, platforms, preferredPlatformId) {
       files,
       fileCount,
       allInstallations,
+      newestInstallation,
+      latestMtime: newestInstallation?.mtime || null,
       hasDrift,
       driftCount: hashes.size,
       specValidation

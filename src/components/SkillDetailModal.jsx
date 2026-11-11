@@ -28,6 +28,7 @@ import {
   RefreshCw
 } from 'lucide-react';
 import { fetchSkillDetail, updateSkillContent, linkSkill, copySkill, moveSkill, trashSkill, unlinkSkill, revealInFinder, alignSkillWithCanonical, runSkillTest } from '../api.js';
+import { formatTimeAgo, formatDateTime } from '../utils/time.js';
 
 export default function SkillDetailModal({
   skillName,
@@ -397,7 +398,15 @@ export default function SkillDetailModal({
                       <div className="flex items-center gap-2.5 min-w-0">
                         <AlertTriangle className="h-5 w-5 text-amber-500 flex-shrink-0" />
                         <div>
-                          <p className="font-semibold text-xs">Content Drift Detected Across Assistants</p>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <p className="font-semibold text-xs">Content Drift Detected Across Assistants</p>
+                            {detail.newestInstallation && (
+                              <span className="text-[10px] font-bold px-2 py-0.2 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/25 flex items-center gap-1">
+                                <Zap className="h-2.5 w-2.5 fill-emerald-500 text-emerald-500" />
+                                <span>Newest: {detail.newestInstallation.platformName} ({formatTimeAgo(detail.newestInstallation.mtime)})</span>
+                              </span>
+                            )}
+                          </div>
                           <p className="text-[11px] text-amber-600 dark:text-amber-400 mt-0.5">
                             Physical copies of this skill have diverged. Choose which platform is the authoritative source to reconcile.
                           </p>
@@ -412,11 +421,14 @@ export default function SkillDetailModal({
                             onChange={(e) => setDriftSourceId(e.target.value)}
                             className="bg-transparent text-xs font-semibold text-slate-900 dark:text-white focus:outline-none cursor-pointer"
                           >
-                            {detail.allInstallations?.map(inst => (
-                              <option key={inst.platformId} value={inst.platformId} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
-                                {inst.platformName} ({inst.shortHash ? `hash:${inst.shortHash}` : 'source'})
-                              </option>
-                            ))}
+                            {detail.allInstallations?.map(inst => {
+                              const isNewest = detail.newestInstallation && inst.platformId === detail.newestInstallation.platformId;
+                              return (
+                                <option key={inst.platformId} value={inst.platformId} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
+                                  {inst.platformName} — {formatTimeAgo(inst.mtime) || 'unknown'} {isNewest ? '★ (Newest)' : ''}
+                                </option>
+                              );
+                            })}
                           </select>
                         </div>
 
@@ -512,6 +524,20 @@ export default function SkillDetailModal({
                           <div>
                             <span className="text-slate-500">Author:</span>
                             <span className="ml-1.5 text-slate-800 dark:text-slate-200">{detail.frontmatter.metadata.author}</span>
+                          </div>
+                        )}
+                        {detail.latestMtime && (
+                          <div className="col-span-2 sm:col-span-3 flex items-center gap-1.5 text-xs text-slate-500 pt-1 border-t border-black/[0.04] dark:border-white/5">
+                            <Clock className="h-3.5 w-3.5 text-slate-400" />
+                            <span>Last Updated:</span>
+                            <span className="font-semibold text-slate-800 dark:text-slate-200">
+                              {formatDateTime(detail.latestMtime)} ({formatTimeAgo(detail.latestMtime)})
+                            </span>
+                            {detail.newestInstallation && (
+                              <span className="text-[11px] text-[#007AFF] font-mono">
+                                • newest in {detail.newestInstallation.platformName}
+                              </span>
+                            )}
                           </div>
                         )}
                         {detail.isSymlink && (
