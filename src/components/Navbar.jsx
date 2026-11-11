@@ -23,6 +23,8 @@ export default function Navbar({
   onOpenDiscover,
   onOpenSkillHub,
   onOpenStacks,
+  onOpenSmartAlign,
+  driftCount = 0,
   totalSkills,
   activeFilter,
   setActiveFilter,
@@ -207,6 +209,21 @@ export default function Navbar({
             <Layers className="h-3.5 w-3.5 text-indigo-500" />
             <span className="hidden sm:inline">Stacks</span>
           </button>
+
+          {/* Smart Align (when drifted skills exist) */}
+          {driftCount > 0 && onOpenSmartAlign && (
+            <button
+              onClick={onOpenSmartAlign}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-gradient-to-r from-amber-500/15 to-orange-500/15 hover:from-amber-500/25 hover:to-orange-500/25 text-amber-600 dark:text-amber-400 border border-amber-500/30 font-semibold text-xs transition-all flex-shrink-0 active:scale-95 shadow-2xs"
+              title="Automatically reconcile all drifted skills from the latest modified revision"
+            >
+              <Zap className="h-3.5 w-3.5 fill-amber-500 text-amber-500" />
+              <span className="hidden sm:inline">Smart Align</span>
+              <span className="text-[10px] font-mono px-1.5 py-0.2 rounded-full bg-amber-500/20 text-amber-600 dark:text-amber-300 font-bold">
+                {driftCount}
+              </span>
+            </button>
+          )}
 
           {/* Settings / Paths */}
           <button

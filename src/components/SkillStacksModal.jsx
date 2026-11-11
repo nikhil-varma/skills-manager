@@ -14,9 +14,12 @@ import {
   ExternalLink,
   Cpu,
   Shield,
-  Bot
+  Bot,
+  Wand2,
+  ArrowRight,
+  Code2
 } from 'lucide-react';
-import { fetchStacks, saveStacks, applyStack } from '../api.js';
+import { fetchStacks, saveStacks, applyStack, suggestSmartStack } from '../api.js';
 
 export default function SkillStacksModal({
   allSkills = [],
@@ -28,9 +31,17 @@ export default function SkillStacksModal({
 }) {
   const [stacks, setStacks] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('browse'); // 'browse' | 'create'
+  const [activeTab, setActiveTab] = useState('browse'); // 'browse' | 'smart' | 'create'
   const [targetPlatformId, setTargetPlatformId] = useState(platforms[0]?.id || 'shared');
   const [applyingStackId, setApplyingStackId] = useState(null);
+
+  // Smart Stack (AI) state
+  const [aiPrompt, setAiPrompt] = useState('');
+  const [aiGenerating, setAiGenerating] = useState(false);
+  const [aiSuggestion, setAiSuggestion] = useState(null);
+  const [selectedAiSkills, setSelectedAiSkills] = useState(new Set());
+  const [aiTargetPlatformId, setAiTargetPlatformId] = useState(platforms[0]?.id || 'shared');
+  const [aiSaving, setAiSaving] = useState(false);
 
   // New Stack Form state
   const [newStackName, setNewStackName] = useState('');
@@ -39,6 +50,65 @@ export default function SkillStacksModal({
   const [selectedSkills, setSelectedSkills] = useState(new Set(preselectedSkills));
   const [skillSearch, setSkillSearch] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+
+  const handleGenerateSmartStack = async (customPrompt) => {
+    const promptToUse = (typeof customPrompt === 'string' ? customPrompt : aiPrompt).trim();
+    if (!promptToUse) {
+      showToast('Please describe what workflow or project you want a stack for', 'error');
+      return;
+    }
+    if (typeof customPrompt === 'string') {
+      setAiPrompt(customPrompt);
+    }
+    try {
+      setAiGenerating(true);
+      const res = await suggestSmartStack({ prompt: promptToUse });
+      setAiSuggestion(res.suggestion);
+      setSelectedAiSkills(new Set(res.suggestion.recommendedSkills || []));
+    } catch (err) {
+      showToast(err.message, 'error');
+    } finally {
+      setAiGenerating(false);
+    }
+  };
+
+  const handleSaveAiStack = async (applyDirectly = false) => {
+    if (!aiSuggestion) return;
+    if (selectedAiSkills.size === 0) {
+      showToast('Please select at least one skill for this stack', 'error');
+      return;
+    }
+
+    try {
+      setAiSaving(true);
+      const newStack = {
+        id: aiSuggestion.id || `stack-${Date.now()}`,
+        name: aiSuggestion.name || 'Smart Stack',
+        icon: aiSuggestion.icon || 'Sparkles',
+        color: aiSuggestion.color || '#007AFF',
+        description: aiSuggestion.description || '',
+        skills: Array.from(selectedAiSkills)
+      };
+
+      const updated = [newStack, ...stacks];
+      await saveStacks(updated);
+      setStacks(updated);
+
+      if (applyDirectly && aiTargetPlatformId) {
+        await applyStack({ stackId: newStack.id, targetPlatformId: aiTargetPlatformId });
+        showToast(`Saved and applied "${newStack.name}" to ${platforms.find(p => p.id === aiTargetPlatformId)?.name}!`, 'success');
+      } else {
+        showToast(`Saved "${newStack.name}" to Stacks!`, 'success');
+      }
+
+      setActiveTab('browse');
+      if (onSuccess) onSuccess();
+    } catch (err) {
+      showToast(err.message, 'error');
+    } finally {
+      setAiSaving(false);
+    }
+  };
 
   const loadStacks = async () => {
     try {
@@ -179,6 +249,18 @@ export default function SkillStacksModal({
               </button>
               <button
                 type="button"
+                onClick={() => setActiveTab('smart')}
+                className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
+                  activeTab === 'smart'
+                    ? 'bg-gradient-to-r from-purple-500 to-indigo-500 text-white shadow-xs'
+                    : 'text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300'
+                }`}
+              >
+                <Wand2 className="h-3.5 w-3.5" />
+                <span>Smart Stack (AI)</span>
+              </button>
+              <button
+                type="button"
                 onClick={() => setActiveTab('create')}
                 className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all flex items-center gap-1 ${
                   activeTab === 'create'
@@ -187,7 +269,7 @@ export default function SkillStacksModal({
                 }`}
               >
                 <Plus className="h-3.5 w-3.5" />
-                <span>New Stack</span>
+                <span>Manual</span>
               </button>
             </div>
 
@@ -306,6 +388,200 @@ export default function SkillStacksModal({
                   );
                 })}
               </div>
+            </div>
+          ) : activeTab === 'smart' ? (
+            /* SMART STACK (AI) GENERATOR */
+            <div className="space-y-5 max-w-2xl mx-auto">
+              <div className="p-4 sm:p-5 rounded-2xl border border-purple-500/20 bg-gradient-to-b from-purple-500/[0.06] to-transparent dark:from-purple-500/[0.1] space-y-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="h-8 w-8 rounded-lg bg-purple-500/15 text-purple-600 dark:text-purple-400 flex items-center justify-center">
+                    <Wand2 className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-sm text-slate-900 dark:text-white">
+                      AI Workflow Stack Generator
+                    </h4>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                      Describe your tech stack, goal, or framework — Smart Stack matches relevant local skills and auto-configures your profile.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <textarea
+                    rows={3}
+                    value={aiPrompt}
+                    onChange={(e) => setAiPrompt(e.target.value)}
+                    placeholder="e.g. Building an iOS mobile app with SwiftUI, Supabase auth, and Stripe subscriptions..."
+                    className="w-full bg-white dark:bg-black/40 border border-black/[0.08] dark:border-white/10 rounded-xl p-3 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-purple-500/40"
+                  />
+
+                  {/* Starter Chips */}
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="text-[10px] text-slate-400 font-medium">Quick Ideas:</span>
+                    {[
+                      '🌐 Next.js & Supabase SaaS',
+                      '📱 React Native Mobile Suite',
+                      '☸️ Kubernetes & DevOps SRE',
+                      '🛡️ Security & Pentest Audit',
+                      '🧪 Automated QA & Unit Testing',
+                      '🦀 Rust Microservices & WebSockets'
+                    ].map(chip => (
+                      <button
+                        key={chip}
+                        type="button"
+                        onClick={() => handleGenerateSmartStack(chip.replace(/^[^\s]+\s*/, ''))}
+                        className="text-[10px] px-2 py-0.5 rounded-full bg-black/[0.04] dark:bg-white/10 hover:bg-purple-500/15 hover:text-purple-600 dark:hover:text-purple-300 text-slate-600 dark:text-slate-300 transition-colors cursor-pointer"
+                      >
+                        {chip}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="flex justify-end pt-1">
+                    <button
+                      type="button"
+                      onClick={() => handleGenerateSmartStack()}
+                      disabled={aiGenerating || !aiPrompt.trim()}
+                      className="px-4 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-semibold text-xs shadow-md shadow-purple-500/20 flex items-center gap-1.5 transition-all disabled:opacity-50"
+                    >
+                      {aiGenerating ? (
+                        <>
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          <span>Architecting Stack...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="h-3.5 w-3.5" />
+                          <span>Generate Smart Stack</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Generated Result Card */}
+              {aiSuggestion && (
+                <div className="p-4 sm:p-5 rounded-2xl border border-black/[0.08] dark:border-white/10 bg-white/80 dark:bg-black/30 backdrop-blur-xl space-y-4 animate-fade-in shadow-xs">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-start gap-3 min-w-0">
+                      <div 
+                        className="h-10 w-10 rounded-xl flex items-center justify-center flex-shrink-0 shadow-xs"
+                        style={{ backgroundColor: `${aiSuggestion.color || '#007AFF'}15`, color: aiSuggestion.color || '#007AFF' }}
+                      >
+                        <Sparkles className="h-5 w-5" />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-semibold text-sm sm:text-base text-slate-900 dark:text-white truncate">
+                            {aiSuggestion.name}
+                          </h4>
+                          <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-purple-500/15 text-purple-600 dark:text-purple-300 font-bold">
+                            {selectedAiSkills.size} skills
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
+                          {aiSuggestion.description}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {aiSuggestion.rationale && (
+                    <div className="p-3 rounded-xl bg-purple-500/[0.05] border border-purple-500/15 text-xs text-purple-900 dark:text-purple-200 leading-relaxed">
+                      <strong>Architect's Rationale:</strong> {aiSuggestion.rationale}
+                    </div>
+                  )}
+
+                  {/* Skills Selection Checklist */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block">
+                      Recommended Skills (Toggle to include/exclude):
+                    </label>
+                    <div className="max-h-48 overflow-y-auto divide-y divide-black/[0.04] dark:divide-white/5 border border-black/[0.08] dark:border-white/10 rounded-xl bg-white/50 dark:bg-black/20">
+                      {(aiSuggestion.recommendedSkills || []).map(skillName => {
+                        const skillObj = allSkills.find(s => s.name === skillName);
+                        const isChecked = selectedAiSkills.has(skillName);
+                        return (
+                          <label
+                            key={skillName}
+                            className={`flex items-center justify-between p-2.5 hover:bg-black/[0.02] dark:hover:bg-white/[0.04] cursor-pointer transition-colors ${isChecked ? 'bg-purple-500/[0.04]' : ''}`}
+                          >
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              <input
+                                type="checkbox"
+                                checked={isChecked}
+                                onChange={() => {
+                                  setSelectedAiSkills(prev => {
+                                    const next = new Set(prev);
+                                    if (next.has(skillName)) next.delete(skillName);
+                                    else next.add(skillName);
+                                    return next;
+                                  });
+                                }}
+                                className="rounded border-slate-300 text-purple-600 focus:ring-purple-500"
+                              />
+                              <div className="min-w-0">
+                                <span className="font-semibold text-xs text-slate-900 dark:text-white truncate block">
+                                  {skillObj?.displayName || skillName}
+                                </span>
+                                <span className="font-mono text-[10px] text-slate-400 truncate block">
+                                  {skillName}
+                                </span>
+                              </div>
+                            </div>
+                            <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">
+                              Installed
+                            </span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Target Assistant Mount */}
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 pt-2 border-t border-black/[0.06] dark:border-white/10">
+                    <div className="flex items-center gap-2">
+                      <Bot className="h-4 w-4 text-purple-500" />
+                      <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                        Target Assistant:
+                      </span>
+                      <select
+                        value={aiTargetPlatformId}
+                        onChange={(e) => setAiTargetPlatformId(e.target.value)}
+                        className="bg-white dark:bg-black/40 border border-black/[0.08] dark:border-white/10 rounded-lg px-2.5 py-1 text-xs text-slate-900 dark:text-slate-100"
+                      >
+                        {platforms.map(p => (
+                          <option key={p.id} value={p.id}>
+                            {p.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
+                      <button
+                        type="button"
+                        onClick={() => handleSaveAiStack(false)}
+                        disabled={aiSaving || selectedAiSkills.size === 0}
+                        className="px-3.5 py-1.5 rounded-lg border border-black/10 dark:border-white/10 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-black/5 dark:hover:bg-white/5 transition-colors"
+                      >
+                        Save Stack Only
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleSaveAiStack(true)}
+                        disabled={aiSaving || selectedAiSkills.size === 0}
+                        className="px-4 py-1.5 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-semibold text-xs shadow-xs flex items-center gap-1.5 transition-all disabled:opacity-50"
+                      >
+                        {aiSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+                        <span>Save & Mount Stack</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           ) : (
             /* CREATE CUSTOM STACK */

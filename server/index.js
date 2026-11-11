@@ -889,6 +889,249 @@ app.post('/api/stacks/apply', (req, res) => {
   }
 });
 
+// Format relative time helper for smart alignment timestamps
+function formatRelativeTime(isoString) {
+  if (!isoString) return 'unknown';
+  const diff = Date.now() - new Date(isoString).getTime();
+  if (diff < 60000) return 'just now';
+  const mins = Math.floor(diff / 60000);
+  if (mins < 60) return `${mins}m ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
+}
+
+// Smart Align: Preview all drifted skills and detect newest revision or source authority
+app.post('/api/drift/smart-align-preview', (req, res) => {
+  try {
+    const { strategy = 'newest', preferredSourceId = null } = req.body;
+    const platforms = getPlatforms();
+    const { skills } = scanPlatforms(platforms);
+    const driftedSkills = skills.filter(s => s.hasDrift);
+
+    const items = [];
+
+    for (const skill of driftedSkills) {
+      const installed = Object.entries(skill.platforms)
+        .filter(([platId, info]) => info.installed && info.isValid)
+        .map(([platId, info]) => {
+          const platObj = platforms.find(p => p.id === platId);
+          return {
+            platformId: platId,
+            platformName: platObj ? platObj.name : platId,
+            mtime: info.mtime,
+            mtimeMs: info.mtime ? new Date(info.mtime).getTime() : 0,
+            fileSize: info.fileSize,
+            isSymlink: info.isSymlink,
+            fileHash: info.fileHash
+          };
+        });
+
+      if (installed.length < 2) continue;
+
+      let source = null;
+      if (strategy === 'fixed' && preferredSourceId) {
+        source = installed.find(i => i.platformId === preferredSourceId);
+      }
+      if (!source) {
+        // Sort descending by mtime (newest first)
+        const sortedByMtime = [...installed].sort((a, b) => b.mtimeMs - a.mtimeMs);
+        source = sortedByMtime[0];
+      }
+
+      const targets = installed
+        .filter(i => i.platformId !== source.platformId)
+        .map(t => ({
+          platformId: t.platformId,
+          platformName: t.platformName,
+          mtime: t.mtime,
+          relativeTime: formatRelativeTime(t.mtime),
+          isSymlink: t.isSymlink
+        }));
+
+      items.push({
+        skillName: skill.name,
+        displayName: skill.displayName || skill.name,
+        sourcePlatformId: source.platformId,
+        sourcePlatformName: source.platformName,
+        sourceMtime: source.mtime,
+        sourceRelativeTime: formatRelativeTime(source.mtime),
+        targets
+      });
+    }
+
+    res.json({
+      success: true,
+      strategy,
+      preferredSourceId,
+      driftedCount: driftedSkills.length,
+      items
+    });
+  } catch (err) {
+    console.error('smart-align-preview error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Smart Align: Bulk apply alignment across approved skills
+app.post('/api/drift/smart-align-apply', (req, res) => {
+  try {
+    const { items = [], mode = 'symlink' } = req.body;
+    const platforms = getPlatforms();
+    const results = [];
+
+    for (const item of items) {
+      const { skillName, sourcePlatformId, targetPlatformIds } = item;
+      try {
+        const alignRes = alignSkillWithCanonical({
+          skillName,
+          platforms,
+          canonicalPlatformId: sourcePlatformId,
+          mode,
+          targetPlatformIds: targetPlatformIds || null
+        });
+        results.push({ skillName, success: true, ...alignRes });
+      } catch (e) {
+        results.push({ skillName, success: false, error: e.message });
+      }
+    }
+
+    res.json({
+      success: true,
+      mode,
+      reconciledCount: results.filter(r => r.success).length,
+      total: items.length,
+      results
+    });
+  } catch (err) {
+    console.error('smart-align-apply error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Smart Stack: AI & Semantic intent-based stack suggestion
+app.post('/api/stacks/suggest', async (req, res) => {
+  try {
+    const { prompt = '' } = req.body;
+    if (!prompt.trim()) {
+      return res.status(400).json({ error: 'Prompt is required' });
+    }
+
+    const platforms = getPlatforms();
+    const { skills } = scanPlatforms(platforms);
+    const availableSkills = skills.map(s => ({
+      name: s.name,
+      displayName: s.displayName || s.name,
+      description: s.description || '',
+      tags: s.metadata?.tags || []
+    }));
+
+    let suggestion = null;
+    const config = getLLMConfig();
+
+    if (config && (config.apiKey || config.provider === 'ollama' || config.provider === 'lmstudio')) {
+      try {
+        const systemPrompt = `You are an expert AI agent workflow architect.
+The user wants an AI assistant skill stack tailored for a specific development project or goal.
+Here is the user's project request:
+"${prompt.trim()}"
+
+Here is the library of installed skills available locally on their computer:
+${JSON.stringify(availableSkills.slice(0, 100), null, 2)}
+
+Respond with a valid JSON object ONLY (no markdown code fences, no extra text) matching this schema:
+{
+  "name": "Short Descriptive Title (e.g., Fullstack SaaS Suite)",
+  "id": "slug-name",
+  "icon": "One of: Layers, Cpu, Shield, Bot, Sparkles, Code, Terminal, Database, Cloud",
+  "color": "Hex color e.g. #007AFF, #10B981, #8B5CF6, #EC4899",
+  "description": "1-2 sentence description explaining the workflow",
+  "rationale": "Clear 1-2 sentence rationale for why these skills were selected",
+  "recommendedSkills": ["skill-name-1", "skill-name-2"],
+  "missingSkills": ["suggested-future-skill-1"]
+}`;
+
+        const raw = await callLLM({
+          messages: [{ role: 'user', content: `Suggest the optimal skill stack for: ${prompt}` }],
+          config,
+          systemPrompt
+        });
+
+        const rawStr = typeof raw === 'string' ? raw : raw?.content || '';
+        const clean = rawStr.replace(/```json/gi, '').replace(/```/g, '').trim();
+        suggestion = JSON.parse(clean);
+      } catch (llmErr) {
+        console.warn('Smart Stack LLM call failed, falling back to heuristic:', llmErr.message);
+      }
+    }
+
+    // Heuristic Fallback Engine
+    if (!suggestion || !Array.isArray(suggestion.recommendedSkills) || suggestion.recommendedSkills.length === 0) {
+      const lowerPrompt = prompt.toLowerCase();
+      const stopWords = new Set(['the', 'a', 'an', 'and', 'with', 'for', 'in', 'to', 'of', 'on', 'app', 'building', 'using', 'stack', 'need', 'want', 'make', 'create']);
+      const tokens = lowerPrompt.replace(/[^a-z0-9_-]/g, ' ').split(/\s+/).filter(t => t.length > 2 && !stopWords.has(t));
+
+      const scored = availableSkills.map(s => {
+        let score = 0;
+        const sName = s.name.toLowerCase();
+        const sDesc = s.description.toLowerCase();
+        const sTags = s.tags.map(t => t.toLowerCase()).join(' ');
+
+        for (const token of tokens) {
+          if (sName.includes(token)) score += 5;
+          if (sTags.includes(token)) score += 4;
+          if (sDesc.includes(token)) score += 2;
+        }
+        return { skill: s, score };
+      });
+
+      scored.sort((a, b) => b.score - a.score);
+      const topMatches = scored.filter(s => s.score > 0).slice(0, 6).map(s => s.skill.name);
+      const chosenSkills = topMatches.length > 0 ? topMatches : availableSkills.slice(0, 4).map(s => s.name);
+
+      let icon = 'Sparkles';
+      let color = '#007AFF';
+      if (/security|audit|auth|vuln|pentest/i.test(lowerPrompt)) {
+        icon = 'Shield';
+        color = '#8B5CF6';
+      } else if (/docker|k8s|kubernetes|cloud|devops|deploy|ci|cd|infra/i.test(lowerPrompt)) {
+        icon = 'Cpu';
+        color = '#10B981';
+      } else if (/test|qa|spec|jest|cypress|unit/i.test(lowerPrompt)) {
+        icon = 'CheckCircle2';
+        color = '#F59E0B';
+      } else if (/bot|ai|agent|llm|gpt|langchain/i.test(lowerPrompt)) {
+        icon = 'Bot';
+        color = '#EC4899';
+      } else if (/react|next|vue|front|web|ui|tailwind/i.test(lowerPrompt)) {
+        icon = 'Layers';
+        color = '#007AFF';
+      }
+
+      const words = prompt.trim().split(/\s+/).slice(0, 4);
+      const title = words.map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') + ' Stack';
+      const slug = words.map(w => w.toLowerCase().replace(/[^a-z0-9]/g, '')).join('-') || 'smart-stack';
+
+      suggestion = {
+        name: title,
+        id: `${slug}-${Date.now().toString().slice(-4)}`,
+        icon,
+        color,
+        description: `Automated workflow optimized for "${prompt.trim()}".`,
+        rationale: `Selected ${chosenSkills.length} highly relevant skills matching your project intent and technical domain.`,
+        recommendedSkills: chosenSkills,
+        missingSkills: []
+      };
+    }
+
+    res.json({ success: true, suggestion });
+  } catch (err) {
+    console.error('smart-stack error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Serve static Vite build if present
 const distPath = path.resolve('dist');
 if (fs.existsSync(distPath)) {

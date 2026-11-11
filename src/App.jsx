@@ -9,6 +9,7 @@ import AutoDiscoverModal from './components/AutoDiscoverModal.jsx';
 import SkillHubModal from './components/SkillHubModal.jsx';
 import ForkSkillModal from './components/ForkSkillModal.jsx';
 import DriftAlignModal from './components/DriftAlignModal.jsx';
+import SmartAlignModal from './components/SmartAlignModal.jsx';
 import SkillStacksModal from './components/SkillStacksModal.jsx';
 import ChatPanel from './components/ChatPanel.jsx';
 import Toast from './components/Toast.jsx';
@@ -78,6 +79,7 @@ export default function App() {
   const [stackPreselectedSkills, setStackPreselectedSkills] = useState([]);
   const [forkTargetSkill, setForkTargetSkill] = useState(null);
   const [driftSkillTarget, setDriftSkillTarget] = useState(null);
+  const [isSmartAlignOpen, setIsSmartAlignOpen] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
 
   // Theme State (macOS Sequoia Glass Light / Dark)
@@ -167,12 +169,14 @@ export default function App() {
 
     const symlinked = skills.filter(s => s.hasSymlink).length;
     const starred = skills.filter(s => starredSkills.has(s.name)).length;
+    const drifted = skills.filter(s => s.hasDrift).length;
 
-    return { unsynced, symlinked, starred };
+    return { unsynced, symlinked, starred, drifted };
   }, [skills, platforms, starredSkills]);
 
   const activeFilterName = useMemo(() => {
     if (activeFilter === 'all') return `All Skills (${skills.length})`;
+    if (activeFilter === 'drifted') return `Drifted (${filterStats.drifted})`;
     if (activeFilter === 'starred') return `Starred (${filterStats.starred})`;
     if (activeFilter === 'unsynced') return `Needs Sync (${filterStats.unsynced})`;
     if (activeFilter === 'symlinked') return `Symlinked (${filterStats.symlinked})`;
@@ -198,6 +202,8 @@ export default function App() {
     // Platform or category filter
     if (activeFilter === 'all') {
       return result;
+    } else if (activeFilter === 'drifted') {
+      return result.filter(s => s.hasDrift);
     } else if (activeFilter === 'starred') {
       return result.filter(s => starredSkills.has(s.name));
     } else if (activeFilter === 'unsynced') {
@@ -407,6 +413,8 @@ export default function App() {
         onOpenDiscover={() => setIsDiscoverOpen(true)}
         onOpenSkillHub={() => setIsSkillHubOpen(true)}
         onOpenStacks={() => { setStackPreselectedSkills([]); setIsStacksOpen(true); }}
+        onOpenSmartAlign={() => setIsSmartAlignOpen(true)}
+        driftCount={filterStats.drifted}
         totalSkills={totalSkills}
         activeFilter={activeFilter}
         setActiveFilter={setActiveFilter}
@@ -528,6 +536,19 @@ export default function App() {
                     </button>
                   )}
 
+                  {filterStats.drifted > 0 && (
+                    <button
+                      onClick={() => setActiveFilter('drifted')}
+                      className={`px-3 py-1 rounded-lg font-medium text-xs transition-all flex items-center gap-1 ${
+                        activeFilter === 'drifted'
+                          ? 'bg-amber-500/25 text-amber-700 dark:text-amber-300 border border-amber-500/35 shadow-xs font-semibold'
+                          : 'text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300'
+                      }`}
+                    >
+                      <span>Drifted ({filterStats.drifted})</span>
+                    </button>
+                  )}
+
                   {platforms
                     .filter(p => (p.count || 0) > 0)
                     .map(p => (
@@ -593,6 +614,7 @@ export default function App() {
             onSyncAll={handleSyncAll}
             onForkSkill={(skill) => setForkTargetSkill(skill)}
             onAlignSkill={handleAlignSkill}
+            onOpenSmartAlign={() => setIsSmartAlignOpen(true)}
             onTrashSkill={handleTrashSkill}
             onDeleteCompletely={handleDeleteCompletely}
             onRevealPath={handleRevealPath}
@@ -648,6 +670,15 @@ export default function App() {
           onSuccess={loadData}
           showToast={showToast}
           onRevealPath={handleRevealPath}
+        />
+      )}
+
+      {isSmartAlignOpen && (
+        <SmartAlignModal
+          platforms={platforms}
+          onClose={() => setIsSmartAlignOpen(false)}
+          onSuccess={loadData}
+          showToast={showToast}
         />
       )}
 

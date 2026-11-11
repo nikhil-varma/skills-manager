@@ -349,3 +349,43 @@ export async function applyStack({ stackId, targetPlatformId }) {
   }
   return res.json();
 }
+
+export async function fetchSmartAlignPreview({ strategy = 'newest', preferredSourceId = null } = {}) {
+  const res = await fetch(`${BASE}/drift/smart-align-preview`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ strategy, preferredSourceId })
+  });
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({ error: 'Failed to preview smart alignment' }));
+    throw new Error(errData.error || 'Failed to preview smart alignment');
+  }
+  return res.json();
+}
+
+export async function applySmartAlign({ items = [], mode = 'symlink' } = {}) {
+  const res = await fetch(`${BASE}/drift/smart-align-apply`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ items, mode })
+  });
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({ error: 'Failed to apply smart alignment' }));
+    throw new Error(errData.error || 'Failed to apply smart alignment');
+  }
+  return res.json();
+}
+
+export async function suggestSmartStack({ prompt }) {
+  const res = await fetch(`${BASE}/stacks/suggest`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ prompt })
+  });
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({ error: 'Failed to generate smart stack' }));
+    throw new Error(errData.error || 'Failed to generate smart stack');
+  }
+  return res.json();
+}
+

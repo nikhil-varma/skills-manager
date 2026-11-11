@@ -57,6 +57,7 @@ export default function SkillsCardView({
   onSyncAll,
   onForkSkill,
   onAlignSkill,
+  onOpenSmartAlign,
   onTrashSkill,
   onDeleteCompletely,
   onRevealPath
@@ -148,6 +149,9 @@ export default function SkillsCardView({
 
     return result;
   }, [skills, selectedTag, sortBy, visiblePlatforms, starredSkills]);
+
+  // Count drifted skills
+  const driftedCount = useMemo(() => skills.filter(s => s.hasDrift).length, [skills]);
 
   // Pagination
   const totalPages = Math.max(1, Math.ceil(processedSkills.length / pageSize));
@@ -355,6 +359,18 @@ export default function SkillsCardView({
                 ×
               </button>
             </div>
+          )}
+
+          {/* Smart Align Button in Toolbar */}
+          {driftedCount > 0 && onOpenSmartAlign && (
+            <button
+              onClick={onOpenSmartAlign}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500/15 to-orange-500/15 hover:from-amber-500/25 hover:to-orange-500/25 text-amber-600 dark:text-amber-400 border border-amber-500/30 text-xs font-semibold shadow-2xs transition-all active:scale-95"
+              title="Auto-detect latest changes and reconcile all drifted skills"
+            >
+              <Zap className="h-3.5 w-3.5 fill-amber-500 text-amber-500" />
+              <span>Smart Align ({driftedCount})</span>
+            </button>
           )}
         </div>
 
