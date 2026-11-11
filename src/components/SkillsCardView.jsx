@@ -50,6 +50,7 @@ export default function SkillsCardView({
   onOpenInEditor,
   onBatchLink,
   onBatchSyncAll,
+  onSaveAsStack,
   onOpenDetail,
   onLinkSkill,
   onUnlinkSkill,
@@ -1124,6 +1125,19 @@ export default function SkillsCardView({
             <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
             <span className="hidden sm:inline">Star All</span>
           </button>
+
+          {/* Save Selection as Stack */}
+          {onSaveAsStack && (
+            <button
+              type="button"
+              onClick={() => onSaveAsStack(Array.from(selectedSkills))}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 text-xs font-semibold transition-colors"
+              title="Create a reusable Skill Stack from this selection"
+            >
+              <Layers className="h-3.5 w-3.5 text-indigo-500" />
+              <span className="hidden sm:inline">Save as Stack</span>
+            </button>
+          )}
 
           {/* Clear Selection */}
           <button

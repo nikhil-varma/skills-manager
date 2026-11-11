@@ -234,3 +234,66 @@ export function saveLLMConfig(llmConfig) {
     return false;
   }
 }
+
+export const DEFAULT_STACKS = [
+  {
+    id: 'fullstack-web',
+    name: 'Fullstack Web Engineer',
+    icon: 'Layers',
+    color: '#007AFF',
+    description: 'React component refactoring, Tailwind tokens, API schema validation, and git workflows',
+    skills: ['tailwind-theme-craft', 'react-component-refactor', 'api-contract-validator', 'git-commit-sage']
+  },
+  {
+    id: 'devops-sre',
+    name: 'DevOps & SRE Guild',
+    icon: 'Cpu',
+    color: '#10B981',
+    description: 'Multi-service Docker architectures, zero-downtime DB migrations, post-mortems',
+    skills: ['docker-compose-architect', 'database-migration-helper', 'incident-postmortem-scribe', 'security-vulnerability-auditor']
+  },
+  {
+    id: 'qa-security',
+    name: 'Code Review & Security',
+    icon: 'Shield',
+    color: '#8B5CF6',
+    description: 'Deep PR audits, OWASP top 10 scanner, and comprehensive unit test generation',
+    skills: ['pr-review-expert', 'unit-test-synthesizer', 'security-vulnerability-auditor']
+  }
+];
+
+export function getStacks() {
+  try {
+    if (fs.existsSync(SETTINGS_FILE)) {
+      const data = JSON.parse(fs.readFileSync(SETTINGS_FILE, 'utf-8'));
+      if (Array.isArray(data.stacks) && data.stacks.length > 0) {
+        return data.stacks;
+      }
+    }
+  } catch (err) {
+    console.error('Error reading stacks from settings:', err);
+  }
+  return [...DEFAULT_STACKS];
+}
+
+export function saveStacks(stacks) {
+  try {
+    if (!fs.existsSync(CONFIG_DIR)) {
+      fs.mkdirSync(CONFIG_DIR, { recursive: true });
+    }
+
+    let current = {};
+    if (fs.existsSync(SETTINGS_FILE)) {
+      try {
+        current = JSON.parse(fs.readFileSync(SETTINGS_FILE, 'utf-8'));
+      } catch (e) {}
+    }
+
+    current.stacks = stacks;
+    fs.writeFileSync(SETTINGS_FILE, JSON.stringify(current, null, 2), 'utf-8');
+    return true;
+  } catch (err) {
+    console.error('Error saving stacks:', err);
+    return false;
+  }
+}

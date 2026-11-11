@@ -8,6 +8,7 @@ import {
   Radar,
   Bot,
   Sparkles,
+  Layers,
   Sun,
   Moon
 } from 'lucide-react';
@@ -21,6 +22,7 @@ export default function Navbar({
   onOpenSettings,
   onOpenDiscover,
   onOpenSkillHub,
+  onOpenStacks,
   totalSkills,
   activeFilter,
   setActiveFilter,
@@ -194,6 +196,16 @@ export default function Navbar({
           >
             <Sparkles className="h-3.5 w-3.5 text-purple-500 dark:text-purple-400" />
             <span className="hidden sm:inline font-semibold">Skill Hub</span>
+          </button>
+
+          {/* Skill Stacks / Profiles Button */}
+          <button
+            onClick={onOpenStacks}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-black/[0.04] hover:bg-black/[0.08] dark:bg-white/[0.06] dark:hover:bg-white/[0.12] border border-black/[0.06] dark:border-white/10 text-slate-700 dark:text-slate-300 font-medium text-xs transition-colors flex-shrink-0"
+            title="Manage project skill stacks and workflow profiles"
+          >
+            <Layers className="h-3.5 w-3.5 text-indigo-500" />
+            <span className="hidden sm:inline">Stacks</span>
           </button>
 
           {/* Settings / Paths */}

@@ -3,9 +3,9 @@ import cors from 'cors';
 import path from 'path';
 import fs from 'fs';
 import { exec } from 'child_process';
-import { getPlatforms, savePlatforms, expandHome, contractHome, getLLMConfig, saveLLMConfig } from './config.js';
+import { getPlatforms, savePlatforms, expandHome, contractHome, getLLMConfig, saveLLMConfig, getStacks, saveStacks } from './config.js';
 import { discoverAllOSTools } from './discover.js';
-import { testLLMConnection, chatWithSkills } from './llm.js';
+import { testLLMConnection, chatWithSkills, callLLM } from './llm.js';
 import {
   scanPlatforms,
   getSkillDetail,
@@ -765,6 +765,127 @@ app.post('/api/ai/chat', async (req, res) => {
     if (!res.writableEnded) {
       res.status(500).json({ error: err.message });
     }
+  }
+});
+
+// Interactive Skill Playground / Test Runner
+app.post('/api/skills/test-run', async (req, res) => {
+  try {
+    const { skillName, platformId, userPrompt } = req.body;
+    if (!skillName || !userPrompt) {
+      return res.status(400).json({ error: 'skillName and userPrompt are required' });
+    }
+
+    const config = getLLMConfig();
+    const platforms = getPlatforms();
+    const detail = getSkillDetail(skillName, platforms, platformId);
+    if (!detail) {
+      return res.status(404).json({ error: `Skill "${skillName}" not found` });
+    }
+
+    const systemPrompt = `You are an AI assistant executing the following specialized agent skill:
+# Skill: ${detail.displayName || detail.name}
+${detail.description ? `Description: ${detail.description}\n` : ''}
+
+${detail.rawContent || detail.markdownBody || ''}
+
+Follow the rules, output structure, and instructions defined in this skill strictly.`;
+
+    const startTime = Date.now();
+    const reply = await callLLM({
+      messages: [{ role: 'user', content: userPrompt }],
+      config,
+      systemPrompt
+    });
+    const latencyMs = Date.now() - startTime;
+
+    res.json({
+      success: true,
+      reply: reply?.content || reply,
+      latencyMs,
+      model: config.model,
+      provider: config.provider
+    });
+  } catch (err) {
+    console.error('Skill test-run error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Skill Stacks: Get all stacks
+app.get('/api/stacks', (req, res) => {
+  try {
+    const stacks = getStacks();
+    res.json({ stacks });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Skill Stacks: Save stacks
+app.post('/api/stacks', (req, res) => {
+  try {
+    const { stacks } = req.body;
+    if (!Array.isArray(stacks)) {
+      return res.status(400).json({ error: 'stacks array is required' });
+    }
+    saveStacks(stacks);
+    res.json({ success: true, stacks });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Skill Stacks: 1-Click Apply Stack to Target Assistant
+app.post('/api/stacks/apply', (req, res) => {
+  try {
+    const { stackId, targetPlatformId } = req.body;
+    const stacks = getStacks();
+    const stack = stacks.find(s => s.id === stackId);
+    if (!stack) return res.status(404).json({ error: 'Stack not found' });
+
+    const platforms = getPlatforms();
+    const targetPlat = platforms.find(p => p.id === targetPlatformId);
+    if (!targetPlat) return res.status(404).json({ error: 'Target platform not found' });
+
+    const sharedPlat = platforms.find(p => p.id === 'shared');
+    const applied = [];
+    const skipped = [];
+
+    for (const skillName of stack.skills) {
+      // Find source
+      let sourcePlat = null;
+      for (const p of platforms) {
+        if (p.id === targetPlat.id) continue;
+        const sDir = path.join(p.expandedPath, skillName);
+        if (fs.existsSync(sDir)) {
+          sourcePlat = p;
+          if (p.id === 'shared') break; // prefer shared hub
+        }
+      }
+
+      if (!sourcePlat) {
+        skipped.push({ skillName, reason: 'Skill not found in any connected assistant' });
+        continue;
+      }
+
+      try {
+        linkSkill({
+          skillName,
+          sourcePlatformPath: sourcePlat.expandedPath,
+          targetPlatformPath: targetPlat.expandedPath,
+          makeSharedCanonical: true,
+          sharedPath: sharedPlat ? sharedPlat.expandedPath : null
+        });
+        applied.push(skillName);
+      } catch (e) {
+        skipped.push({ skillName, reason: e.message });
+      }
+    }
+
+    res.json({ success: true, stackName: stack.name, targetPlatform: targetPlat.name, applied, skipped });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 

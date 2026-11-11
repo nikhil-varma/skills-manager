@@ -9,6 +9,7 @@ import AutoDiscoverModal from './components/AutoDiscoverModal.jsx';
 import SkillHubModal from './components/SkillHubModal.jsx';
 import ForkSkillModal from './components/ForkSkillModal.jsx';
 import DriftAlignModal from './components/DriftAlignModal.jsx';
+import SkillStacksModal from './components/SkillStacksModal.jsx';
 import ChatPanel from './components/ChatPanel.jsx';
 import Toast from './components/Toast.jsx';
 import { 
@@ -73,6 +74,8 @@ export default function App() {
   const [settingsInitialTab, setSettingsInitialTab] = useState('locations');
   const [isDiscoverOpen, setIsDiscoverOpen] = useState(false);
   const [isSkillHubOpen, setIsSkillHubOpen] = useState(false);
+  const [isStacksOpen, setIsStacksOpen] = useState(false);
+  const [stackPreselectedSkills, setStackPreselectedSkills] = useState([]);
   const [forkTargetSkill, setForkTargetSkill] = useState(null);
   const [driftSkillTarget, setDriftSkillTarget] = useState(null);
   const [isChatOpen, setIsChatOpen] = useState(false);
@@ -403,6 +406,7 @@ export default function App() {
         }}
         onOpenDiscover={() => setIsDiscoverOpen(true)}
         onOpenSkillHub={() => setIsSkillHubOpen(true)}
+        onOpenStacks={() => { setStackPreselectedSkills([]); setIsStacksOpen(true); }}
         totalSkills={totalSkills}
         activeFilter={activeFilter}
         setActiveFilter={setActiveFilter}
@@ -582,6 +586,7 @@ export default function App() {
             onOpenInEditor={handleOpenInEditor}
             onBatchLink={handleBatchLink}
             onBatchSyncAll={handleBatchSyncAll}
+            onSaveAsStack={(skillsList) => { setStackPreselectedSkills(skillsList); setIsStacksOpen(true); }}
             onOpenDetail={(name) => setSelectedSkillName(name)}
             onLinkSkill={handleLinkSkill}
             onUnlinkSkill={handleUnlinkSkill}
@@ -650,6 +655,20 @@ export default function App() {
         <SkillHubModal
           platforms={platforms}
           onClose={() => setIsSkillHubOpen(false)}
+          onSuccess={loadData}
+          showToast={showToast}
+        />
+      )}
+
+      {isStacksOpen && (
+        <SkillStacksModal
+          allSkills={skills}
+          platforms={platforms}
+          preselectedSkills={stackPreselectedSkills}
+          onClose={() => {
+            setIsStacksOpen(false);
+            setStackPreselectedSkills([]);
+          }}
           onSuccess={loadData}
           showToast={showToast}
         />

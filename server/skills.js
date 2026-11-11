@@ -330,11 +330,13 @@ export function getSkillDetail(skillName, platforms, preferredPlatformId) {
         let fileHash = null;
         let mtime = null;
         let fileSize = 0;
+        let instRawContent = '';
         try {
           isLink = fs.lstatSync(pDir).isSymbolicLink();
           const targetSkillFile = findSkillFile(pDir);
           if (targetSkillFile) {
-            fileHash = crypto.createHash('md5').update(fs.readFileSync(targetSkillFile)).digest('hex');
+            instRawContent = fs.readFileSync(targetSkillFile, 'utf-8');
+            fileHash = crypto.createHash('md5').update(instRawContent).digest('hex');
             hashes.add(fileHash);
             const stat = fs.statSync(targetSkillFile);
             mtime = stat.mtime.toISOString();
@@ -353,7 +355,8 @@ export function getSkillDetail(skillName, platforms, preferredPlatformId) {
           fileHash,
           shortHash: fileHash ? fileHash.slice(0, 7) : null,
           mtime,
-          fileSize
+          fileSize,
+          content: instRawContent
         });
       }
     }

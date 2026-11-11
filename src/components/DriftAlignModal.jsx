@@ -15,7 +15,13 @@ import {
   ExternalLink,
   ArrowRight,
   ShieldAlert,
-  Sparkles
+  Sparkles,
+  GitCompare,
+  ListFilter,
+  ArrowLeftRight,
+  Columns,
+  Minus,
+  Plus
 } from 'lucide-react';
 import { fetchSkillDetail, alignSkillWithCanonical, revealInFinder } from '../api.js';
 
@@ -41,6 +47,43 @@ function formatBytes(bytes) {
   return `${(bytes / 1024).toFixed(1)} KB`;
 }
 
+// Myers / LCS line-by-line diff algorithm
+function computeLineDiff(textA = '', textB = '') {
+  const linesA = textA ? textA.split(/\r?\n/) : [];
+  const linesB = textB ? textB.split(/\r?\n/) : [];
+
+  const m = linesA.length;
+  const n = linesB.length;
+  const dp = Array.from({ length: m + 1 }, () => new Int32Array(n + 1));
+
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      if (linesA[i - 1] === linesB[j - 1]) {
+        dp[i][j] = dp[i - 1][j - 1] + 1;
+      } else {
+        dp[i][j] = Math.max(dp[i - 1][j], dp[i][j - 1]);
+      }
+    }
+  }
+
+  const diff = [];
+  let i = m, j = n;
+  while (i > 0 || j > 0) {
+    if (i > 0 && j > 0 && linesA[i - 1] === linesB[j - 1]) {
+      diff.unshift({ type: 'same', lineA: i, lineB: j, text: linesA[i - 1] });
+      i--;
+      j--;
+    } else if (j > 0 && (i === 0 || dp[i][j - 1] >= dp[i - 1][j])) {
+      diff.unshift({ type: 'added', lineB: j, text: linesB[j - 1] });
+      j--;
+    } else if (i > 0 && (j === 0 || dp[i][j - 1] < dp[i - 1][j])) {
+      diff.unshift({ type: 'removed', lineA: i, text: linesA[i - 1] });
+      i--;
+    }
+  }
+  return diff;
+}
+
 export default function DriftAlignModal({
   skillName,
   initialSkill,
@@ -52,7 +95,9 @@ export default function DriftAlignModal({
 }) {
   const [detail, setDetail] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [viewMode, setViewMode] = useState('list'); // 'list' | 'diff'
   const [selectedSourceId, setSelectedSourceId] = useState('');
+  const [compareTargetId, setCompareTargetId] = useState('');
   const [alignMode, setAlignMode] = useState('overwrite'); // 'overwrite' | 'symlink'
   const [selectedTargets, setSelectedTargets] = useState(new Set());
   const [isAligning, setIsAligning] = useState(false);
@@ -82,6 +127,12 @@ export default function DriftAlignModal({
 
         setSelectedSourceId(bestSource.platformId);
 
+        // Select comparison target: first platform with differing hash
+        const diverged = installs.find(i => i.platformId !== bestSource.platformId && i.fileHash !== bestSource.fileHash) ||
+                         installs.find(i => i.platformId !== bestSource.platformId) ||
+                         installs[0];
+        setCompareTargetId(diverged?.platformId || '');
+
         // Select all other platforms as targets by default
         const otherIds = new Set(installs.filter(i => i.platformId !== bestSource.platformId).map(i => i.platformId));
         setSelectedTargets(otherIds);
@@ -103,7 +154,6 @@ export default function DriftAlignModal({
     setSelectedTargets(prev => {
       const next = new Set(prev);
       next.delete(platId);
-      // Ensure other installed platforms are selected
       if (detail?.allInstallations) {
         for (const inst of detail.allInstallations) {
           if (inst.platformId !== platId) next.add(inst.platformId);
@@ -111,6 +161,12 @@ export default function DriftAlignModal({
       }
       return next;
     });
+
+    // If compare target was source, pick another
+    if (compareTargetId === platId && detail?.allInstallations) {
+      const other = detail.allInstallations.find(i => i.platformId !== platId);
+      if (other) setCompareTargetId(other.platformId);
+    }
   };
 
   const toggleTarget = (platId) => {
@@ -159,6 +215,10 @@ export default function DriftAlignModal({
     return detail?.allInstallations?.find(i => i.platformId === selectedSourceId);
   }, [detail, selectedSourceId]);
 
+  const compareTargetInstallation = useMemo(() => {
+    return detail?.allInstallations?.find(i => i.platformId === compareTargetId);
+  }, [detail, compareTargetId]);
+
   // Count distinct hashes across installations
   const distinctHashCount = useMemo(() => {
     const hashes = new Set();
@@ -170,12 +230,30 @@ export default function DriftAlignModal({
     return hashes.size;
   }, [detail]);
 
+  // Compute visual line diff between Source and Compare Target
+  const lineDiff = useMemo(() => {
+    if (!selectedSourceInstallation || !compareTargetInstallation) return [];
+    const sourceText = selectedSourceInstallation.content || detail?.rawContent || '';
+    const targetText = compareTargetInstallation.content || '';
+    return computeLineDiff(sourceText, targetText);
+  }, [selectedSourceInstallation, compareTargetInstallation, detail]);
+
+  const diffStats = useMemo(() => {
+    let added = 0, removed = 0, same = 0;
+    for (const d of lineDiff) {
+      if (d.type === 'added') added++;
+      else if (d.type === 'removed') removed++;
+      else same++;
+    }
+    return { added, removed, same };
+  }, [lineDiff]);
+
   return (
     <div className="fixed inset-0 z-60 flex items-center justify-center p-3 sm:p-5 bg-black/60 backdrop-blur-md animate-fade-in">
-      <div className="relative w-full max-w-3xl max-h-[92vh] flex flex-col rounded-2xl border border-black/10 dark:border-white/10 bg-[#fbfcfd] dark:bg-[#1a1c24] shadow-2xl overflow-hidden macos-glass">
+      <div className="relative w-full max-w-4xl max-h-[92vh] flex flex-col rounded-2xl border border-black/10 dark:border-white/10 bg-[#fbfcfd] dark:bg-[#1a1c24] shadow-2xl overflow-hidden macos-glass">
         
         {/* Header */}
-        <div className="flex items-center justify-between px-5 sm:px-6 py-4 border-b border-black/[0.08] dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02]">
+        <div className="flex items-center justify-between px-5 sm:px-6 py-3.5 border-b border-black/[0.08] dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02]">
           <div className="flex items-center gap-3 min-w-0">
             <div className="h-9 w-9 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-500 flex-shrink-0 shadow-xs">
               <Zap className="h-5 w-5" />
@@ -186,7 +264,7 @@ export default function DriftAlignModal({
                   Drift Analyser & Source Alignment
                 </h3>
                 <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/25 flex-shrink-0">
-                  {distinctHashCount > 1 ? `${distinctHashCount} Variations` : 'In Parity'}
+                  {distinctHashCount > 1 ? `${distinctHashCount} Divergent Copies` : 'In Parity'}
                 </span>
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5">
@@ -194,23 +272,55 @@ export default function DriftAlignModal({
               </p>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
-          >
-            <X className="h-5 w-5" />
-          </button>
+
+          <div className="flex items-center gap-2">
+            {/* View Mode Toggle: Locations List vs Visual Diff */}
+            <div className="p-1 rounded-xl bg-black/[0.04] dark:bg-white/[0.06] border border-black/[0.06] dark:border-white/10 flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => setViewMode('list')}
+                className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
+                  viewMode === 'list'
+                    ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                <ListFilter className="h-3.5 w-3.5 text-[#007AFF]" />
+                <span>Locations</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode('diff')}
+                className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
+                  viewMode === 'diff'
+                    ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                <GitCompare className="h-3.5 w-3.5 text-amber-500" />
+                <span>Visual Diff</span>
+              </button>
+            </div>
+
+            <button
+              onClick={onClose}
+              className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
         </div>
 
         {/* Modal Body */}
-        <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-5 text-xs">
+        <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-4 text-xs">
           
           {loading ? (
             <div className="py-20 flex flex-col items-center justify-center text-slate-400 text-xs">
               <Loader2 className="h-6 w-6 animate-spin text-[#007AFF] mb-2" />
               Inspecting file hashes across locations...
             </div>
-          ) : (
+          ) : viewMode === 'list' ? (
+            /* LIST VIEW: Source selection & target alignment breakdown */
             <>
               {/* Guidance Banner */}
               <div className="p-3.5 rounded-xl border border-amber-500/25 bg-amber-500/10 text-amber-800 dark:text-amber-200 flex items-start gap-2.5">
@@ -221,7 +331,7 @@ export default function DriftAlignModal({
                   </p>
                   <p className="text-[11px] text-amber-700 dark:text-amber-300 leading-relaxed">
                     Different copies of <code className="font-mono font-bold">{skillName}</code> have diverged across assistants. 
-                    Select the location whose version you wish to keep, and SkillDesk will align the other locations to match it.
+                    Select the location whose version you wish to keep, or switch to <strong>Visual Diff</strong> to inspect changes line-by-line.
                   </p>
                 </div>
               </div>
@@ -366,7 +476,7 @@ export default function DriftAlignModal({
 
                             {isIdentical ? (
                               <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
-                                Already matches source
+                                Matches source
                               </span>
                             ) : (
                               <span className="text-[10px] font-semibold text-amber-600 dark:text-amber-400">
@@ -431,6 +541,110 @@ export default function DriftAlignModal({
                 </div>
               </div>
             </>
+          ) : (
+            /* VISUAL DIFF VIEW: Side-by-side / Unified Git diff */
+            <div className="space-y-4">
+              {/* Diff Control Bar */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-xl border border-black/[0.08] dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02]">
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[11px] text-slate-500">Source:</span>
+                    <span className="font-bold text-xs text-slate-900 dark:text-white flex items-center gap-1">
+                      <span className="h-2 w-2 rounded-full" style={{ backgroundColor: selectedSourceInstallation?.color || '#007AFF' }} />
+                      {selectedSourceInstallation?.platformName}
+                    </span>
+                  </div>
+
+                  <ArrowRight className="h-3.5 w-3.5 text-slate-400" />
+
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[11px] text-slate-500">Compare with:</span>
+                    <select
+                      value={compareTargetId}
+                      onChange={(e) => setCompareTargetId(e.target.value)}
+                      className="bg-white dark:bg-black/50 border border-black/[0.08] dark:border-white/10 rounded-lg px-2.5 py-1 text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-[#007AFF]"
+                    >
+                      {detail?.allInstallations
+                        ?.filter(i => i.platformId !== selectedSourceId)
+                        .map(i => (
+                          <option key={i.platformId} value={i.platformId}>
+                            {i.platformName} ({i.shortHash ? `hash:${i.shortHash}` : 'copy'})
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Diff Stats */}
+                <div className="flex items-center gap-2 text-[11px] font-mono">
+                  <span className="flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                    <Plus className="h-3 w-3" />
+                    {diffStats.added} added
+                  </span>
+                  <span className="flex items-center gap-1 px-2 py-0.5 rounded bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">
+                    <Minus className="h-3 w-3" />
+                    {diffStats.removed} removed
+                  </span>
+                  <span className="text-slate-400">
+                    {diffStats.same} matching
+                  </span>
+                </div>
+              </div>
+
+              {/* Diff Code Container */}
+              <div className="rounded-xl border border-black/[0.08] dark:border-white/10 bg-[#f8f9fa] dark:bg-[#12141a] overflow-hidden">
+                <div className="flex items-center justify-between px-4 py-2 border-b border-black/[0.06] dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02] text-[11px] font-mono text-slate-500">
+                  <span>SKILL.md Unified Diff</span>
+                  <button
+                    onClick={() => {
+                      if (compareTargetId) {
+                        handleSelectSource(compareTargetId);
+                      }
+                    }}
+                    className="flex items-center gap-1 text-[#007AFF] hover:underline"
+                  >
+                    <ArrowLeftRight className="h-3 w-3" />
+                    <span>Make {compareTargetInstallation?.platformName || 'Target'} the Source instead</span>
+                  </button>
+                </div>
+
+                <div className="p-2 overflow-x-auto max-h-[50vh] font-mono text-[11px] leading-relaxed">
+                  {lineDiff.length === 0 ? (
+                    <div className="py-12 text-center text-slate-400">
+                      Both files are identical. No content drift between these two locations.
+                    </div>
+                  ) : (
+                    lineDiff.map((d, idx) => {
+                      if (d.type === 'added') {
+                        return (
+                          <div key={idx} className="flex items-start bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 px-2 py-0.5 rounded border-l-2 border-emerald-500">
+                            <span className="w-8 text-right pr-3 select-none text-emerald-500/60 font-mono text-[10px]">+{d.lineB}</span>
+                            <span className="select-none pr-2 font-bold">+</span>
+                            <span className="whitespace-pre-wrap break-all flex-1">{d.text || ' '}</span>
+                          </div>
+                        );
+                      }
+                      if (d.type === 'removed') {
+                        return (
+                          <div key={idx} className="flex items-start bg-rose-500/15 text-rose-800 dark:text-rose-300 px-2 py-0.5 rounded border-l-2 border-rose-500">
+                            <span className="w-8 text-right pr-3 select-none text-rose-500/60 font-mono text-[10px]">-{d.lineA}</span>
+                            <span className="select-none pr-2 font-bold">-</span>
+                            <span className="whitespace-pre-wrap break-all flex-1">{d.text || ' '}</span>
+                          </div>
+                        );
+                      }
+                      return (
+                        <div key={idx} className="flex items-start text-slate-600 dark:text-slate-400 hover:bg-black/[0.02] dark:hover:bg-white/[0.02] px-2 py-0.5">
+                          <span className="w-8 text-right pr-3 select-none text-slate-400/50 font-mono text-[10px]">{d.lineA}</span>
+                          <span className="select-none pr-2 text-transparent"> </span>
+                          <span className="whitespace-pre-wrap break-all flex-1">{d.text || ' '}</span>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+            </div>
           )}
 
         </div>
@@ -455,7 +669,7 @@ export default function DriftAlignModal({
             >
               {isAligning ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Zap className="h-3.5 w-3.5" />}
               <span>
-                {isAligning ? 'Aligning...' : `Align from ${selectedSourceInstallation?.platformName || 'Source'}`}
+                {isAligning ? 'Aligning...' : `Align ${selectedTargets.size} Targets from ${selectedSourceInstallation?.platformName || 'Source'}`}
               </span>
             </button>
           </div>

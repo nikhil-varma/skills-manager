@@ -307,3 +307,45 @@ export async function alignSkillWithCanonical({ skillName, canonicalPlatformId, 
   }
   return res.json();
 }
+
+export async function runSkillTest({ skillName, platformId, userPrompt }) {
+  const res = await fetch(`${BASE}/skills/test-run`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ skillName, platformId, userPrompt })
+  });
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({ error: 'Test run failed' }));
+    throw new Error(errData.error || 'Failed to execute skill test run');
+  }
+  return res.json();
+}
+
+export async function fetchStacks() {
+  const res = await fetch(`${BASE}/stacks`);
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+export async function saveStacks(stacks) {
+  const res = await fetch(`${BASE}/stacks`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ stacks })
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+export async function applyStack({ stackId, targetPlatformId }) {
+  const res = await fetch(`${BASE}/stacks/apply`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ stackId, targetPlatformId })
+  });
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({ error: 'Failed to apply stack' }));
+    throw new Error(errData.error || 'Failed to apply stack to assistant');
+  }
+  return res.json();
+}

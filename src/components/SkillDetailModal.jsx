@@ -18,9 +18,15 @@ import {
   AlertTriangle,
   Zap,
   CheckCircle2,
-  GitFork
+  GitFork,
+  FlaskConical,
+  Play,
+  Terminal,
+  Clock,
+  CopyCheck,
+  RefreshCw
 } from 'lucide-react';
-import { fetchSkillDetail, updateSkillContent, linkSkill, copySkill, moveSkill, trashSkill, unlinkSkill, revealInFinder, alignSkillWithCanonical } from '../api.js';
+import { fetchSkillDetail, updateSkillContent, linkSkill, copySkill, moveSkill, trashSkill, unlinkSkill, revealInFinder, alignSkillWithCanonical, runSkillTest } from '../api.js';
 
 export default function SkillDetailModal({
   skillName,
@@ -47,6 +53,33 @@ export default function SkillDetailModal({
   const [targetPlatformId, setTargetPlatformId] = useState(platforms[0]?.id || '');
   const [actionProcessing, setActionProcessing] = useState(false);
   const [driftSourceId, setDriftSourceId] = useState('');
+
+  // Interactive Skill Sandbox state
+  const [testPrompt, setTestPrompt] = useState('Demonstrate this skill with a realistic example scenario.');
+  const [testResult, setTestResult] = useState(null);
+  const [testLoading, setTestLoading] = useState(false);
+  const [testError, setTestError] = useState(null);
+  const [copiedTestOutput, setCopiedTestOutput] = useState(false);
+
+  const handleRunSkillTest = async () => {
+    if (!testPrompt.trim()) return;
+    try {
+      setTestLoading(true);
+      setTestError(null);
+      const res = await runSkillTest({
+        skillName,
+        platformId: detail?.platformId,
+        userPrompt: testPrompt.trim()
+      });
+      setTestResult(res);
+      showToast(`Skill test completed in ${(res.latencyMs / 1000).toFixed(1)}s!`, 'success');
+    } catch (err) {
+      setTestError(err.message);
+      showToast(err.message, 'error');
+    } finally {
+      setTestLoading(false);
+    }
+  };
 
   useEffect(() => {
     loadDetail();
@@ -315,6 +348,17 @@ export default function SkillDetailModal({
             >
               <ArrowRightLeft className="h-4 w-4 text-emerald-500" />
               <span>Move & Sync</span>
+            </button>
+            <button
+              onClick={() => { setActiveTab('sandbox'); setIsEditing(false); }}
+              className={`h-9 px-3.5 rounded-lg text-xs sm:text-[13px] font-medium transition-all flex items-center gap-1.5 ${
+                activeTab === 'sandbox'
+                  ? 'bg-white dark:bg-white/15 text-slate-900 dark:text-white shadow-xs font-semibold'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              <FlaskConical className="h-4 w-4 text-emerald-500" />
+              <span>Test Sandbox</span>
             </button>
           </div>
 
@@ -660,6 +704,143 @@ export default function SkillDetailModal({
                       ))}
                     </div>
                   </div>
+                </div>
+              )}
+
+              {/* Tab: Interactive Skill Sandbox / Test Runner */}
+              {activeTab === 'sandbox' && (
+                <div className="space-y-5">
+                  <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4 sm:p-5 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2.5">
+                        <div className="h-8 w-8 rounded-lg bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                          <FlaskConical className="h-4 w-4" />
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+                            Interactive Skill Sandbox
+                            <span className="text-[10px] font-mono px-2 py-0.2 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                              Live Test
+                            </span>
+                          </h4>
+                          <p className="text-xs text-slate-500 dark:text-slate-400">
+                            Test this skill with your configured LLM in isolation before deploying it across assistants.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Test Prompt Input */}
+                    <div className="space-y-2 pt-1">
+                      <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                        Test User Scenario / Prompt:
+                      </label>
+                      <textarea
+                        rows={3}
+                        value={testPrompt}
+                        onChange={(e) => setTestPrompt(e.target.value)}
+                        placeholder="e.g. Test this skill by processing sample inputs..."
+                        className="w-full bg-white dark:bg-black/50 border border-black/10 dark:border-white/10 rounded-xl p-3 text-xs text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#007AFF]/35 font-mono"
+                      />
+
+                      {/* Quick Prompt Suggestions */}
+                      <div className="flex items-center gap-1.5 flex-wrap pt-1">
+                        <span className="text-[11px] text-slate-400">Quick tests:</span>
+                        {[
+                          'Demonstrate this skill with a realistic example scenario',
+                          'Test edge case handling and error conditions',
+                          'Verify strict adherence to output formatting rules'
+                        ].map((promptText, idx) => (
+                          <button
+                            key={idx}
+                            type="button"
+                            onClick={() => setTestPrompt(promptText)}
+                            className="text-[10px] px-2 py-0.5 rounded-full bg-black/[0.04] dark:bg-white/5 hover:bg-black/[0.08] dark:hover:bg-white/10 text-slate-600 dark:text-slate-300 border border-black/[0.04] dark:border-white/5 transition-colors"
+                          >
+                            {promptText.slice(0, 36)}...
+                          </button>
+                        ))}
+                      </div>
+
+                      {/* Action Bar */}
+                      <div className="flex items-center justify-between pt-2">
+                        <span className="text-[11px] text-slate-400 font-mono">
+                          System prompt: {skillName} (SKILL.md instructions)
+                        </span>
+
+                        <button
+                          type="button"
+                          onClick={handleRunSkillTest}
+                          disabled={testLoading || !testPrompt.trim()}
+                          className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow-xs shadow-emerald-600/25 transition-all disabled:opacity-50 active:scale-95"
+                        >
+                          {testLoading ? (
+                            <>
+                              <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                              <span>Executing Skill...</span>
+                            </>
+                          ) : (
+                            <>
+                              <Play className="h-3.5 w-3.5 fill-white" />
+                              <span>Run Skill Test</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Test Results Output */}
+                  {testError && (
+                    <div className="p-4 rounded-xl border border-rose-500/20 bg-rose-500/10 text-rose-500 text-xs flex items-start gap-2.5">
+                      <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <p className="font-semibold">Test Run Failed</p>
+                        <p className="text-[11px] mt-0.5">{testError}</p>
+                        <p className="text-[10px] text-rose-400/80 mt-1">
+                          Make sure your LLM provider (Ollama, LMStudio, OpenAI, or Gemini) is running and configured in Settings.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {testResult && (
+                    <div className="rounded-xl border border-black/[0.08] dark:border-white/10 bg-white/70 dark:bg-white/[0.03] overflow-hidden shadow-xs">
+                      <div className="flex items-center justify-between px-4 py-2.5 border-b border-black/[0.06] dark:border-white/10 bg-black/[0.02] dark:bg-white/[0.02]">
+                        <div className="flex items-center gap-2">
+                          <Terminal className="h-3.5 w-3.5 text-emerald-500" />
+                          <span className="font-semibold text-xs text-slate-900 dark:text-white">AI Agent Response</span>
+                          <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-black/[0.04] dark:bg-white/10 text-slate-500">
+                            {(testResult.latencyMs / 1000).toFixed(2)}s
+                          </span>
+                          <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-black/[0.04] dark:bg-white/10 text-slate-500">
+                            {testResult.model || 'local'}
+                          </span>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (navigator.clipboard) {
+                              navigator.clipboard.writeText(testResult.reply || '');
+                              setCopiedTestOutput(true);
+                              setTimeout(() => setCopiedTestOutput(false), 2000);
+                            }
+                          }}
+                          className="flex items-center gap-1 text-[11px] text-slate-500 hover:text-slate-800 dark:hover:text-white"
+                        >
+                          {copiedTestOutput ? <Check className="h-3 w-3 text-emerald-500" /> : <Copy className="h-3 w-3" />}
+                          <span>{copiedTestOutput ? 'Copied' : 'Copy'}</span>
+                        </button>
+                      </div>
+
+                      <div className="p-4 prose prose-slate dark:prose-invert max-w-none text-xs leading-relaxed max-h-[45vh] overflow-y-auto">
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                          {testResult.reply || ''}
+                        </ReactMarkdown>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </>
