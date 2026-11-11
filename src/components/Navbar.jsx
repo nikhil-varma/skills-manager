@@ -143,9 +143,35 @@ export default function Navbar({
 
         {/* Action Controls Row (Desktop & Tablet) */}
         <div className="flex items-center justify-between sm:justify-end gap-1.5 overflow-x-auto no-scrollbar">
-          {/* macOS View Mode Switcher: Matrix vs By Folder */}
+          {/* macOS View Mode Switcher: Cards vs By Folder vs Table */}
           {onSetViewMode && (
             <div className="p-0.5 rounded-lg bg-black/[0.04] dark:bg-white/[0.06] border border-black/[0.06] dark:border-white/10 flex items-center flex-shrink-0">
+              <button
+                type="button"
+                onClick={() => onSetViewMode('cards')}
+                className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition-all ${
+                  viewMode === 'cards'
+                    ? 'bg-white dark:bg-white/15 text-slate-900 dark:text-white shadow-2xs font-semibold'
+                    : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+                }`}
+                title="Skills Cards View (Primary)"
+              >
+                <LayoutGrid className="h-3.5 w-3.5 text-[#007AFF]" />
+                <span className="text-[11px]">Cards</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => onSetViewMode('grouped')}
+                className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition-all ${
+                  viewMode === 'grouped'
+                    ? 'bg-white dark:bg-white/15 text-slate-900 dark:text-white shadow-2xs font-semibold'
+                    : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+                }`}
+                title="Folder Grouping View (Grouped by Folder Location)"
+              >
+                <FolderTree className="h-3.5 w-3.5 text-[#AF52DE]" />
+                <span className="hidden sm:inline text-[11px]">By Folder</span>
+              </button>
               <button
                 type="button"
                 onClick={() => onSetViewMode('matrix')}
@@ -154,23 +180,9 @@ export default function Navbar({
                     ? 'bg-white dark:bg-white/15 text-slate-900 dark:text-white shadow-2xs font-semibold'
                     : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
                 }`}
-                title="Matrix View (Cross-Assistant Matrix)"
+                title="Table Matrix View"
               >
-                <LayoutGrid className="h-3.5 w-3.5" />
-                <span className="hidden xl:inline text-[11px]">Matrix</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => onSetViewMode('grouped')}
-                className={`flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium transition-all ${
-                  viewMode === 'grouped'
-                    ? 'bg-white dark:bg-white/15 text-slate-900 dark:text-white shadow-2xs font-semibold'
-                    : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
-                }`}
-                title="Folder Grouping View (Grouped by Folder Location)"
-              >
-                <FolderTree className="h-3.5 w-3.5" />
-                <span className="hidden xl:inline text-[11px]">By Folder</span>
+                <span className="text-[11px] text-slate-400">Table</span>
               </button>
             </div>
           )}

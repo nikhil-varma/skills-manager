@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import Navbar from './components/Navbar.jsx';
 import PlatformOverview from './components/PlatformOverview.jsx';
+import SkillsCardView from './components/SkillsCardView.jsx';
 import MatrixView from './components/MatrixView.jsx';
 import FolderGroupedView from './components/FolderGroupedView.jsx';
 import SkillDetailModal from './components/SkillDetailModal.jsx';
@@ -39,9 +40,9 @@ export default function App() {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
 
-  // View Mode: 'matrix' (Cross-assistant table) | 'grouped' (Grouped by folder location)
+  // View Mode: 'cards' (Primary card view) | 'grouped' (Grouped by folder location) | 'matrix' (Table)
   const [viewMode, setViewMode] = useState(() => {
-    return localStorage.getItem('skilldesk-view-mode') || 'matrix';
+    return localStorage.getItem('skilldesk-view-mode') || 'cards';
   });
 
   const handleSetViewMode = (mode) => {
@@ -489,6 +490,24 @@ export default function App() {
               Reset Filters
             </button>
           </div>
+        ) : viewMode === 'cards' ? (
+          <SkillsCardView
+            skills={filteredSkills}
+            totalFiltered={filteredSkills.length}
+            totalSkills={skills.length}
+            currentPage={currentPage}
+            setCurrentPage={setCurrentPage}
+            pageSize={pageSize}
+            setPageSize={setPageSize}
+            platforms={platforms}
+            onOpenDetail={(name) => setSelectedSkillName(name)}
+            onLinkSkill={handleLinkSkill}
+            onUnlinkSkill={handleUnlinkSkill}
+            onSyncAll={handleSyncAll}
+            onTrashSkill={handleTrashSkill}
+            onDeleteCompletely={handleDeleteCompletely}
+            onRevealPath={handleRevealPath}
+          />
         ) : viewMode === 'matrix' ? (
           <MatrixView
             skills={paginatedSkills}
