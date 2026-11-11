@@ -14,9 +14,13 @@ import {
   ExternalLink, 
   Sparkles,
   Check,
-  AlertCircle
+  AlertCircle,
+  AlertTriangle,
+  Zap,
+  CheckCircle2,
+  GitFork
 } from 'lucide-react';
-import { fetchSkillDetail, updateSkillContent, linkSkill, copySkill, moveSkill, trashSkill, unlinkSkill, revealInFinder } from '../api.js';
+import { fetchSkillDetail, updateSkillContent, linkSkill, copySkill, moveSkill, trashSkill, unlinkSkill, revealInFinder, alignSkillWithCanonical } from '../api.js';
 
 export default function SkillDetailModal({
   skillName,
@@ -26,7 +30,8 @@ export default function SkillDetailModal({
   showToast,
   onRevealPath,
   onTrashSkill,
-  onDeleteCompletely
+  onDeleteCompletely,
+  onForkSkill
 }) {
   const [detail, setDetail] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -211,6 +216,23 @@ export default function SkillDetailModal({
           </div>
 
           <div className="flex items-center gap-1 sm:gap-1.5 flex-shrink-0 ml-2">
+            {onForkSkill && (
+              <button
+                onClick={() => {
+                  onForkSkill({
+                    name: skillName,
+                    description: detail?.description,
+                    platforms: detail?.allInstallations 
+                      ? Object.fromEntries(detail.allInstallations.map(i => [i.platformId, { installed: true }]))
+                      : {}
+                  });
+                }}
+                className="p-1.5 sm:p-2 rounded-xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-500/20 border border-indigo-500/20 transition-colors"
+                title="Fork / Duplicate this skill"
+              >
+                <GitFork className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+              </button>
+            )}
             {detail?.dirPath && (
               <button
                 onClick={() => {
@@ -319,12 +341,71 @@ export default function SkillDetailModal({
               {/* Tab: Documentation View */}
               {activeTab === 'doc' && !isEditing && (
                 <div className="space-y-6">
+                  {/* Content Drift Alert (inspired by wanghuan9/skilldock) */}
+                  {detail.hasDrift && (
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-700 dark:text-amber-300 text-xs">
+                      <div className="flex items-center gap-2.5">
+                        <AlertTriangle className="h-4 w-4 text-amber-500 flex-shrink-0" />
+                        <div>
+                          <p className="font-semibold text-xs">Content Drift Detected Across Assistants</p>
+                          <p className="text-[11px] text-amber-600 dark:text-amber-400">
+                            Physical copies of this skill have diverged from each other. Aligning will reconcile copies with the canonical source.
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={async () => {
+                          try {
+                            setActionProcessing(true);
+                            await alignSkillWithCanonical({ skillName, canonicalPlatformId: detail.platformId });
+                            showToast(`Aligned all copies of ${skillName} with canonical source!`, 'success');
+                            onRefresh();
+                            await loadDetail();
+                          } catch (err) {
+                            showToast(err.message, 'error');
+                          } finally {
+                            setActionProcessing(false);
+                          }
+                        }}
+                        disabled={actionProcessing}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-white font-semibold text-xs shadow-xs transition-colors disabled:opacity-50 flex-shrink-0"
+                      >
+                        <Zap className="h-3.5 w-3.5" />
+                        <span>{actionProcessing ? 'Aligning...' : 'Align with Canonical'}</span>
+                      </button>
+                    </div>
+                  )}
+
                   {/* Frontmatter summary card */}
                   {detail.frontmatter && Object.keys(detail.frontmatter).length > 0 && (
                     <div className="rounded-xl border border-black/[0.06] dark:border-white/10 bg-black/[0.015] dark:bg-white/[0.02] p-4">
-                      <h4 className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">
-                        Skill Metadata
-                      </h4>
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                          Skill Metadata
+                        </h4>
+                        {detail.specValidation && (
+                          <span 
+                            className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full border ${
+                              detail.specValidation.isValid
+                                ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
+                                : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20'
+                            }`}
+                            title={detail.specValidation.issues?.join(' • ') || 'Anthropic Agent Skills Specification compliant'}
+                          >
+                            {detail.specValidation.isValid ? (
+                              <>
+                                <CheckCircle2 className="h-3 w-3" />
+                                <span>Anthropic Spec Valid</span>
+                              </>
+                            ) : (
+                              <>
+                                <AlertCircle className="h-3 w-3" />
+                                <span>{detail.specValidation.badge}</span>
+                              </>
+                            )}
+                          </span>
+                        )}
+                      </div>
                       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
                         <div>
                           <span className="text-slate-500">Name:</span>

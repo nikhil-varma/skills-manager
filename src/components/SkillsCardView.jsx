@@ -32,7 +32,8 @@ import {
   Square,
   X,
   Zap,
-  Share2
+  Share2,
+  GitFork
 } from 'lucide-react';
 
 export default function SkillsCardView({
@@ -53,6 +54,8 @@ export default function SkillsCardView({
   onLinkSkill,
   onUnlinkSkill,
   onSyncAll,
+  onForkSkill,
+  onAlignSkill,
   onTrashSkill,
   onDeleteCompletely,
   onRevealPath
@@ -503,6 +506,25 @@ export default function SkillsCardView({
 
                     {/* Top Right: Status Badge & Delete */}
                     <div className="flex items-center gap-1 flex-shrink-0">
+                      {skill.hasDrift && (
+                        <span 
+                          className="flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/25"
+                          title="Content Drift: physical copies differ from each other. Click Align to reconcile."
+                        >
+                          <AlertTriangle className="h-2.5 w-2.5" />
+                          Drift
+                        </span>
+                      )}
+
+                      {skill.specValidation?.isValid && (
+                        <span 
+                          className="hidden sm:inline-flex items-center gap-0.5 text-[9px] font-medium px-1.5 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
+                          title="Compliant with Anthropic Agent Skills Specification"
+                        >
+                          ✓ Spec
+                        </span>
+                      )}
+
                       <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${
                         installedPlatforms.length === visiblePlatforms.length
                           ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
@@ -773,10 +795,34 @@ export default function SkillsCardView({
                         <span>{loadingAction === `${skill.name}-syncall` ? 'Syncing...' : 'Sync All'}</span>
                       </button>
                     )}
+
+                    {/* 1-Click Align Drift Button (inspired by skilldock) */}
+                    {skill.hasDrift && onAlignSkill && (
+                      <button
+                        type="button"
+                        onClick={() => onAlignSkill(skill.name)}
+                        className="flex items-center gap-1 px-2.5 py-1 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-600 dark:text-amber-400 text-xs font-semibold transition-colors"
+                        title="Align detached copies with canonical source"
+                      >
+                        <Zap className="h-3 w-3" />
+                        <span>Align</span>
+                      </button>
+                    )}
                   </div>
 
-                  {/* Right Actions: Editor & Inspect */}
+                  {/* Right Actions: Fork, Editor & Inspect */}
                   <div className="flex items-center gap-1.5">
+                    {onForkSkill && (
+                      <button
+                        type="button"
+                        onClick={() => onForkSkill(skill)}
+                        className="p-1.5 rounded-xl bg-black/[0.04] hover:bg-black/[0.08] dark:bg-white/[0.06] dark:hover:bg-white/[0.1] text-slate-700 dark:text-slate-300 font-medium text-xs transition-colors"
+                        title="Fork / Duplicate this skill"
+                      >
+                        <GitFork className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+
                     {onOpenInEditor && primaryPath && (
                       <button
                         type="button"
@@ -879,6 +925,14 @@ export default function SkillsCardView({
                           v{skill.metadata.version}
                         </span>
                       )}
+                      {skill.hasDrift && (
+                        <span 
+                          className="text-[9px] font-semibold px-1.5 py-0.2 rounded bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/25 flex-shrink-0"
+                          title="Content Drift: copies differ"
+                        >
+                          Drift
+                        </span>
+                      )}
                     </div>
                     <p className="text-[11px] font-mono text-slate-400 dark:text-slate-500 truncate mt-0.5">
                       {skill.name}
@@ -940,6 +994,29 @@ export default function SkillsCardView({
                       title="Open in Code Editor (Cursor / VS Code)"
                     >
                       <Code2 className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+
+                  {onForkSkill && (
+                    <button
+                      type="button"
+                      onClick={() => onForkSkill(skill)}
+                      className="p-1.5 rounded-lg bg-black/[0.03] hover:bg-black/[0.06] dark:bg-white/[0.05] dark:hover:bg-white/[0.1] text-slate-500 hover:text-slate-800 dark:hover:text-white transition-colors"
+                      title="Fork / Duplicate skill"
+                    >
+                      <GitFork className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+
+                  {skill.hasDrift && onAlignSkill && (
+                    <button
+                      type="button"
+                      onClick={() => onAlignSkill(skill.name)}
+                      className="px-2 py-1 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 text-amber-600 dark:text-amber-400 text-xs font-semibold transition-colors flex items-center gap-1"
+                      title="Reconcile and overwrite drifted copies with canonical version"
+                    >
+                      <Zap className="h-3 w-3" />
+                      <span className="hidden md:inline">Align</span>
                     </button>
                   )}
 

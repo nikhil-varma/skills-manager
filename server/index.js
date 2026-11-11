@@ -16,8 +16,13 @@ import {
   deleteSkillEverywhere,
   unlinkSkill,
   updateSkillFile,
-  createNewSkill
+  createNewSkill,
+  forkSkill,
+  alignSkillWithCanonical,
+  installCommunitySkill,
+  validateSkillSpec
 } from './skills.js';
+import { COMMUNITY_SKILLS } from './communityCatalog.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -458,6 +463,125 @@ app.post('/api/skills/create', (req, res) => {
         }
       }
     }
+
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Community Catalog: List curated skills (inspired by xingkongliang & smithery-ai)
+app.get('/api/community/skills', (req, res) => {
+  try {
+    const platforms = getPlatforms();
+    const scanned = scanPlatforms(platforms);
+    const installedSkillNames = new Set(scanned.skills.map(s => s.name));
+
+    // Enrich catalog with installation status
+    const enriched = COMMUNITY_SKILLS.map(item => ({
+      ...item,
+      isInstalled: installedSkillNames.has(item.name)
+    }));
+
+    res.json({ skills: enriched });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Community Catalog: Fetch raw remote markdown (GitHub or web)
+app.post('/api/community/fetch-remote', async (req, res) => {
+  try {
+    const { url } = req.body;
+    if (!url || typeof url !== 'string') {
+      return res.status(400).json({ error: 'Valid URL is required' });
+    }
+
+    // Convert github.com blob URLs to raw.githubusercontent.com
+    let fetchUrl = url.trim();
+    if (fetchUrl.includes('github.com') && fetchUrl.includes('/blob/')) {
+      fetchUrl = fetchUrl.replace('github.com', 'raw.githubusercontent.com').replace('/blob/', '/');
+    }
+
+    const response = await fetch(fetchUrl);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch remote skill: HTTP ${response.status}`);
+    }
+
+    const rawMarkdown = await response.text();
+    res.json({ rawMarkdown });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Install curated or custom community skill
+app.post('/api/community/install', (req, res) => {
+  try {
+    const { skillName, content, targetPlatformId, linkToOthers = true } = req.body;
+    const platforms = getPlatforms();
+
+    const targetPlat = platforms.find(p => p.id === targetPlatformId);
+    if (!targetPlat) {
+      return res.status(400).json({ error: 'Invalid target platform' });
+    }
+
+    const otherPlatIds = linkToOthers 
+      ? platforms.filter(p => p.id !== targetPlatformId).map(p => p.id)
+      : [];
+
+    const result = installCommunitySkill({
+      skillName,
+      content,
+      targetPlatformPath: targetPlat.expandedPath,
+      linkToPlatforms: otherPlatIds,
+      platforms
+    });
+
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Fork / Clone skill (inspired by landn172/skill-manager)
+app.post('/api/skills/fork', (req, res) => {
+  try {
+    const { sourceSkillName, sourcePlatformId, newSkillName, targetPlatformId, newDescription } = req.body;
+    const platforms = getPlatforms();
+
+    const sourcePlat = platforms.find(p => p.id === sourcePlatformId);
+    const targetPlat = platforms.find(p => p.id === targetPlatformId);
+
+    if (!sourcePlat || !targetPlat) {
+      return res.status(400).json({ error: 'Invalid source or target platform' });
+    }
+
+    const result = forkSkill({
+      sourceSkillName,
+      sourcePlatformPath: sourcePlat.expandedPath,
+      newSkillName,
+      targetPlatformPath: targetPlat.expandedPath,
+      newDescription
+    });
+
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 1-Click Align Drift with Canonical Source (inspired by wanghuan9/skilldock)
+app.post('/api/skills/align', (req, res) => {
+  try {
+    const { skillName, canonicalPlatformId } = req.body;
+    const platforms = getPlatforms();
+
+    const result = alignSkillWithCanonical({
+      skillName,
+      platforms,
+      canonicalPlatformId
+    });
 
     res.json(result);
   } catch (err) {

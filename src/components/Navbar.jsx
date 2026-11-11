@@ -20,6 +20,7 @@ export default function Navbar({
   onOpenNewSkill,
   onOpenSettings,
   onOpenDiscover,
+  onOpenSkillHub,
   totalSkills,
   activeFilter,
   setActiveFilter,
@@ -103,6 +104,16 @@ export default function Navbar({
               <span className="font-semibold text-[11px]">AI</span>
             </button>
 
+            {/* Skill Hub Mobile Pill */}
+            <button
+              onClick={onOpenSkillHub}
+              className="p-1.5 rounded-lg bg-purple-500/15 border border-purple-500/25 text-purple-600 dark:text-purple-300 shadow-sm active:scale-95 transition-transform"
+              title="Community Skill Hub"
+              aria-label="Community Skill Hub"
+            >
+              <Sparkles className="h-4 w-4" />
+            </button>
+
             {/* New Skill (+) Mobile Button */}
             <button
               onClick={onOpenNewSkill}
@@ -173,6 +184,16 @@ export default function Navbar({
           >
             <Radar className="h-3.5 w-3.5 animate-pulse text-[#007AFF] dark:text-[#0A84FF]" />
             <span className="hidden sm:inline">Auto-Detect</span>
+          </button>
+
+          {/* Community Skill Hub Button (from xingkongliang & smithery) */}
+          <button
+            onClick={onOpenSkillHub}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-gradient-to-r from-purple-500/15 to-indigo-500/15 hover:from-purple-500/25 hover:to-indigo-500/25 text-purple-600 dark:text-purple-300 border border-purple-500/30 font-medium text-xs transition-all flex-shrink-0 active:scale-95 shadow-2xs"
+            title="Browse verified Anthropic / AgentOS community skills store"
+          >
+            <Sparkles className="h-3.5 w-3.5 text-purple-500 dark:text-purple-400" />
+            <span className="hidden sm:inline font-semibold">Skill Hub</span>
           </button>
 
           {/* Settings / Paths */}

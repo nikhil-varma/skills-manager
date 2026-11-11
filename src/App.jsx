@@ -6,6 +6,8 @@ import SkillDetailModal from './components/SkillDetailModal.jsx';
 import NewSkillModal from './components/NewSkillModal.jsx';
 import SettingsModal from './components/SettingsModal.jsx';
 import AutoDiscoverModal from './components/AutoDiscoverModal.jsx';
+import SkillHubModal from './components/SkillHubModal.jsx';
+import ForkSkillModal from './components/ForkSkillModal.jsx';
 import ChatPanel from './components/ChatPanel.jsx';
 import Toast from './components/Toast.jsx';
 import { 
@@ -19,7 +21,8 @@ import {
   deleteSkillCompletely,
   revealInFinder,
   openInEditor,
-  fetchLLMConfig 
+  fetchLLMConfig,
+  alignSkillWithCanonical
 } from './api.js';
 import { Sparkles, Layers, Filter, CheckCircle2, AlertCircle, ChevronDown, Bot, Star } from 'lucide-react';
 
@@ -68,6 +71,8 @@ export default function App() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [settingsInitialTab, setSettingsInitialTab] = useState('locations');
   const [isDiscoverOpen, setIsDiscoverOpen] = useState(false);
+  const [isSkillHubOpen, setIsSkillHubOpen] = useState(false);
+  const [forkTargetSkill, setForkTargetSkill] = useState(null);
   const [isChatOpen, setIsChatOpen] = useState(false);
 
   // Theme State (macOS Sequoia Glass Light / Dark)
@@ -286,6 +291,16 @@ export default function App() {
     }
   };
 
+  const handleAlignSkill = async (skillName, canonicalPlatformId) => {
+    try {
+      await alignSkillWithCanonical({ skillName, canonicalPlatformId });
+      showToast(`Aligned copies of "${skillName}" with canonical version!`, 'success');
+      await loadData();
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
+  };
+
   const handleRevealPath = async (filePath) => {
     try {
       const res = await revealInFinder(filePath);
@@ -376,6 +391,7 @@ export default function App() {
           setIsSettingsOpen(true);
         }}
         onOpenDiscover={() => setIsDiscoverOpen(true)}
+        onOpenSkillHub={() => setIsSkillHubOpen(true)}
         totalSkills={totalSkills}
         activeFilter={activeFilter}
         setActiveFilter={setActiveFilter}
@@ -559,6 +575,8 @@ export default function App() {
             onLinkSkill={handleLinkSkill}
             onUnlinkSkill={handleUnlinkSkill}
             onSyncAll={handleSyncAll}
+            onForkSkill={(skill) => setForkTargetSkill(skill)}
+            onAlignSkill={handleAlignSkill}
             onTrashSkill={handleTrashSkill}
             onDeleteCompletely={handleDeleteCompletely}
             onRevealPath={handleRevealPath}
@@ -594,6 +612,32 @@ export default function App() {
           onRevealPath={handleRevealPath}
           onTrashSkill={handleTrashSkill}
           onDeleteCompletely={handleDeleteCompletely}
+          onForkSkill={(skill) => {
+            setSelectedSkillName(null);
+            setForkTargetSkill(skill);
+          }}
+        />
+      )}
+
+      {isSkillHubOpen && (
+        <SkillHubModal
+          platforms={platforms}
+          onClose={() => setIsSkillHubOpen(false)}
+          onSuccess={loadData}
+          showToast={showToast}
+        />
+      )}
+
+      {forkTargetSkill && (
+        <ForkSkillModal
+          skill={forkTargetSkill}
+          platforms={platforms}
+          onClose={() => setForkTargetSkill(null)}
+          onSuccess={(newName) => {
+            loadData();
+            setSelectedSkillName(newName);
+          }}
+          showToast={showToast}
         />
       )}
 

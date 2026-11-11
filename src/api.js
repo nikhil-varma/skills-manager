@@ -249,3 +249,61 @@ export async function sendAIChat(messages, signal) {
   }
   return res.json();
 }
+
+export async function fetchCommunitySkills() {
+  const res = await fetch(`${BASE}/community/skills`);
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
+
+export async function fetchRemoteSkill(url) {
+  const res = await fetch(`${BASE}/community/fetch-remote`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ url })
+  });
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({ error: 'Fetch failed' }));
+    throw new Error(errData.error || 'Failed to fetch remote skill');
+  }
+  return res.json();
+}
+
+export async function installCommunitySkill({ skillName, content, targetPlatformId, linkToOthers = true }) {
+  const res = await fetch(`${BASE}/community/install`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ skillName, content, targetPlatformId, linkToOthers })
+  });
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({ error: 'Installation failed' }));
+    throw new Error(errData.error || 'Failed to install skill');
+  }
+  return res.json();
+}
+
+export async function forkSkill({ sourceSkillName, sourcePlatformId, newSkillName, targetPlatformId, newDescription }) {
+  const res = await fetch(`${BASE}/skills/fork`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ sourceSkillName, sourcePlatformId, newSkillName, targetPlatformId, newDescription })
+  });
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({ error: 'Fork failed' }));
+    throw new Error(errData.error || 'Failed to fork skill');
+  }
+  return res.json();
+}
+
+export async function alignSkillWithCanonical({ skillName, canonicalPlatformId }) {
+  const res = await fetch(`${BASE}/skills/align`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ skillName, canonicalPlatformId })
+  });
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({ error: 'Align failed' }));
+    throw new Error(errData.error || 'Failed to align skill with canonical source');
+  }
+  return res.json();
+}

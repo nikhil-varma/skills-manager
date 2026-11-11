@@ -1,8 +1,37 @@
 import fs from 'fs';
 import path from 'path';
+import crypto from 'crypto';
 import matter from 'gray-matter';
 import os from 'os';
 import { contractHome } from './config.js';
+
+/**
+ * Validate Anthropic Agent Skills Specification
+ * Checks frontmatter compliance, description quality, and markdown structure
+ */
+export function validateSkillSpec(skillName, data = {}, markdownBody = '') {
+  const issues = [];
+  const name = data.name || skillName;
+  const isKebab = /^[a-z0-9]+(-[a-z0-9]+)*$/.test(name);
+  if (!isKebab) {
+    issues.push('Name should be lowercase kebab-case (e.g. pr-review-helper)');
+  }
+  const desc = data.description || '';
+  if (!desc.trim()) {
+    issues.push('Missing description in frontmatter');
+  } else if (desc.length < 15) {
+    issues.push('Description is short; explain when the AI agent should trigger this skill');
+  }
+  const hasHeadings = /^(#{1,3})\s+/m.test(markdownBody || '');
+  if (!hasHeadings && (!markdownBody || markdownBody.length < 40)) {
+    issues.push('Documentation lacks markdown sections (## Instructions, ## Usage)');
+  }
+  return {
+    isValid: issues.length === 0,
+    issues,
+    badge: issues.length === 0 ? 'Spec Valid' : `${issues.length} Notice${issues.length > 1 ? 's' : ''}`
+  };
+}
 
 // Helper to safely find SKILL.md in a directory
 function findSkillFile(dirPath) {
@@ -151,10 +180,12 @@ export function scanPlatforms(platforms) {
         }
 
         let parsed = { data: {}, content: '' };
+        let fileHash = null;
         if (skillFile && isValid) {
           try {
             const raw = fs.readFileSync(skillFile, 'utf-8');
             parsed = safeParseMatter(raw);
+            fileHash = crypto.createHash('md5').update(raw).digest('hex');
           } catch (err) {
             // Silently recover
           }
@@ -207,7 +238,8 @@ export function scanPlatforms(platforms) {
           displayPath: contractHome(entryPath),
           isValid,
           fileCount,
-          files
+          files,
+          fileHash
         };
 
         if (isSymlink) skill.hasSymlink = true;
@@ -219,6 +251,19 @@ export function scanPlatforms(platforms) {
 
     const stat = platformStats.find(p => p.id === platform.id);
     if (stat) stat.count = count;
+  }
+
+  // Compute cross-platform drift and specification compliance (inspired by skilldock & anthropics/skills)
+  for (const skill of skillsMap.values()) {
+    const installed = Object.values(skill.platforms).filter(p => p.installed && p.isValid);
+    const hashes = new Set();
+    for (const inst of installed) {
+      if (inst.fileHash) hashes.add(inst.fileHash);
+    }
+    // Drift occurs when skill is installed in >1 platform with differing content hashes
+    skill.hasDrift = hashes.size > 1;
+    skill.driftCount = hashes.size;
+    skill.specValidation = validateSkillSpec(skill.name, skill.metadata, skill.description);
   }
 
   // Convert map to sorted array
@@ -269,12 +314,19 @@ export function getSkillDetail(skillName, platforms, preferredPlatformId) {
     } catch (err) {}
 
     const allInstallations = [];
+    const hashes = new Set();
     for (const p of platforms) {
       const pDir = path.join(p.expandedPath, skillName);
       if (fs.existsSync(pDir)) {
         let isLink = false;
+        let fileHash = null;
         try {
           isLink = fs.lstatSync(pDir).isSymbolicLink();
+          const targetSkillFile = findSkillFile(pDir);
+          if (targetSkillFile) {
+            fileHash = crypto.createHash('md5').update(fs.readFileSync(targetSkillFile)).digest('hex');
+            hashes.add(fileHash);
+          }
         } catch (e) {}
         allInstallations.push({
           platformId: p.id,
@@ -284,10 +336,14 @@ export function getSkillDetail(skillName, platforms, preferredPlatformId) {
           path: p.path,
           expandedPath: p.expandedPath,
           dirPath: pDir,
-          isSymlink: isLink
+          isSymlink: isLink,
+          fileHash
         });
       }
     }
+
+    const hasDrift = hashes.size > 1;
+    const specValidation = validateSkillSpec(skillName, parsed.data, parsed.content);
 
     return {
       name: skillName,
@@ -305,7 +361,10 @@ export function getSkillDetail(skillName, platforms, preferredPlatformId) {
       platformName: platform.name,
       files,
       fileCount,
-      allInstallations
+      allInstallations,
+      hasDrift,
+      driftCount: hashes.size,
+      specValidation
     };
   }
 
@@ -602,4 +661,125 @@ Describe when the assistant should trigger or recommend this skill.
 
   fs.writeFileSync(skillFile, content, 'utf-8');
   return { success: true, path: skillDir, skillFile, name: cleanName };
+}
+
+/**
+ * Fork / Clone an existing skill to a new name and destination
+ * (Inspired by landn172/skill-manager)
+ */
+export function forkSkill({ sourceSkillName, sourcePlatformPath, newSkillName, targetPlatformPath, newDescription }) {
+  const cleanName = newSkillName.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '-');
+  if (!cleanName) throw new Error('New skill name must be valid alphanumeric or dashes');
+
+  const sourceDir = path.join(sourcePlatformPath, sourceSkillName);
+  if (!fs.existsSync(sourceDir)) {
+    throw new Error(`Source skill not found at: ${sourceDir}`);
+  }
+
+  const targetDir = path.join(targetPlatformPath, cleanName);
+  if (fs.existsSync(targetDir)) {
+    throw new Error(`Target skill "${cleanName}" already exists`);
+  }
+
+  const realSource = fs.realpathSync(sourceDir);
+  fs.cpSync(realSource, targetDir, { recursive: true });
+
+  // Update SKILL.md in cloned directory
+  const skillFile = findSkillFile(targetDir) || path.join(targetDir, 'SKILL.md');
+  if (fs.existsSync(skillFile)) {
+    let content = fs.readFileSync(skillFile, 'utf-8');
+    // Replace name in frontmatter
+    content = content.replace(/^name:\s*.*$/m, `name: ${cleanName}`);
+    if (newDescription) {
+      content = content.replace(/^description:\s*.*$/m, `description: ${newDescription.trim()}`);
+    }
+    fs.writeFileSync(skillFile, content, 'utf-8');
+  }
+
+  return { success: true, newSkillName: cleanName, path: targetDir };
+}
+
+/**
+ * 1-Click Align with Canonical Source
+ * Overwrite detached copies across assistants with the canonical source
+ * (Inspired by wanghuan9/skilldock)
+ */
+export function alignSkillWithCanonical({ skillName, platforms, canonicalPlatformId }) {
+  const canonicalPlat = platforms.find(p => p.id === canonicalPlatformId) || 
+                        platforms.find(p => p.id === 'shared') || 
+                        platforms.find(p => fs.existsSync(path.join(p.expandedPath, skillName)));
+
+  if (!canonicalPlat) {
+    throw new Error(`No canonical copy found for ${skillName}`);
+  }
+
+  const canonicalDir = path.join(canonicalPlat.expandedPath, skillName);
+  if (!fs.existsSync(canonicalDir)) {
+    throw new Error(`Canonical skill not found in ${canonicalPlat.name}`);
+  }
+
+  const realCanonical = fs.realpathSync(canonicalDir);
+  const updatedPlatforms = [];
+
+  for (const plat of platforms) {
+    if (plat.id === canonicalPlat.id) continue;
+    const targetDir = path.join(plat.expandedPath, skillName);
+    if (fs.existsSync(targetDir)) {
+      try {
+        const lstat = fs.lstatSync(targetDir);
+        if (!lstat.isSymbolicLink()) {
+          // It's a detached copy: overwrite with canonical
+          fs.rmSync(targetDir, { recursive: true, force: true });
+          fs.cpSync(realCanonical, targetDir, { recursive: true });
+          updatedPlatforms.push(plat.name);
+        }
+      } catch (err) {
+        console.warn(`Could not align platform ${plat.name}:`, err.message);
+      }
+    }
+  }
+
+  return { success: true, skillName, updatedPlatforms };
+}
+
+/**
+ * Install a curated or custom community skill directly
+ * (Inspired by xingkongliang/skills-manager & smithery-ai)
+ */
+export function installCommunitySkill({ skillName, content, targetPlatformPath, linkToPlatforms = [], platforms = [] }) {
+  const cleanName = skillName.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '-');
+  if (!cleanName) throw new Error('Skill name must be non-empty');
+
+  if (!fs.existsSync(targetPlatformPath)) {
+    fs.mkdirSync(targetPlatformPath, { recursive: true });
+  }
+
+  const targetDir = path.join(targetPlatformPath, cleanName);
+  if (fs.existsSync(targetDir)) {
+    throw new Error(`Skill "${cleanName}" already exists in target destination`);
+  }
+
+  fs.mkdirSync(targetDir, { recursive: true });
+  const skillFile = path.join(targetDir, 'SKILL.md');
+  fs.writeFileSync(skillFile, content, 'utf-8');
+
+  // If symlinking to other platforms requested
+  const linkedTo = [];
+  if (Array.isArray(linkToPlatforms) && linkToPlatforms.length > 0) {
+    for (const platId of linkToPlatforms) {
+      const plat = platforms.find(p => p.id === platId);
+      if (!plat) continue;
+      const linkDest = path.join(plat.expandedPath, cleanName);
+      if (!fs.existsSync(linkDest)) {
+        try {
+          fs.symlinkSync(targetDir, linkDest, 'dir');
+          linkedTo.push(plat.name);
+        } catch (e) {
+          console.warn(`Could not symlink to ${plat.name}:`, e.message);
+        }
+      }
+    }
+  }
+
+  return { success: true, name: cleanName, path: targetDir, linkedTo };
 }
