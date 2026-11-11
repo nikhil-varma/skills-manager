@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import SkillExecutiveReader from './SkillExecutiveReader.jsx';
 import { 
   X, 
   FileText, 
@@ -523,12 +524,17 @@ export default function SkillDetailModal({
                     </div>
                   )}
 
-                  {/* Markdown content */}
-                  <div className="prose prose-sm dark:prose-invert max-w-none text-slate-800 dark:text-slate-200">
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                      {detail.markdownBody || detail.rawContent || '_No documentation found in SKILL.md_'}
-                    </ReactMarkdown>
-                  </div>
+                  {/* Executive Reader 2.0 with Bento Anatomy & 3-Tier Switcher */}
+                  <SkillExecutiveReader
+                    skillName={skillName}
+                    detail={detail}
+                    rawMarkdown={detail.markdownBody || detail.rawContent || ''}
+                    onRunInSandbox={(prompt) => {
+                      setTestPrompt(prompt);
+                      setIsEditing(false);
+                      setActiveTab('sandbox');
+                    }}
+                  />
                 </div>
               )}
 
