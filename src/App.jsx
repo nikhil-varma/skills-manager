@@ -2,8 +2,6 @@ import React, { useState, useEffect, useMemo } from 'react';
 import Navbar from './components/Navbar.jsx';
 import PlatformOverview from './components/PlatformOverview.jsx';
 import SkillsCardView from './components/SkillsCardView.jsx';
-import MatrixView from './components/MatrixView.jsx';
-import FolderGroupedView from './components/FolderGroupedView.jsx';
 import SkillDetailModal from './components/SkillDetailModal.jsx';
 import NewSkillModal from './components/NewSkillModal.jsx';
 import SettingsModal from './components/SettingsModal.jsx';
@@ -22,7 +20,7 @@ import {
   revealInFinder,
   fetchLLMConfig 
 } from './api.js';
-import { Sparkles, Layers, Filter, CheckCircle2, AlertCircle, ChevronDown, Bot, LayoutGrid, FolderTree } from 'lucide-react';
+import { Sparkles, Layers, Filter, CheckCircle2, AlertCircle, ChevronDown, Bot } from 'lucide-react';
 
 export default function App() {
   const [skills, setSkills] = useState([]);
@@ -39,16 +37,6 @@ export default function App() {
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
-
-  // View Mode: 'cards' (Primary card view) | 'grouped' (Grouped by folder location) | 'matrix' (Table)
-  const [viewMode, setViewMode] = useState(() => {
-    return localStorage.getItem('skilldesk-view-mode') || 'cards';
-  });
-
-  const handleSetViewMode = (mode) => {
-    setViewMode(mode);
-    localStorage.setItem('skilldesk-view-mode', mode);
-  };
 
   // Modals & Panels
   const [selectedSkillName, setSelectedSkillName] = useState(null);
@@ -314,8 +302,6 @@ export default function App() {
         isLLMConfigured={isLLMConfigured}
         theme={theme}
         onToggleTheme={toggleTheme}
-        viewMode={viewMode}
-        onSetViewMode={handleSetViewMode}
       />
 
       <div className="flex-1 flex flex-col lg:flex-row w-full overflow-hidden">
@@ -360,39 +346,6 @@ export default function App() {
               </div>
 
               <div className="flex items-center gap-2.5 sm:gap-3 text-xs">
-                {/* View Switcher in Filter Bar */}
-                <div 
-                  className="p-0.5 rounded-lg bg-black/[0.04] dark:bg-white/[0.06] border border-black/[0.06] dark:border-white/10 flex items-center"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <button
-                    type="button"
-                    onClick={() => handleSetViewMode('matrix')}
-                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-medium transition-all ${
-                      viewMode === 'matrix'
-                        ? 'bg-white dark:bg-white/15 text-slate-900 dark:text-white shadow-2xs font-semibold'
-                        : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
-                    }`}
-                    title="Matrix View (Cross-Assistant Comparison)"
-                  >
-                    <LayoutGrid className="h-3.5 w-3.5" />
-                    <span>Matrix</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleSetViewMode('grouped')}
-                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-medium transition-all ${
-                      viewMode === 'grouped'
-                        ? 'bg-white dark:bg-white/15 text-slate-900 dark:text-white shadow-2xs font-semibold'
-                        : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
-                    }`}
-                    title="Grouped by Folder Location"
-                  >
-                    <FolderTree className="h-3.5 w-3.5" />
-                    <span>By Folder</span>
-                  </button>
-                </div>
-
                 <span className="text-slate-500 dark:text-slate-400 text-[11px] hidden sm:inline">
                   Showing <strong className="text-slate-800 dark:text-slate-200">{filteredSkills.length}</strong> of {skills.length} skills
                 </span>
@@ -490,7 +443,7 @@ export default function App() {
               Reset Filters
             </button>
           </div>
-        ) : viewMode === 'cards' ? (
+        ) : (
           <SkillsCardView
             skills={filteredSkills}
             totalFiltered={filteredSkills.length}
@@ -507,35 +460,6 @@ export default function App() {
             onTrashSkill={handleTrashSkill}
             onDeleteCompletely={handleDeleteCompletely}
             onRevealPath={handleRevealPath}
-          />
-        ) : viewMode === 'matrix' ? (
-          <MatrixView
-            skills={paginatedSkills}
-            totalFiltered={filteredSkills.length}
-            totalSkills={skills.length}
-            currentPage={currentPage}
-            setCurrentPage={setCurrentPage}
-            pageSize={pageSize}
-            setPageSize={setPageSize}
-            platforms={platforms}
-            onOpenDetail={(name) => setSelectedSkillName(name)}
-            onLinkSkill={handleLinkSkill}
-            onUnlinkSkill={handleUnlinkSkill}
-            onSyncAll={handleSyncAll}
-            onTrashSkill={handleTrashSkill}
-            onDeleteCompletely={handleDeleteCompletely}
-            onRevealPath={handleRevealPath}
-          />
-        ) : (
-          <FolderGroupedView
-            skills={filteredSkills}
-            platforms={platforms}
-            onOpenDetail={(name) => setSelectedSkillName(name)}
-            onRevealPath={handleRevealPath}
-            onUnlinkSkill={handleUnlinkSkill}
-            onTrashSkill={handleTrashSkill}
-            onLinkSkill={handleLinkSkill}
-            searchTerm={searchTerm}
           />
         )}
           </div>
