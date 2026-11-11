@@ -27,7 +27,12 @@ import {
   Hash,
   ArrowRight,
   MoreVertical,
-  Info
+  Code2,
+  CheckSquare,
+  Square,
+  X,
+  Zap,
+  Share2
 } from 'lucide-react';
 
 export default function SkillsCardView({
@@ -39,6 +44,11 @@ export default function SkillsCardView({
   pageSize = 24,
   setPageSize,
   platforms,
+  starredSkills = new Set(),
+  onToggleStar,
+  onOpenInEditor,
+  onBatchLink,
+  onBatchSyncAll,
   onOpenDetail,
   onLinkSkill,
   onUnlinkSkill,
@@ -50,13 +60,17 @@ export default function SkillsCardView({
   const [layoutMode, setLayoutMode] = useState(() => {
     return localStorage.getItem('skilldesk-card-layout') || 'grid'; // 'grid' | 'compact'
   });
-  const [sortBy, setSortBy] = useState('deployed'); // 'deployed' | 'name-asc' | 'name-desc' | 'needs-sync' | 'symlinked'
+  const [sortBy, setSortBy] = useState('deployed'); // 'deployed' | 'starred' | 'name-asc' | 'name-desc' | 'needs-sync' | 'symlinked'
   const [loadingAction, setLoadingAction] = useState(null);
   const [openLinkMenu, setOpenLinkMenu] = useState(null); // skillName
   const [openLocationMenu, setOpenLocationMenu] = useState(null); // `${skillName}-${platId}`
   const [copiedSkill, setCopiedSkill] = useState(null);
   const [selectedTag, setSelectedTag] = useState(null);
   const [deleteTargetSkill, setDeleteTargetSkill] = useState(null);
+
+  // Multi-Select state for bulk operations
+  const [selectedSkills, setSelectedSkills] = useState(new Set());
+  const [isBatchLinkOpen, setIsBatchLinkOpen] = useState(false);
 
   const handleSetLayoutMode = (mode) => {
     setLayoutMode(mode);
@@ -94,6 +108,12 @@ export default function SkillsCardView({
     }
 
     result.sort((a, b) => {
+      if (sortBy === 'starred') {
+        const aStar = starredSkills?.has(a.name) ? 1 : 0;
+        const bStar = starredSkills?.has(b.name) ? 1 : 0;
+        if (bStar !== aStar) return bStar - aStar;
+      }
+
       const aInstalledCount = visiblePlatforms.filter(p => a.platforms[p.id]?.installed).length;
       const bInstalledCount = visiblePlatforms.filter(p => b.platforms[p.id]?.installed).length;
 
@@ -119,11 +139,11 @@ export default function SkillsCardView({
         if (bSym !== aSym) return bSym - aSym;
         return a.name.localeCompare(b.name);
       }
-      return 0;
+      return a.name.localeCompare(b.name);
     });
 
     return result;
-  }, [skills, selectedTag, sortBy, visiblePlatforms]);
+  }, [skills, selectedTag, sortBy, visiblePlatforms, starredSkills]);
 
   // Pagination
   const totalPages = Math.max(1, Math.ceil(processedSkills.length / pageSize));
@@ -132,10 +152,44 @@ export default function SkillsCardView({
     return processedSkills.slice(start, start + pageSize);
   }, [processedSkills, currentPage, pageSize]);
 
-  const handleCopyCommand = async (skillName, e) => {
+  // Multi-select helpers
+  const toggleSelectSkill = (skillName, e) => {
+    e?.stopPropagation();
+    setSelectedSkills(prev => {
+      const next = new Set(prev);
+      if (next.has(skillName)) {
+        next.delete(skillName);
+      } else {
+        next.add(skillName);
+      }
+      return next;
+    });
+  };
+
+  const isAllPageSelected = useMemo(() => {
+    return paginatedSkills.length > 0 && paginatedSkills.every(s => selectedSkills.has(s.name));
+  }, [paginatedSkills, selectedSkills]);
+
+  const toggleSelectAllPage = () => {
+    setSelectedSkills(prev => {
+      const next = new Set(prev);
+      if (isAllPageSelected) {
+        paginatedSkills.forEach(s => next.delete(s.name));
+      } else {
+        paginatedSkills.forEach(s => next.add(s.name));
+      }
+      return next;
+    });
+  };
+
+  const clearSelection = () => {
+    setSelectedSkills(new Set());
+  };
+
+  const handleCopyCommand = async (skillName, e, mode = 'slash') => {
     e?.stopPropagation();
     try {
-      const cmd = `/${skillName}`;
+      const cmd = mode === 'mention' ? `@${skillName}` : `/${skillName}`;
       if (navigator.clipboard) {
         await navigator.clipboard.writeText(cmd);
       }
@@ -185,6 +239,16 @@ export default function SkillsCardView({
     }
   };
 
+  const handleBatchStar = () => {
+    if (onToggleStar) {
+      selectedSkills.forEach(name => {
+        if (!starredSkills.has(name)) {
+          onToggleStar(name);
+        }
+      });
+    }
+  };
+
   // Helper to get skill icon color & style
   const getSkillVisuals = (name) => {
     const colors = [
@@ -200,12 +264,36 @@ export default function SkillsCardView({
   };
 
   return (
-    <div className="space-y-4">
-      {/* View Toolbar: Layout Mode, Sorting, Tag Filters, Counts */}
+    <div className="space-y-4 relative">
+      {/* View Toolbar: Layout Mode, Sorting, Tag Filters, Select All, Counts */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 p-3.5 rounded-2xl border border-black/[0.08] dark:border-white/10 bg-white/70 dark:bg-[#1a1c24]/70 backdrop-blur-xl shadow-2xs">
         
-        {/* Left: Layout Switcher & Sort Selector */}
+        {/* Left: Multi-select Toggle, Layout Switcher & Sort Selector */}
         <div className="flex flex-wrap items-center gap-2.5">
+          {/* Quick Select All Page Button */}
+          <button
+            onClick={toggleSelectAllPage}
+            className={`p-1.5 rounded-xl border transition-all flex items-center gap-1.5 text-xs font-medium ${
+              isAllPageSelected
+                ? 'bg-[#007AFF] text-white border-[#007AFF] shadow-2xs'
+                : selectedSkills.size > 0
+                ? 'bg-[#007AFF]/10 text-[#007AFF] border-[#007AFF]/30'
+                : 'bg-black/[0.04] dark:bg-white/[0.06] border-black/[0.06] dark:border-white/10 text-slate-600 dark:text-slate-300 hover:bg-black/[0.08]'
+            }`}
+            title={isAllPageSelected ? 'Deselect visible skills' : 'Select all visible skills on this page'}
+          >
+            {isAllPageSelected ? (
+              <CheckSquare className="h-4 w-4" />
+            ) : selectedSkills.size > 0 ? (
+              <Check className="h-4 w-4" />
+            ) : (
+              <Square className="h-4 w-4 text-slate-400" />
+            )}
+            <span className="text-[11px] hidden sm:inline">
+              {selectedSkills.size > 0 ? `${selectedSkills.size} selected` : 'Select Page'}
+            </span>
+          </button>
+
           {/* Grid vs Compact List Segmented Control */}
           <div className="p-1 rounded-xl bg-black/[0.04] dark:bg-black/40 border border-black/[0.06] dark:border-white/10 inline-flex items-center gap-1">
             <button
@@ -243,6 +331,7 @@ export default function SkillsCardView({
               className="px-2.5 py-1.5 rounded-xl bg-black/[0.03] dark:bg-white/[0.06] border border-black/[0.06] dark:border-white/10 text-slate-800 dark:text-slate-200 text-xs font-medium focus:outline-none cursor-pointer"
             >
               <option value="deployed">Most Deployed First</option>
+              <option value="starred">★ Starred First</option>
               <option value="needs-sync">Needs Sync First</option>
               <option value="name-asc">Name (A → Z)</option>
               <option value="name-desc">Name (Z → A)</option>
@@ -302,6 +391,8 @@ export default function SkillsCardView({
         /* GRID VIEW: 2 or 3 Columns of Spacious Cards */
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {paginatedSkills.map(skill => {
+            const isSelected = selectedSkills.has(skill.name);
+            const isStarred = starredSkills?.has(skill.name);
             const installedPlatforms = visiblePlatforms.filter(p => skill.platforms[p.id]?.installed);
             const uninstalledPlatforms = visiblePlatforms.filter(p => !skill.platforms[p.id]?.installed);
             const primarySource = installedPlatforms.find(p => p.id === 'shared') || 
@@ -309,16 +400,35 @@ export default function SkillsCardView({
                                   installedPlatforms[0];
             const hasMissing = installedPlatforms.length < visiblePlatforms.length;
             const visuals = getSkillVisuals(skill.name);
+            const primaryPath = primarySource ? (skill.platforms[primarySource.id]?.path || primarySource.path) : null;
 
             return (
               <div
                 key={skill.name}
-                className="group relative flex flex-col justify-between rounded-2xl border border-black/[0.08] dark:border-white/10 bg-white/80 dark:bg-[#1c1e27]/85 backdrop-blur-xl p-4 sm:p-5 shadow-2xs hover:shadow-lg hover:border-black/15 dark:hover:border-white/20 transition-all duration-200"
+                className={`group relative flex flex-col justify-between rounded-2xl border transition-all duration-200 backdrop-blur-xl p-4 sm:p-5 shadow-2xs hover:shadow-lg ${
+                  isSelected
+                    ? 'border-[#007AFF] bg-[#007AFF]/[0.03] ring-1 ring-[#007AFF]/40 dark:border-[#007AFF]/60'
+                    : 'border-black/[0.08] dark:border-white/10 bg-white/80 dark:bg-[#1c1e27]/85 hover:border-black/15 dark:hover:border-white/20'
+                }`}
               >
-                {/* 1. Header: Icon, Name, Slug, Copy Command, Top Actions */}
+                {/* 1. Header: Selection Checkbox, Icon, Name, Star, Slug, Top Actions */}
                 <div className="space-y-3">
                   <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-start gap-3 min-w-0 flex-1">
+                    <div className="flex items-start gap-2.5 min-w-0 flex-1">
+                      {/* Multi-Select Checkbox */}
+                      <button
+                        type="button"
+                        onClick={(e) => toggleSelectSkill(skill.name, e)}
+                        className={`mt-1 h-4 w-4 rounded border transition-colors flex items-center justify-center flex-shrink-0 cursor-pointer ${
+                          isSelected
+                            ? 'bg-[#007AFF] border-[#007AFF] text-white'
+                            : 'border-black/25 dark:border-white/25 bg-white/80 dark:bg-black/40 hover:border-[#007AFF]'
+                        }`}
+                        title={isSelected ? 'Deselect skill' : 'Select skill for batch actions'}
+                      >
+                        {isSelected && <Check className="h-3 w-3 stroke-[3]" />}
+                      </button>
+
                       {/* Skill Icon */}
                       <div 
                         onClick={() => onOpenDetail(skill.name)}
@@ -328,7 +438,7 @@ export default function SkillsCardView({
                         <FileCode className="h-5 w-5" />
                       </div>
 
-                      {/* Title & Slug */}
+                      {/* Title, Star & Slug */}
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-1.5 flex-wrap">
                           <h3 
@@ -338,6 +448,23 @@ export default function SkillsCardView({
                           >
                             {skill.displayName || skill.name}
                           </h3>
+
+                          {/* Star / Favorite Button */}
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (onToggleStar) onToggleStar(skill.name);
+                            }}
+                            className={`p-0.5 rounded transition-colors ${
+                              isStarred
+                                ? 'text-amber-400 hover:text-amber-500'
+                                : 'text-slate-300 dark:text-slate-600 hover:text-amber-400 opacity-0 group-hover:opacity-100'
+                            }`}
+                            title={isStarred ? 'Remove from favorites' : 'Star this skill'}
+                          >
+                            <Star className={`h-3.5 w-3.5 ${isStarred ? 'fill-amber-400' : ''}`} />
+                          </button>
 
                           {skill.metadata?.version && (
                             <span className="text-[10px] font-mono px-1.5 py-0.2 rounded-full bg-black/[0.04] dark:bg-white/10 text-slate-600 dark:text-slate-300">
@@ -356,7 +483,7 @@ export default function SkillsCardView({
                             type="button"
                             onClick={(e) => handleCopyCommand(skill.name, e)}
                             className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[10px] font-mono bg-black/[0.03] dark:bg-white/[0.05] hover:bg-black/[0.06] dark:hover:bg-white/[0.1] text-slate-500 dark:text-slate-400 transition-colors"
-                            title="Copy prompt command to clipboard"
+                            title="Click to copy /<skill-name> command"
                           >
                             {copiedSkill === skill.name ? (
                               <>
@@ -501,6 +628,18 @@ export default function SkillsCardView({
 
                             {/* Location Mini Actions */}
                             <div className="flex items-center gap-1 flex-shrink-0 ml-2">
+                              {/* Open in Editor */}
+                              {onOpenInEditor && (
+                                <button
+                                  type="button"
+                                  onClick={() => onOpenInEditor(platData.path || plat.path)}
+                                  className="p-1 rounded text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+                                  title="Open in Code Editor (Cursor / VS Code)"
+                                >
+                                  <Code2 className="h-3 w-3" />
+                                </button>
+                              )}
+
                               {/* Reveal in Finder */}
                               <button
                                 type="button"
@@ -572,7 +711,7 @@ export default function SkillsCardView({
 
                 {/* 3. Card Bottom Action Bar */}
                 <div className="pt-3 mt-3 border-t border-black/[0.06] dark:border-white/10 flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-1.5 flex-wrap">
                     {/* Link to Assistant Dropdown */}
                     {uninstalledPlatforms.length > 0 && (
                       <div className="relative">
@@ -636,8 +775,19 @@ export default function SkillsCardView({
                     )}
                   </div>
 
-                  {/* Right Actions: Inspect & Finder */}
+                  {/* Right Actions: Editor & Inspect */}
                   <div className="flex items-center gap-1.5">
+                    {onOpenInEditor && primaryPath && (
+                      <button
+                        type="button"
+                        onClick={() => onOpenInEditor(primaryPath)}
+                        className="p-1.5 rounded-xl bg-black/[0.04] hover:bg-black/[0.08] dark:bg-white/[0.06] dark:hover:bg-white/[0.1] text-slate-700 dark:text-slate-300 font-medium text-xs transition-colors"
+                        title="Open in Code Editor (Cursor / VS Code)"
+                      >
+                        <Code2 className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+
                     <button
                       type="button"
                       onClick={() => onOpenDetail(skill.name)}
@@ -656,6 +806,8 @@ export default function SkillsCardView({
         /* COMPACT ROW CARDS VIEW: Horizontal dense card layout */
         <div className="space-y-2">
           {paginatedSkills.map(skill => {
+            const isSelected = selectedSkills.has(skill.name);
+            const isStarred = starredSkills?.has(skill.name);
             const installedPlatforms = visiblePlatforms.filter(p => skill.platforms[p.id]?.installed);
             const uninstalledPlatforms = visiblePlatforms.filter(p => !skill.platforms[p.id]?.installed);
             const primarySource = installedPlatforms.find(p => p.id === 'shared') || 
@@ -663,14 +815,48 @@ export default function SkillsCardView({
                                   installedPlatforms[0];
             const hasMissing = installedPlatforms.length < visiblePlatforms.length;
             const visuals = getSkillVisuals(skill.name);
+            const primaryPath = primarySource ? (skill.platforms[primarySource.id]?.path || primarySource.path) : null;
 
             return (
               <div
                 key={skill.name}
-                className="group flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 sm:px-4 rounded-xl border border-black/[0.06] dark:border-white/10 bg-white/70 dark:bg-[#1a1c24]/75 backdrop-blur-xl hover:bg-white/90 dark:hover:bg-[#1c1e27] hover:shadow-xs transition-all"
+                className={`group flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 sm:px-4 rounded-xl border backdrop-blur-xl transition-all ${
+                  isSelected
+                    ? 'border-[#007AFF] bg-[#007AFF]/[0.03] ring-1 ring-[#007AFF]/40 dark:border-[#007AFF]/60'
+                    : 'border-black/[0.06] dark:border-white/10 bg-white/70 dark:bg-[#1a1c24]/75 hover:bg-white/90 dark:hover:bg-[#1c1e27] hover:shadow-xs'
+                }`}
               >
-                {/* Left: Icon, Name, Slug, Description */}
-                <div className="flex items-center gap-3 min-w-0 flex-1">
+                {/* Left: Checkbox, Star, Icon, Name, Slug, Description */}
+                <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                  {/* Multi-Select Checkbox */}
+                  <button
+                    type="button"
+                    onClick={(e) => toggleSelectSkill(skill.name, e)}
+                    className={`h-4 w-4 rounded border transition-colors flex items-center justify-center flex-shrink-0 cursor-pointer ${
+                      isSelected
+                        ? 'bg-[#007AFF] border-[#007AFF] text-white'
+                        : 'border-black/25 dark:border-white/25 bg-white/80 dark:bg-black/40 hover:border-[#007AFF]'
+                    }`}
+                  >
+                    {isSelected && <Check className="h-3 w-3 stroke-[3]" />}
+                  </button>
+
+                  {/* Star Button */}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (onToggleStar) onToggleStar(skill.name);
+                    }}
+                    className={`p-0.5 rounded transition-colors ${
+                      isStarred
+                        ? 'text-amber-400'
+                        : 'text-slate-300 dark:text-slate-600 hover:text-amber-400 opacity-0 group-hover:opacity-100'
+                    }`}
+                  >
+                    <Star className={`h-3.5 w-3.5 ${isStarred ? 'fill-amber-400' : ''}`} />
+                  </button>
+
                   <div 
                     onClick={() => onOpenDetail(skill.name)}
                     className="h-8 w-8 rounded-lg flex items-center justify-center flex-shrink-0 cursor-pointer shadow-2xs"
@@ -739,6 +925,17 @@ export default function SkillsCardView({
                     {copiedSkill === skill.name ? <Check className="h-3.5 w-3.5 text-emerald-500" /> : <Terminal className="h-3.5 w-3.5" />}
                   </button>
 
+                  {onOpenInEditor && primaryPath && (
+                    <button
+                      type="button"
+                      onClick={() => onOpenInEditor(primaryPath)}
+                      className="p-1.5 rounded-lg bg-black/[0.03] hover:bg-black/[0.06] dark:bg-white/[0.05] dark:hover:bg-white/[0.1] text-slate-500 hover:text-slate-800 dark:hover:text-white transition-colors"
+                      title="Open in Code Editor (Cursor / VS Code)"
+                    >
+                      <Code2 className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+
                   {hasMissing && primarySource && (
                     <button
                       type="button"
@@ -763,6 +960,96 @@ export default function SkillsCardView({
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Floating Multi-Select Batch Actions Dock */}
+      {selectedSkills.size > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2 p-2 sm:px-3 rounded-2xl border border-black/15 dark:border-white/20 bg-white/95 dark:bg-[#1e2029]/95 shadow-2xl backdrop-blur-2xl text-slate-900 dark:text-slate-100 animate-slide-up">
+          <div className="flex items-center gap-2 px-2 text-xs font-semibold border-r border-black/10 dark:border-white/10 pr-3">
+            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#007AFF] text-[10px] text-white">
+              {selectedSkills.size}
+            </span>
+            <span>Selected</span>
+          </div>
+
+          {/* Batch Link Dropdown */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setIsBatchLinkOpen(!isBatchLinkOpen)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#007AFF] hover:bg-[#0066d6] text-white text-xs font-semibold transition-colors shadow-xs"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              <span>Link to...</span>
+              <ChevronDown className="h-3 w-3" />
+            </button>
+
+            {isBatchLinkOpen && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setIsBatchLinkOpen(false)} />
+                <div className="absolute left-0 bottom-10 z-50 w-56 max-h-60 overflow-y-auto rounded-xl border border-black/10 dark:border-white/15 bg-white/95 dark:bg-[#20222b]/95 shadow-2xl backdrop-blur-2xl p-1 text-xs animate-scale-in">
+                  <div className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400 border-b border-black/5 dark:border-white/5 mb-1">
+                    Link All {selectedSkills.size} Skills Into
+                  </div>
+                  {visiblePlatforms.map(plat => (
+                    <button
+                      key={plat.id}
+                      onClick={async () => {
+                        setIsBatchLinkOpen(false);
+                        if (onBatchLink) {
+                          await onBatchLink(Array.from(selectedSkills), plat.id);
+                        }
+                      }}
+                      className="flex w-full items-center justify-between gap-2 rounded-lg px-2.5 py-1.5 text-left text-slate-700 dark:text-slate-200 hover:bg-[#007AFF]/10 hover:text-[#007AFF] transition-colors"
+                    >
+                      <div className="flex items-center gap-2 truncate">
+                        <span className="h-2 w-2 rounded-full flex-shrink-0" style={{ backgroundColor: plat.color }} />
+                        <span className="truncate">{plat.name}</span>
+                      </div>
+                      <Link2 className="h-3 w-3 text-slate-400 flex-shrink-0" />
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Batch Sync All */}
+          {onBatchSyncAll && (
+            <button
+              type="button"
+              onClick={async () => {
+                await onBatchSyncAll(Array.from(selectedSkills));
+              }}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-500/10 hover:bg-purple-500/20 text-purple-600 dark:text-purple-400 text-xs font-semibold transition-colors"
+              title="Batch-sync all selected skills across all platforms"
+            >
+              <Sparkles className="h-3.5 w-3.5" />
+              <span>Sync All</span>
+            </button>
+          )}
+
+          {/* Batch Star */}
+          <button
+            type="button"
+            onClick={handleBatchStar}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 text-xs font-semibold transition-colors"
+            title="Star all selected skills"
+          >
+            <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+            <span className="hidden sm:inline">Star All</span>
+          </button>
+
+          {/* Clear Selection */}
+          <button
+            type="button"
+            onClick={clearSelection}
+            className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors ml-1"
+            title="Clear selection"
+          >
+            <X className="h-4 w-4" />
+          </button>
         </div>
       )}
 

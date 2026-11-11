@@ -18,9 +18,10 @@ import {
   trashSkill, 
   deleteSkillCompletely,
   revealInFinder,
+  openInEditor,
   fetchLLMConfig 
 } from './api.js';
-import { Sparkles, Layers, Filter, CheckCircle2, AlertCircle, ChevronDown, Bot } from 'lucide-react';
+import { Sparkles, Layers, Filter, CheckCircle2, AlertCircle, ChevronDown, Bot, Star } from 'lucide-react';
 
 export default function App() {
   const [skills, setSkills] = useState([]);
@@ -31,8 +32,31 @@ export default function App() {
 
   // Filters
   const [searchTerm, setSearchTerm] = useState('');
-  const [activeFilter, setActiveFilter] = useState('all'); // 'all', platform.id, 'unsynced', 'symlinked'
+  const [activeFilter, setActiveFilter] = useState('all'); // 'all', platform.id, 'unsynced', 'symlinked', 'starred'
   const [isFiltersExpanded, setIsFiltersExpanded] = useState(false); // Collapsed by default
+
+  // Starred / Favorite Skills
+  const [starredSkills, setStarredSkills] = useState(() => {
+    try {
+      const saved = localStorage.getItem('skilldesk-starred');
+      return new Set(saved ? JSON.parse(saved) : []);
+    } catch (e) {
+      return new Set();
+    }
+  });
+
+  const toggleStarSkill = (name) => {
+    setStarredSkills(prev => {
+      const next = new Set(prev);
+      if (next.has(name)) {
+        next.delete(name);
+      } else {
+        next.add(name);
+      }
+      localStorage.setItem('skilldesk-starred', JSON.stringify(Array.from(next)));
+      return next;
+    });
+  };
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -132,12 +156,14 @@ export default function App() {
     }).length;
 
     const symlinked = skills.filter(s => s.hasSymlink).length;
+    const starred = skills.filter(s => starredSkills.has(s.name)).length;
 
-    return { unsynced, symlinked };
-  }, [skills, platforms]);
+    return { unsynced, symlinked, starred };
+  }, [skills, platforms, starredSkills]);
 
   const activeFilterName = useMemo(() => {
     if (activeFilter === 'all') return `All Skills (${skills.length})`;
+    if (activeFilter === 'starred') return `Starred (${filterStats.starred})`;
     if (activeFilter === 'unsynced') return `Needs Sync (${filterStats.unsynced})`;
     if (activeFilter === 'symlinked') return `Symlinked (${filterStats.symlinked})`;
     const plat = platforms.find(p => p.id === activeFilter);
@@ -162,6 +188,8 @@ export default function App() {
     // Platform or category filter
     if (activeFilter === 'all') {
       return result;
+    } else if (activeFilter === 'starred') {
+      return result.filter(s => starredSkills.has(s.name));
     } else if (activeFilter === 'unsynced') {
       return result.filter(s => {
         const count = platforms.filter(p => s.platforms[p.id]?.installed).length;
@@ -173,7 +201,7 @@ export default function App() {
       // Platform id filter
       return result.filter(s => s.platforms[activeFilter]?.installed);
     }
-  }, [skills, searchTerm, activeFilter, platforms]);
+  }, [skills, searchTerm, activeFilter, platforms, starredSkills]);
 
   // Reset page to 1 whenever search term or filter changes
   useEffect(() => {
@@ -280,6 +308,61 @@ export default function App() {
     }
   };
 
+  const handleOpenInEditor = async (filePath) => {
+    try {
+      const res = await openInEditor(filePath);
+      if (res.success) {
+        showToast('Opened in code editor', 'success');
+      } else {
+        showToast(res.error || 'Could not open editor', 'error');
+      }
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
+  };
+
+  const handleBatchLink = async (skillNames, targetPlatformId) => {
+    try {
+      let count = 0;
+      for (const name of skillNames) {
+        const skill = skills.find(s => s.name === name);
+        if (skill) {
+          const installed = platforms.filter(p => skill.platforms[p.id]?.installed);
+          const primarySource = installed.find(p => p.id === 'shared') || installed.find(p => !skill.platforms[p.id]?.isSymlink) || installed[0];
+          if (primarySource) {
+            await linkSkill({ skillName: name, sourcePlatformId: primarySource.id, targetPlatformId, makeSharedCanonical: true });
+            count++;
+          }
+        }
+      }
+      showToast(`Linked ${count} skills to ${targetPlatformId}`, 'success');
+      await loadData();
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
+  };
+
+  const handleBatchSyncAll = async (skillNames) => {
+    try {
+      let count = 0;
+      for (const name of skillNames) {
+        const skill = skills.find(s => s.name === name);
+        if (skill) {
+          const installed = platforms.filter(p => skill.platforms[p.id]?.installed);
+          const primarySource = installed.find(p => p.id === 'shared') || installed.find(p => !skill.platforms[p.id]?.isSymlink) || installed[0];
+          if (primarySource) {
+            await syncAllSkills({ skillName: name, sourcePlatformId: primarySource.id, mode: 'symlink' });
+            count++;
+          }
+        }
+      }
+      showToast(`Synced ${count} skills across all installed assistants`, 'success');
+      await loadData();
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
+  };
+
   return (
     <div className="h-screen bg-[#f5f6f8] dark:bg-[#0b0f17] text-slate-900 dark:text-slate-100 flex flex-col transition-colors duration-200 overflow-hidden">
       <Navbar
@@ -374,6 +457,20 @@ export default function App() {
                     All Skills ({skills.length})
                   </button>
 
+                  {filterStats.starred > 0 && (
+                    <button
+                      onClick={() => setActiveFilter('starred')}
+                      className={`px-3 py-1 rounded-lg font-medium text-xs transition-all flex items-center gap-1.5 ${
+                        activeFilter === 'starred'
+                          ? 'bg-amber-500 text-white shadow-xs font-semibold'
+                          : 'text-amber-600 dark:text-amber-400 hover:text-amber-700 hover:bg-amber-500/10'
+                      }`}
+                    >
+                      <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+                      <span>Starred ({filterStats.starred})</span>
+                    </button>
+                  )}
+
                   {filterStats.unsynced > 0 && (
                     <button
                       onClick={() => setActiveFilter('unsynced')}
@@ -453,6 +550,11 @@ export default function App() {
             pageSize={pageSize}
             setPageSize={setPageSize}
             platforms={platforms}
+            starredSkills={starredSkills}
+            onToggleStar={toggleStarSkill}
+            onOpenInEditor={handleOpenInEditor}
+            onBatchLink={handleBatchLink}
+            onBatchSyncAll={handleBatchSyncAll}
             onOpenDetail={(name) => setSelectedSkillName(name)}
             onLinkSkill={handleLinkSkill}
             onUnlinkSkill={handleUnlinkSkill}

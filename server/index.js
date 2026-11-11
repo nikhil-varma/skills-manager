@@ -511,6 +511,37 @@ app.post('/api/actions/reveal-in-finder', (req, res) => {
   }
 });
 
+// Open in Code Editor (Cursor, VS Code, or default editor)
+app.post('/api/actions/open-in-editor', (req, res) => {
+  try {
+    const { filePath, editor } = req.body;
+    if (!filePath) return res.status(400).json({ error: 'filePath is required' });
+
+    const safePath = expandHome(filePath);
+    if (!fs.existsSync(safePath)) {
+      return res.json({ success: false, error: 'File or directory does not exist' });
+    }
+
+    let cmd = `open -a "Cursor" "${safePath}" || open -a "Visual Studio Code" "${safePath}" || open "${safePath}"`;
+    if (editor === 'cursor') {
+      cmd = `open -a "Cursor" "${safePath}"`;
+    } else if (editor === 'vscode' || editor === 'code') {
+      cmd = `open -a "Visual Studio Code" "${safePath}"`;
+    } else if (editor === 'zed') {
+      cmd = `open -a "Zed" "${safePath}"`;
+    }
+
+    exec(cmd, (err) => {
+      if (err) {
+        exec(`open "${safePath}"`, () => {});
+      }
+      res.json({ success: true, opened: true });
+    });
+  } catch (err) {
+    res.json({ success: false, error: err.message });
+  }
+});
+
 // --- AI Skill Assistant Endpoints ---
 
 // Get current AI LLM config

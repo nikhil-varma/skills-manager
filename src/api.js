@@ -189,6 +189,15 @@ export async function revealInFinder(filePath) {
   return res.json();
 }
 
+export async function openInEditor(filePath, editor = null) {
+  const res = await fetch(`${BASE}/actions/open-in-editor`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ filePath, editor })
+  });
+  return res.json();
+}
+
 // AI Assistant endpoints
 export async function fetchLLMConfig() {
   const res = await fetch(`${BASE}/ai/config`);
