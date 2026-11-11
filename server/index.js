@@ -571,16 +571,18 @@ app.post('/api/skills/fork', (req, res) => {
   }
 });
 
-// 1-Click Align Drift with Canonical Source (inspired by wanghuan9/skilldock)
+// Align Drift with Chosen Source Platform (inspired by wanghuan9/skilldock)
 app.post('/api/skills/align', (req, res) => {
   try {
-    const { skillName, canonicalPlatformId } = req.body;
+    const { skillName, canonicalPlatformId, mode = 'overwrite', targetPlatformIds } = req.body;
     const platforms = getPlatforms();
 
     const result = alignSkillWithCanonical({
       skillName,
       platforms,
-      canonicalPlatformId
+      canonicalPlatformId,
+      mode,
+      targetPlatformIds
     });
 
     res.json(result);

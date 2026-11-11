@@ -800,9 +800,9 @@ export default function SkillsCardView({
                     {skill.hasDrift && onAlignSkill && (
                       <button
                         type="button"
-                        onClick={() => onAlignSkill(skill.name)}
+                        onClick={() => onAlignSkill(skill)}
                         className="flex items-center gap-1 px-2.5 py-1 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-600 dark:text-amber-400 text-xs font-semibold transition-colors"
-                        title="Align detached copies with canonical source"
+                        title="Choose source platform to resolve drift"
                       >
                         <Zap className="h-3 w-3" />
                         <span>Align</span>
@@ -1011,9 +1011,9 @@ export default function SkillsCardView({
                   {skill.hasDrift && onAlignSkill && (
                     <button
                       type="button"
-                      onClick={() => onAlignSkill(skill.name)}
+                      onClick={() => onAlignSkill(skill)}
                       className="px-2 py-1 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 text-amber-600 dark:text-amber-400 text-xs font-semibold transition-colors flex items-center gap-1"
-                      title="Reconcile and overwrite drifted copies with canonical version"
+                      title="Choose source platform to resolve drift"
                     >
                       <Zap className="h-3 w-3" />
                       <span className="hidden md:inline">Align</span>

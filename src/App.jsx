@@ -8,6 +8,7 @@ import SettingsModal from './components/SettingsModal.jsx';
 import AutoDiscoverModal from './components/AutoDiscoverModal.jsx';
 import SkillHubModal from './components/SkillHubModal.jsx';
 import ForkSkillModal from './components/ForkSkillModal.jsx';
+import DriftAlignModal from './components/DriftAlignModal.jsx';
 import ChatPanel from './components/ChatPanel.jsx';
 import Toast from './components/Toast.jsx';
 import { 
@@ -73,6 +74,7 @@ export default function App() {
   const [isDiscoverOpen, setIsDiscoverOpen] = useState(false);
   const [isSkillHubOpen, setIsSkillHubOpen] = useState(false);
   const [forkTargetSkill, setForkTargetSkill] = useState(null);
+  const [driftSkillTarget, setDriftSkillTarget] = useState(null);
   const [isChatOpen, setIsChatOpen] = useState(false);
 
   // Theme State (macOS Sequoia Glass Light / Dark)
@@ -291,13 +293,22 @@ export default function App() {
     }
   };
 
-  const handleAlignSkill = async (skillName, canonicalPlatformId) => {
-    try {
-      await alignSkillWithCanonical({ skillName, canonicalPlatformId });
-      showToast(`Aligned copies of "${skillName}" with canonical version!`, 'success');
-      await loadData();
-    } catch (err) {
-      showToast(err.message, 'error');
+  const handleAlignSkill = async (skillOrName, canonicalPlatformId = null) => {
+    if (canonicalPlatformId) {
+      try {
+        const skillName = typeof skillOrName === 'string' ? skillOrName : skillOrName.name;
+        await alignSkillWithCanonical({ skillName, canonicalPlatformId });
+        showToast(`Aligned copies of "${skillName}" with chosen source!`, 'success');
+        await loadData();
+      } catch (err) {
+        showToast(err.message, 'error');
+      }
+    } else {
+      // Open Drift Analyser modal to let user choose the authoritative source
+      const skillObj = typeof skillOrName === 'string' 
+        ? skills.find(s => s.name === skillOrName) || { name: skillOrName }
+        : skillOrName;
+      setDriftSkillTarget(skillObj);
     }
   };
 
@@ -616,6 +627,22 @@ export default function App() {
             setSelectedSkillName(null);
             setForkTargetSkill(skill);
           }}
+          onOpenDriftModal={(skill) => {
+            setSelectedSkillName(null);
+            setDriftSkillTarget(skill);
+          }}
+        />
+      )}
+
+      {driftSkillTarget && (
+        <DriftAlignModal
+          skillName={driftSkillTarget.name}
+          initialSkill={driftSkillTarget}
+          platforms={platforms}
+          onClose={() => setDriftSkillTarget(null)}
+          onSuccess={loadData}
+          showToast={showToast}
+          onRevealPath={handleRevealPath}
         />
       )}
 

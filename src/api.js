@@ -295,15 +295,15 @@ export async function forkSkill({ sourceSkillName, sourcePlatformId, newSkillNam
   return res.json();
 }
 
-export async function alignSkillWithCanonical({ skillName, canonicalPlatformId }) {
+export async function alignSkillWithCanonical({ skillName, canonicalPlatformId, mode = 'overwrite', targetPlatformIds }) {
   const res = await fetch(`${BASE}/skills/align`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ skillName, canonicalPlatformId })
+    body: JSON.stringify({ skillName, canonicalPlatformId, mode, targetPlatformIds })
   });
   if (!res.ok) {
     const errData = await res.json().catch(() => ({ error: 'Align failed' }));
-    throw new Error(errData.error || 'Failed to align skill with canonical source');
+    throw new Error(errData.error || 'Failed to align skill with chosen source');
   }
   return res.json();
 }

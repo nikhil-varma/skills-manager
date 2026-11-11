@@ -181,11 +181,16 @@ export function scanPlatforms(platforms) {
 
         let parsed = { data: {}, content: '' };
         let fileHash = null;
+        let mtime = null;
+        let fileSize = 0;
         if (skillFile && isValid) {
           try {
             const raw = fs.readFileSync(skillFile, 'utf-8');
             parsed = safeParseMatter(raw);
             fileHash = crypto.createHash('md5').update(raw).digest('hex');
+            const stat = fs.statSync(skillFile);
+            mtime = stat.mtime.toISOString();
+            fileSize = stat.size;
           } catch (err) {
             // Silently recover
           }
@@ -239,7 +244,10 @@ export function scanPlatforms(platforms) {
           isValid,
           fileCount,
           files,
-          fileHash
+          fileHash,
+          shortHash: fileHash ? fileHash.slice(0, 7) : null,
+          mtime,
+          fileSize
         };
 
         if (isSymlink) skill.hasSymlink = true;
@@ -320,12 +328,17 @@ export function getSkillDetail(skillName, platforms, preferredPlatformId) {
       if (fs.existsSync(pDir)) {
         let isLink = false;
         let fileHash = null;
+        let mtime = null;
+        let fileSize = 0;
         try {
           isLink = fs.lstatSync(pDir).isSymbolicLink();
           const targetSkillFile = findSkillFile(pDir);
           if (targetSkillFile) {
             fileHash = crypto.createHash('md5').update(fs.readFileSync(targetSkillFile)).digest('hex');
             hashes.add(fileHash);
+            const stat = fs.statSync(targetSkillFile);
+            mtime = stat.mtime.toISOString();
+            fileSize = stat.size;
           }
         } catch (e) {}
         allInstallations.push({
@@ -337,7 +350,10 @@ export function getSkillDetail(skillName, platforms, preferredPlatformId) {
           expandedPath: p.expandedPath,
           dirPath: pDir,
           isSymlink: isLink,
-          fileHash
+          fileHash,
+          shortHash: fileHash ? fileHash.slice(0, 7) : null,
+          mtime,
+          fileSize
         });
       }
     }
@@ -700,22 +716,22 @@ export function forkSkill({ sourceSkillName, sourcePlatformPath, newSkillName, t
 }
 
 /**
- * 1-Click Align with Canonical Source
- * Overwrite detached copies across assistants with the canonical source
+ * Align with Chosen Source Platform
+ * Reconcile detached copies or symlinks across assistants with the selected authoritative source
  * (Inspired by wanghuan9/skilldock)
  */
-export function alignSkillWithCanonical({ skillName, platforms, canonicalPlatformId }) {
+export function alignSkillWithCanonical({ skillName, platforms, canonicalPlatformId, mode = 'overwrite', targetPlatformIds = null }) {
   const canonicalPlat = platforms.find(p => p.id === canonicalPlatformId) || 
                         platforms.find(p => p.id === 'shared') || 
                         platforms.find(p => fs.existsSync(path.join(p.expandedPath, skillName)));
 
   if (!canonicalPlat) {
-    throw new Error(`No canonical copy found for ${skillName}`);
+    throw new Error(`Chosen source platform "${canonicalPlatformId}" not found`);
   }
 
   const canonicalDir = path.join(canonicalPlat.expandedPath, skillName);
   if (!fs.existsSync(canonicalDir)) {
-    throw new Error(`Canonical skill not found in ${canonicalPlat.name}`);
+    throw new Error(`Skill "${skillName}" does not exist in chosen source: ${canonicalPlat.name}`);
   }
 
   const realCanonical = fs.realpathSync(canonicalDir);
@@ -723,15 +739,36 @@ export function alignSkillWithCanonical({ skillName, platforms, canonicalPlatfor
 
   for (const plat of platforms) {
     if (plat.id === canonicalPlat.id) continue;
+    if (targetPlatformIds && Array.isArray(targetPlatformIds) && !targetPlatformIds.includes(plat.id)) {
+      continue;
+    }
+
     const targetDir = path.join(plat.expandedPath, skillName);
     if (fs.existsSync(targetDir)) {
       try {
-        const lstat = fs.lstatSync(targetDir);
-        if (!lstat.isSymbolicLink()) {
-          // It's a detached copy: overwrite with canonical
+        if (mode === 'symlink') {
+          // Replace with symlink pointing to canonicalDir
           fs.rmSync(targetDir, { recursive: true, force: true });
-          fs.cpSync(realCanonical, targetDir, { recursive: true });
-          updatedPlatforms.push(plat.name);
+          fs.symlinkSync(canonicalDir, targetDir, 'dir');
+          updatedPlatforms.push({ platformId: plat.id, platformName: plat.name, mode: 'symlink' });
+        } else {
+          // Overwrite mode
+          const lstat = fs.lstatSync(targetDir);
+          if (lstat.isSymbolicLink()) {
+            // Already a symlink: ensure it points to canonical
+            const currentTarget = fs.readlinkSync(targetDir);
+            const resolvedTarget = path.resolve(path.dirname(targetDir), currentTarget);
+            if (resolvedTarget !== realCanonical && resolvedTarget !== canonicalDir) {
+              fs.unlinkSync(targetDir);
+              fs.symlinkSync(canonicalDir, targetDir, 'dir');
+              updatedPlatforms.push({ platformId: plat.id, platformName: plat.name, mode: 'symlink' });
+            }
+          } else {
+            // Detached directory: overwrite content from canonical
+            fs.rmSync(targetDir, { recursive: true, force: true });
+            fs.cpSync(realCanonical, targetDir, { recursive: true });
+            updatedPlatforms.push({ platformId: plat.id, platformName: plat.name, mode: 'overwrite' });
+          }
         }
       } catch (err) {
         console.warn(`Could not align platform ${plat.name}:`, err.message);
@@ -739,7 +776,7 @@ export function alignSkillWithCanonical({ skillName, platforms, canonicalPlatfor
     }
   }
 
-  return { success: true, skillName, updatedPlatforms };
+  return { success: true, skillName, sourcePlatform: canonicalPlat.name, updatedPlatforms };
 }
 
 /**

@@ -31,7 +31,8 @@ export default function SkillDetailModal({
   onRevealPath,
   onTrashSkill,
   onDeleteCompletely,
-  onForkSkill
+  onForkSkill,
+  onOpenDriftModal
 }) {
   const [detail, setDetail] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -45,6 +46,7 @@ export default function SkillDetailModal({
   // Manage actions state
   const [targetPlatformId, setTargetPlatformId] = useState(platforms[0]?.id || '');
   const [actionProcessing, setActionProcessing] = useState(false);
+  const [driftSourceId, setDriftSourceId] = useState('');
 
   useEffect(() => {
     loadDetail();
@@ -57,6 +59,9 @@ export default function SkillDetailModal({
       const data = await fetchSkillDetail(skillName);
       setDetail(data);
       setEditedContent(data.rawContent || '');
+      if (data.allInstallations?.length) {
+        setDriftSourceId(data.platformId || data.allInstallations[0].platformId);
+      }
     } catch (err) {
       setError(err.message);
     } finally {
@@ -343,36 +348,71 @@ export default function SkillDetailModal({
                 <div className="space-y-6">
                   {/* Content Drift Alert (inspired by wanghuan9/skilldock) */}
                   {detail.hasDrift && (
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-700 dark:text-amber-300 text-xs">
-                      <div className="flex items-center gap-2.5">
-                        <AlertTriangle className="h-4 w-4 text-amber-500 flex-shrink-0" />
+                    <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-3 p-4 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-700 dark:text-amber-300 text-xs">
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <AlertTriangle className="h-5 w-5 text-amber-500 flex-shrink-0" />
                         <div>
                           <p className="font-semibold text-xs">Content Drift Detected Across Assistants</p>
-                          <p className="text-[11px] text-amber-600 dark:text-amber-400">
-                            Physical copies of this skill have diverged from each other. Aligning will reconcile copies with the canonical source.
+                          <p className="text-[11px] text-amber-600 dark:text-amber-400 mt-0.5">
+                            Physical copies of this skill have diverged. Choose which platform is the authoritative source to reconcile.
                           </p>
                         </div>
                       </div>
-                      <button
-                        onClick={async () => {
-                          try {
-                            setActionProcessing(true);
-                            await alignSkillWithCanonical({ skillName, canonicalPlatformId: detail.platformId });
-                            showToast(`Aligned all copies of ${skillName} with canonical source!`, 'success');
-                            onRefresh();
-                            await loadDetail();
-                          } catch (err) {
-                            showToast(err.message, 'error');
-                          } finally {
-                            setActionProcessing(false);
-                          }
-                        }}
-                        disabled={actionProcessing}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-white font-semibold text-xs shadow-xs transition-colors disabled:opacity-50 flex-shrink-0"
-                      >
-                        <Zap className="h-3.5 w-3.5" />
-                        <span>{actionProcessing ? 'Aligning...' : 'Align with Canonical'}</span>
-                      </button>
+
+                      <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap w-full lg:w-auto justify-end">
+                        <div className="flex items-center gap-1.5 bg-white/80 dark:bg-black/40 border border-amber-500/30 rounded-lg px-2 py-1">
+                          <span className="text-[11px] text-slate-500 dark:text-slate-400 whitespace-nowrap">Source:</span>
+                          <select
+                            value={driftSourceId || detail.platformId}
+                            onChange={(e) => setDriftSourceId(e.target.value)}
+                            className="bg-transparent text-xs font-semibold text-slate-900 dark:text-white focus:outline-none cursor-pointer"
+                          >
+                            {detail.allInstallations?.map(inst => (
+                              <option key={inst.platformId} value={inst.platformId} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
+                                {inst.platformName} ({inst.shortHash ? `hash:${inst.shortHash}` : 'source'})
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <button
+                          onClick={async () => {
+                            try {
+                              setActionProcessing(true);
+                              const chosen = driftSourceId || detail.platformId;
+                              await alignSkillWithCanonical({ skillName, canonicalPlatformId: chosen });
+                              const sourceName = platforms.find(p => p.id === chosen)?.name || chosen;
+                              showToast(`Aligned copies with source "${sourceName}"!`, 'success');
+                              onRefresh();
+                              await loadDetail();
+                            } catch (err) {
+                              showToast(err.message, 'error');
+                            } finally {
+                              setActionProcessing(false);
+                            }
+                          }}
+                          disabled={actionProcessing}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-white font-semibold text-xs shadow-xs transition-colors disabled:opacity-50 flex-shrink-0"
+                          title="Align all locations using chosen source"
+                        >
+                          <Zap className="h-3.5 w-3.5" />
+                          <span>{actionProcessing ? 'Aligning...' : 'Align with Source'}</span>
+                        </button>
+
+                        {onOpenDriftModal && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              onClose();
+                              onOpenDriftModal({ name: skillName, ...detail });
+                            }}
+                            className="px-2.5 py-1.5 rounded-lg border border-amber-500/40 text-amber-700 dark:text-amber-300 hover:bg-amber-500/10 text-xs font-semibold transition-colors flex-shrink-0"
+                            title="Open interactive Drift Analyser modal"
+                          >
+                            Analyser...
+                          </button>
+                        )}
+                      </div>
                     </div>
                   )}
 
