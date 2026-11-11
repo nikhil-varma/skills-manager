@@ -820,14 +820,14 @@ export default function SkillsCardView({
             return (
               <div
                 key={skill.name}
-                className={`group flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 sm:px-4 rounded-xl border backdrop-blur-xl transition-all ${
+                className={`group flex items-center justify-between gap-3 p-2.5 sm:px-4 rounded-xl border backdrop-blur-xl transition-all ${
                   isSelected
                     ? 'border-[#007AFF] bg-[#007AFF]/[0.03] ring-1 ring-[#007AFF]/40 dark:border-[#007AFF]/60'
                     : 'border-black/[0.06] dark:border-white/10 bg-white/70 dark:bg-[#1a1c24]/75 hover:bg-white/90 dark:hover:bg-[#1c1e27] hover:shadow-xs'
                 }`}
               >
-                {/* Left: Checkbox, Star, Icon, Name, Slug, Description */}
-                <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                {/* Left: Checkbox, Star, Icon, Name, Slug (Guaranteed Minimum Width) */}
+                <div className="flex items-center gap-2.5 w-56 sm:w-64 md:w-80 lg:w-96 flex-shrink-0 min-w-0">
                   {/* Multi-Select Checkbox */}
                   <button
                     type="button"
@@ -848,7 +848,7 @@ export default function SkillsCardView({
                       e.stopPropagation();
                       if (onToggleStar) onToggleStar(skill.name);
                     }}
-                    className={`p-0.5 rounded transition-colors ${
+                    className={`p-0.5 rounded transition-colors flex-shrink-0 ${
                       isStarred
                         ? 'text-amber-400'
                         : 'text-slate-300 dark:text-slate-600 hover:text-amber-400 opacity-0 group-hover:opacity-100'
@@ -866,56 +866,63 @@ export default function SkillsCardView({
                   </div>
 
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5 min-w-0">
                       <span 
                         onClick={() => onOpenDetail(skill.name)}
                         className="font-semibold text-xs sm:text-sm text-slate-900 dark:text-white hover:text-[#007AFF] cursor-pointer truncate"
+                        title={skill.displayName || skill.name}
                       >
                         {skill.displayName || skill.name}
                       </span>
-                      <span className="font-mono text-[10px] text-slate-400 hidden xs:inline truncate">
-                        {skill.name}
-                      </span>
                       {skill.metadata?.version && (
-                        <span className="text-[10px] font-mono px-1 py-0.2 rounded bg-black/[0.04] dark:bg-white/10 text-slate-500">
+                        <span className="text-[10px] font-mono px-1 py-0.2 rounded bg-black/[0.04] dark:bg-white/10 text-slate-500 flex-shrink-0">
                           v{skill.metadata.version}
                         </span>
                       )}
                     </div>
-                    <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate max-w-lg mt-0.5">
-                      {skill.description || 'No description provided'}
+                    <p className="text-[11px] font-mono text-slate-400 dark:text-slate-500 truncate mt-0.5">
+                      {skill.name}
                     </p>
                   </div>
                 </div>
 
-                {/* Middle: Locations presence chips */}
-                <div className="flex items-center gap-1.5 flex-wrap flex-shrink-0">
-                  {installedPlatforms.map(plat => {
+                {/* Middle: Locations presence chips (Flexible & Never Crushing Left) */}
+                <div className="flex-1 min-w-0 hidden md:flex items-center gap-1.5 overflow-hidden">
+                  {installedPlatforms.slice(0, 4).map(plat => {
                     const isSym = skill.platforms[plat.id]?.isSymlink;
                     return (
                       <span
                         key={plat.id}
-                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium border ${
+                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium border flex-shrink-0 ${
                           isSym
                             ? 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20'
                             : 'bg-black/[0.03] dark:bg-white/[0.05] text-slate-700 dark:text-slate-300 border-black/[0.06] dark:border-white/10'
                         }`}
                         title={`${plat.name} (${isSym ? 'Symlink' : 'Source/Copy'})`}
                       >
-                        <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: plat.color }} />
-                        <span>{plat.badge || plat.name}</span>
-                        {isSym && <Link2 className="h-2.5 w-2.5 text-purple-500" />}
+                        <span className="h-1.5 w-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: plat.color }} />
+                        <span className="truncate max-w-[85px]">{plat.badge || plat.name}</span>
+                        {isSym && <Link2 className="h-2.5 w-2.5 text-purple-500 flex-shrink-0" />}
                       </span>
                     );
                   })}
 
-                  <span className="text-[10px] text-slate-400 font-mono ml-1">
-                    {installedPlatforms.length}/{visiblePlatforms.length}
+                  {installedPlatforms.length > 4 && (
+                    <span 
+                      className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-black/[0.04] dark:bg-white/10 text-slate-500 dark:text-slate-400 flex-shrink-0"
+                      title={installedPlatforms.slice(4).map(p => p.name).join(', ')}
+                    >
+                      +{installedPlatforms.length - 4} more
+                    </span>
+                  )}
+
+                  <span className="text-[10px] text-slate-400 font-mono ml-auto flex-shrink-0 pr-2">
+                    {installedPlatforms.length}/{visiblePlatforms.length} active
                   </span>
                 </div>
 
                 {/* Right: Quick Actions */}
-                <div className="flex items-center gap-1.5 flex-shrink-0 sm:ml-2">
+                <div className="flex items-center gap-1.5 flex-shrink-0 ml-auto">
                   <button
                     type="button"
                     onClick={(e) => handleCopyCommand(skill.name, e)}
@@ -952,7 +959,7 @@ export default function SkillsCardView({
                   <button
                     type="button"
                     onClick={() => onOpenDetail(skill.name)}
-                    className="px-2 py-1 rounded-lg bg-black/[0.04] hover:bg-black/[0.08] dark:bg-white/[0.06] dark:hover:bg-white/[0.1] text-slate-700 dark:text-slate-300 font-medium text-xs transition-colors"
+                    className="px-2.5 py-1 rounded-lg bg-black/[0.04] hover:bg-black/[0.08] dark:bg-white/[0.06] dark:hover:bg-white/[0.1] text-slate-700 dark:text-slate-300 font-medium text-xs transition-colors"
                   >
                     Inspect
                   </button>
