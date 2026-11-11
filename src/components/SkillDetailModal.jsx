@@ -252,6 +252,24 @@ export default function SkillDetailModal({
               <p className="text-[11px] sm:text-xs font-mono text-slate-500 dark:text-slate-400 mt-0.5 truncate max-w-xs sm:max-w-lg">
                 {detail?.dirPath}
               </p>
+              {detail?.canonicalSource && (
+                <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                  <div 
+                    className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg bg-black/[0.03] dark:bg-white/[0.06] text-[11px] font-mono border border-black/[0.06] dark:border-white/10 text-slate-700 dark:text-slate-300"
+                    title={`Authoritative Source of Truth: ${detail.canonicalSource.path}`}
+                  >
+                    <span className="font-sans font-semibold text-slate-500 dark:text-slate-400">Source of Truth:</span>
+                    <span className="text-[#007AFF] dark:text-[#0A84FF] font-semibold">
+                      {detail.canonicalSource.displayPath || detail.canonicalSource.path}
+                    </span>
+                    {detail.canonicalSource.reason && (
+                      <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-sans font-medium">
+                        ({detail.canonicalSource.reason})
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 

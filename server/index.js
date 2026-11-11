@@ -955,6 +955,8 @@ app.post('/api/drift/smart-align-preview', (req, res) => {
         displayName: skill.displayName || skill.name,
         sourcePlatformId: source.platformId,
         sourcePlatformName: source.platformName,
+        sourcePath: skill.platforms[source.platformId]?.path,
+        sourceDisplayPath: skill.platforms[source.platformId]?.displayPath,
         sourceMtime: source.mtime,
         sourceRelativeTime: formatRelativeTime(source.mtime),
         targets

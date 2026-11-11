@@ -349,6 +349,16 @@ export default function SmartAlignModal({
                           ))}
                         </div>
                       </div>
+
+                      {/* Authoritative Source of Truth Path */}
+                      {(item.sourceDisplayPath || item.sourcePath) && (
+                        <div className="mt-1.5 text-[10px] font-mono text-slate-500 dark:text-slate-400 flex items-center gap-1 truncate">
+                          <span className="font-sans font-medium text-slate-400 flex-shrink-0">Source of Truth Path:</span>
+                          <span className="truncate text-slate-700 dark:text-slate-300 bg-black/[0.03] dark:bg-white/[0.06] px-1.5 py-0.2 rounded border border-black/[0.04] dark:border-white/5">
+                            {item.sourceDisplayPath || item.sourcePath}
+                          </span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

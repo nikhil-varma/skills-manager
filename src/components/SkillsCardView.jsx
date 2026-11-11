@@ -617,6 +617,19 @@ export default function SkillsCardView({
                     </div>
                   )}
 
+                  {/* Authoritative Source of Truth Path */}
+                  {skill.canonicalSource && (
+                    <div 
+                      className="flex items-center gap-1.5 text-[10px] text-slate-400 dark:text-slate-500 font-mono truncate"
+                      title={`Authoritative Source of Truth: ${skill.canonicalSource.path} (${skill.canonicalSource.reason})`}
+                    >
+                      <span className="text-slate-500 font-sans font-medium flex-shrink-0">Source of Truth:</span>
+                      <span className="truncate text-slate-700 dark:text-slate-300 bg-black/[0.03] dark:bg-white/[0.05] px-1.5 py-0.2 rounded border border-black/[0.04] dark:border-white/5">
+                        {skill.canonicalSource.displayPath || skill.canonicalSource.path}
+                      </span>
+                    </div>
+                  )}
+
                   {/* 2. Deployed Locations (Symlinked / Source / Copied) */}
                   <div className="pt-2 border-t border-black/[0.05] dark:border-white/5 space-y-2">
                     <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">

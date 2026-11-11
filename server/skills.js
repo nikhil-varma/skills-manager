@@ -292,6 +292,55 @@ export function scanPlatforms(platforms) {
       skill.latestPlatformId = sortedByMtime[0].platformId;
       skill.latestPlatformName = sortedByMtime[0].platformName;
     }
+
+    // Determine the authoritative source of truth path
+    let canonicalInfo = null;
+    if (skill.hasDrift && sortedByMtime.length > 0) {
+      const best = skill.platforms[sortedByMtime[0].platformId];
+      canonicalInfo = {
+        platformId: sortedByMtime[0].platformId,
+        platformName: sortedByMtime[0].platformName,
+        path: best?.path,
+        displayPath: best?.displayPath,
+        resolvedPath: best?.resolvedPath,
+        reason: 'Newest modified revision'
+      };
+    } else if (skill.platforms['shared']?.installed && !skill.platforms['shared']?.isSymlink) {
+      canonicalInfo = {
+        platformId: 'shared',
+        platformName: 'Shared Hub',
+        path: skill.platforms['shared'].path,
+        displayPath: skill.platforms['shared'].displayPath,
+        resolvedPath: skill.platforms['shared'].resolvedPath,
+        reason: 'Shared Hub master copy'
+      };
+    } else {
+      const standalone = Object.entries(skill.platforms).find(([id, p]) => p.installed && !p.isSymlink);
+      if (standalone) {
+        const pObj = platforms.find(p => p.id === standalone[0]);
+        canonicalInfo = {
+          platformId: standalone[0],
+          platformName: pObj?.name || standalone[0],
+          path: standalone[1].path,
+          displayPath: standalone[1].displayPath,
+          resolvedPath: standalone[1].resolvedPath,
+          reason: 'Physical source directory'
+        };
+      } else {
+        const first = Object.values(skill.platforms).find(p => p.installed);
+        if (first) {
+          canonicalInfo = {
+            platformId: null,
+            platformName: 'Symlinked Target',
+            path: first.resolvedPath || first.symlinkTarget,
+            displayPath: first.symlinkDisplay || first.displayPath,
+            resolvedPath: first.resolvedPath,
+            reason: 'Symlink target'
+          };
+        }
+      }
+    }
+    skill.canonicalSource = canonicalInfo;
   }
 
   // Convert map to sorted array
@@ -384,11 +433,37 @@ export function getSkillDetail(skillName, platforms, preferredPlatformId) {
     const hasDrift = hashes.size > 1;
     const specValidation = validateSkillSpec(skillName, parsed.data, parsed.content);
 
-    // Identify newest revision
+    // Identify newest revision and authoritative source of truth
     const sortedInstallations = [...allInstallations]
       .filter(i => i.mtime)
       .sort((a, b) => new Date(b.mtime).getTime() - new Date(a.mtime).getTime());
     const newestInstallation = sortedInstallations[0] || null;
+
+    let canonicalSource = null;
+    if (hasDrift && newestInstallation) {
+      canonicalSource = {
+        platformId: newestInstallation.platformId,
+        platformName: newestInstallation.platformName,
+        path: newestInstallation.path,
+        dirPath: newestInstallation.dirPath,
+        displayPath: contractHome(newestInstallation.path),
+        reason: 'Newest modified revision'
+      };
+    } else {
+      const sharedInst = allInstallations.find(i => i.platformId === 'shared' && !i.isSymlink);
+      const standalone = allInstallations.find(i => !i.isSymlink);
+      const chosen = sharedInst || standalone || allInstallations[0];
+      if (chosen) {
+        canonicalSource = {
+          platformId: chosen.platformId,
+          platformName: chosen.platformName,
+          path: chosen.path,
+          dirPath: chosen.dirPath,
+          displayPath: contractHome(chosen.path),
+          reason: chosen.platformId === 'shared' ? 'Shared Hub master copy' : 'Authoritative source copy'
+        };
+      }
+    }
 
     return {
       name: skillName,
@@ -408,6 +483,7 @@ export function getSkillDetail(skillName, platforms, preferredPlatformId) {
       fileCount,
       allInstallations,
       newestInstallation,
+      canonicalSource,
       latestMtime: newestInstallation?.mtime || null,
       hasDrift,
       driftCount: hashes.size,

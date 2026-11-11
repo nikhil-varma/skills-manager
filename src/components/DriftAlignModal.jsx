@@ -477,6 +477,29 @@ export default function DriftAlignModal({
                     );
                   })}
                 </div>
+
+                {/* Active Source of Truth Path Callout */}
+                {selectedSourceInstallation && (
+                  <div className="mt-3 p-3 rounded-xl bg-[#007AFF]/10 border border-[#007AFF]/25 flex items-center justify-between gap-3 text-xs">
+                    <div className="min-w-0">
+                      <span className="text-[10px] uppercase font-bold text-[#007AFF] tracking-wider block">
+                        Active Source of Truth Path (Other locations will align to this):
+                      </span>
+                      <code className="text-xs font-mono font-bold text-slate-900 dark:text-white truncate block mt-0.5">
+                        {selectedSourceInstallation.path}
+                      </code>
+                    </div>
+                    {onRevealPath && (
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); onRevealPath(selectedSourceInstallation.dirPath); }}
+                        className="px-2.5 py-1 rounded-lg bg-white dark:bg-black/40 hover:bg-black/5 dark:hover:bg-white/10 text-slate-700 dark:text-slate-300 font-semibold text-[11px] border border-black/10 dark:border-white/10 transition-colors flex-shrink-0"
+                      >
+                        Reveal in Finder
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Step 2: Target Locations & Alignment Strategy */}
