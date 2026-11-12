@@ -693,10 +693,24 @@ export default function SkillDetailModal({
 
                   {/* Active Platforms & Unlinking */}
                   <div className="rounded-xl border border-black/[0.06] dark:border-white/10 bg-black/[0.015] dark:bg-white/[0.02] p-5 space-y-3">
-                    <h4 className="text-sm font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-2">
-                      <Link2 className="h-4 w-4 text-[#AF52DE]" />
-                      Installed Locations ({detail.allInstallations?.length || 1})
-                    </h4>
+                    <div className="flex items-center justify-between flex-wrap gap-2">
+                      <h4 className="text-sm font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-2">
+                        <Link2 className="h-4 w-4 text-[#AF52DE]" />
+                        Installed Locations ({detail.allInstallations?.length || 1})
+                      </h4>
+                      {onOpenDriftModal && (
+                        <button
+                          onClick={() => {
+                            onClose();
+                            onOpenDriftModal({ name: skillName, ...detail });
+                          }}
+                          className="px-3 py-1 rounded-lg bg-[#007AFF]/10 hover:bg-[#007AFF]/20 text-[#007AFF] text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer"
+                        >
+                          <RefreshCw className="h-3.5 w-3.5" />
+                          <span>Sync & Align All Locations...</span>
+                        </button>
+                      )}
+                    </div>
                     <p className="text-xs text-slate-600 dark:text-slate-400">
                       Un-symlink to disconnect an assistant, or detach it into an independent physical folder.
                     </p>

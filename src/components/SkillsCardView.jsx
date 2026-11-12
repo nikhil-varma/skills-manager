@@ -247,9 +247,16 @@ export default function SkillsCardView({
   };
 
   const handleSyncAll = async (skillName, sourceId) => {
+    const skill = skills?.find(s => s.name === skillName);
+    if (onAlignSkill && skill) {
+      onAlignSkill(skill);
+      return;
+    }
     try {
       setLoadingAction(`${skillName}-syncall`);
-      await onSyncAll(skillName, sourceId, 'symlink');
+      if (onSyncAll) {
+        await onSyncAll(skillName, sourceId, 'symlink');
+      }
     } finally {
       setLoadingAction(null);
     }

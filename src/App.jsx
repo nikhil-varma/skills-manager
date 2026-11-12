@@ -272,13 +272,8 @@ export default function App() {
   };
 
   const handleSyncAll = async (skillName, sourcePlatformId, mode = 'symlink') => {
-    try {
-      await syncAllSkills({ skillName, sourcePlatformId, mode });
-      showToast(`Synchronized ${skillName} across all assistants`, 'success');
-      await loadData();
-    } catch (err) {
-      showToast(err.message, 'error');
-    }
+    const skillObj = skills.find(s => s.name === skillName) || { name: skillName };
+    setDriftSkillTarget(skillObj);
   };
 
   const handleTrashSkill = async (skillName, platformId) => {

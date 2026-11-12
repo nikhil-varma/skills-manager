@@ -417,7 +417,8 @@ export function getSkillDetail(skillName, platforms, preferredPlatformId) {
           platformName: p.name,
           badge: p.badge,
           color: p.color,
-          path: p.path,
+          path: path.join(p.path, skillName),
+          displayPath: contractHome(pDir),
           expandedPath: p.expandedPath,
           dirPath: pDir,
           isSymlink: isLink,
@@ -440,14 +441,15 @@ export function getSkillDetail(skillName, platforms, preferredPlatformId) {
     const newestInstallation = sortedInstallations[0] || null;
 
     let canonicalSource = null;
-    if (hasDrift && newestInstallation) {
+    if (newestInstallation) {
       canonicalSource = {
         platformId: newestInstallation.platformId,
         platformName: newestInstallation.platformName,
         path: newestInstallation.path,
         dirPath: newestInstallation.dirPath,
-        displayPath: contractHome(newestInstallation.path),
-        reason: 'Newest modified revision'
+        displayPath: newestInstallation.displayPath,
+        mtime: newestInstallation.mtime,
+        reason: hasDrift ? 'Newest modified revision' : (newestInstallation.isSymlink ? 'Active linked location' : 'Primary source copy')
       };
     } else {
       const sharedInst = allInstallations.find(i => i.platformId === 'shared' && !i.isSymlink);
@@ -459,11 +461,29 @@ export function getSkillDetail(skillName, platforms, preferredPlatformId) {
           platformName: chosen.platformName,
           path: chosen.path,
           dirPath: chosen.dirPath,
-          displayPath: contractHome(chosen.path),
+          displayPath: chosen.displayPath,
+          mtime: chosen.mtime,
           reason: chosen.platformId === 'shared' ? 'Shared Hub master copy' : 'Authoritative source copy'
         };
       }
     }
+
+    // Identify missing platforms where skill is not installed yet
+    const installedIds = new Set(allInstallations.map(i => i.platformId));
+    const missingPlatforms = platforms
+      .filter(p => !installedIds.has(p.id))
+      .map(p => {
+        const pDir = path.join(p.expandedPath, skillName);
+        return {
+          platformId: p.id,
+          platformName: p.name,
+          badge: p.badge,
+          color: p.color,
+          path: path.join(p.path, skillName),
+          dirPath: pDir,
+          displayPath: contractHome(pDir)
+        };
+      });
 
     return {
       name: skillName,
@@ -482,6 +502,7 @@ export function getSkillDetail(skillName, platforms, preferredPlatformId) {
       files,
       fileCount,
       allInstallations,
+      missingPlatforms,
       newestInstallation,
       canonicalSource,
       latestMtime: newestInstallation?.mtime || null,
@@ -850,36 +871,44 @@ export function alignSkillWithCanonical({ skillName, platforms, canonicalPlatfor
       continue;
     }
 
-    const targetDir = path.join(plat.expandedPath, skillName);
-    if (fs.existsSync(targetDir)) {
+    if (!fs.existsSync(plat.expandedPath)) {
       try {
-        if (mode === 'symlink') {
-          // Replace with symlink pointing to canonicalDir
-          fs.rmSync(targetDir, { recursive: true, force: true });
-          fs.symlinkSync(canonicalDir, targetDir, 'dir');
-          updatedPlatforms.push({ platformId: plat.id, platformName: plat.name, mode: 'symlink' });
-        } else {
-          // Overwrite mode
+        fs.mkdirSync(plat.expandedPath, { recursive: true });
+      } catch (e) {}
+    }
+
+    const targetDir = path.join(plat.expandedPath, skillName);
+    try {
+      if (mode === 'symlink') {
+        // Remove existing target if present (symlink or dir)
+        try {
           const lstat = fs.lstatSync(targetDir);
-          if (lstat.isSymbolicLink()) {
-            // Already a symlink: ensure it points to canonical
-            const currentTarget = fs.readlinkSync(targetDir);
-            const resolvedTarget = path.resolve(path.dirname(targetDir), currentTarget);
-            if (resolvedTarget !== realCanonical && resolvedTarget !== canonicalDir) {
-              fs.unlinkSync(targetDir);
-              fs.symlinkSync(canonicalDir, targetDir, 'dir');
-              updatedPlatforms.push({ platformId: plat.id, platformName: plat.name, mode: 'symlink' });
-            }
-          } else {
-            // Detached directory: overwrite content from canonical
+          if (lstat) {
             fs.rmSync(targetDir, { recursive: true, force: true });
-            fs.cpSync(realCanonical, targetDir, { recursive: true });
-            updatedPlatforms.push({ platformId: plat.id, platformName: plat.name, mode: 'overwrite' });
           }
+        } catch (e) {
+          // target doesn't exist
         }
-      } catch (err) {
-        console.warn(`Could not align platform ${plat.name}:`, err.message);
+        fs.symlinkSync(canonicalDir, targetDir, 'dir');
+        updatedPlatforms.push({ platformId: plat.id, platformName: plat.name, mode: 'symlink' });
+      } else {
+        // Overwrite mode: physical copies
+        let isSym = false;
+        try {
+          const lstat = fs.lstatSync(targetDir);
+          isSym = lstat && lstat.isSymbolicLink();
+        } catch (e) {}
+
+        if (isSym) {
+          fs.unlinkSync(targetDir);
+        } else if (fs.existsSync(targetDir)) {
+          fs.rmSync(targetDir, { recursive: true, force: true });
+        }
+        fs.cpSync(realCanonical, targetDir, { recursive: true });
+        updatedPlatforms.push({ platformId: plat.id, platformName: plat.name, mode: 'overwrite' });
       }
+    } catch (err) {
+      console.warn(`Could not sync platform ${plat.name}:`, err.message);
     }
   }
 
